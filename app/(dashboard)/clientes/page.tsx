@@ -24,12 +24,20 @@ export default async function ClientesPage() {
 
   return (
     <div className="p-7">
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold tracking-tight text-zinc-200">Clientes</h1>
-        <p className="text-xs text-zinc-500 mt-1">
-          {clients.length} cliente{clients.length !== 1 ? 's' : ''} registrados
-        </p>
-      </div>
+      <div className="flex items-center justify-between mb-6">
+  <div>
+    <h1 className="text-xl font-semibold tracking-tight text-zinc-200">Clientes</h1>
+    <p className="text-xs text-zinc-500 mt-1">
+      {clients.length} cliente{clients.length !== 1 ? 's' : ''} registrados
+    </p>
+  </div>
+  <Link
+    href="/clientes/nuevo"
+    className="px-4 py-2 bg-amber-400 text-black text-sm font-bold rounded-md hover:bg-amber-300 transition-colors"
+  >
+    + Nuevo Cliente
+  </Link>
+</div>
 
       <div className="bg-[#141414] border border-[#282828] rounded-lg overflow-hidden">
         <table className="w-full border-collapse">
