@@ -7,11 +7,7 @@ async function getClients(): Promise<Customer[]> {
     .from('customers')
     .select('*')
     .order('created_at', { ascending: false });
-
-  if (error) {
-    console.error('[clientes]', error.message);
-    return [];
-  }
+  if (error) { console.error('[clients]', error.message); return []; }
   return data ?? [];
 }
 
@@ -23,83 +19,72 @@ export default async function ClientesPage() {
   const clients = await getClients();
 
   return (
-    <div className="p-7">
+    <div className="p-6 md:p-7">
       <div className="flex items-center justify-between mb-6">
-  <div>
-    <h1 className="text-xl font-semibold tracking-tight text-zinc-200">Clientes</h1>
-    <p className="text-xs text-zinc-500 mt-1">
-      {clients.length} cliente{clients.length !== 1 ? 's' : ''} registrados
-    </p>
-  </div>
-  <Link
-    href="/clientes/nuevo"
-    className="px-4 py-2 bg-amber-400 text-black text-sm font-bold rounded-md hover:bg-amber-300 transition-colors"
-  >
-    + Nuevo Cliente
-  </Link>
-</div>
+        <div>
+          <h1 className="text-lg font-black tracking-wider uppercase text-gray-900"
+              style={{ fontFamily: 'var(--font-alexandria)' }}>Clients</h1>
+          <p className="text-xs text-gray-400 mt-0.5">
+            {clients.length} client{clients.length !== 1 ? 's' : ''} registered
+          </p>
+        </div>
+        <Link href="/clientes/nuevo"
+          className="px-4 py-2 bg-[#D93A35] text-white text-sm font-semibold rounded-lg hover:bg-[#b52e2a] transition-colors">
+          + New Client
+        </Link>
+      </div>
 
-      <div className="bg-[#141414] border border-[#282828] rounded-lg overflow-hidden">
-        <table className="w-full border-collapse">
-          <thead>
-            <tr>
-              {['Cliente', 'Empresa', 'Email', 'Teléfono', 'Ciudad', 'Estado', 'Alta'].map((h) => (
-                <th
-                  key={h}
-                  className="text-left px-5 py-3 text-[11px] font-bold uppercase tracking-[0.08em] text-zinc-500 border-b border-[#282828]"
-                >
-                  {h}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {clients.length === 0 ? (
-              <tr>
-                <td colSpan={7} className="px-5 py-12 text-center text-sm text-zinc-600">
-                  No hay clientes registrados todavía
-                </td>
+      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse min-w-[700px]">
+            <thead>
+              <tr className="bg-gray-50">
+                {['Client', 'Company', 'Email', 'Phone', 'City', 'Status', 'Joined'].map((h) => (
+                  <th key={h} className="text-left px-5 py-3 text-[10px] font-bold uppercase tracking-[0.1em] text-gray-400 border-b border-gray-100">{h}</th>
+                ))}
               </tr>
-            ) : (
-              clients.map((c) => (
-                <tr
-                  key={c.id}
-                  className="border-b border-[#1f1f1f] last:border-0 hover:bg-[#1c1c1c] transition-colors"
-                >
-                  <td className="px-5 py-3">
-                    <Link href={`/clientes/${c.id}`} className="flex items-center gap-3 group">
-                      <div className="w-8 h-8 rounded-md bg-amber-400 flex items-center justify-center text-xs font-bold text-black flex-shrink-0">
-                        {initials(c.contacto_nombre)}
-                      </div>
-                      <span className="text-sm font-medium text-zinc-200 group-hover:text-amber-400 transition-colors">
-                        {c.contacto_nombre}
-                      </span>
-                    </Link>
-                  </td>
-                  <td className="px-5 py-3 text-sm text-zinc-400">{c.company_name}</td>
-                  <td className="px-5 py-3 font-mono text-xs text-zinc-500">{c.email}</td>
-                  <td className="px-5 py-3 font-mono text-xs text-zinc-500">{c.telefono ?? '—'}</td>
-                  <td className="px-5 py-3 text-sm text-zinc-400">
-                    {(c.direccion_envio as any)?.city ?? '—'}
-                  </td>
-                  <td className="px-5 py-3">
-                    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-[11px] font-semibold border rounded ${
-                      c.estado === 'active'
-                        ? 'text-emerald-300 bg-emerald-950 border-emerald-800'
-                        : 'text-zinc-400 bg-zinc-800 border-zinc-700'
-                    }`}>
-                      <span className="w-1.5 h-1.5 rounded-full bg-current opacity-80" />
-                      {c.estado === 'active' ? 'Activo' : 'Inactivo'}
-                    </span>
-                  </td>
-                  <td className="px-5 py-3 font-mono text-xs text-zinc-500">
-                    {new Date(c.created_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })}
-                  </td>
+            </thead>
+            <tbody>
+              {clients.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="px-5 py-12 text-center text-sm text-gray-400">No clients registered yet</td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : (
+                clients.map((c) => (
+                  <tr key={c.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors">
+                    <td className="px-5 py-3">
+                      <Link href={`/clientes/${c.id}`} className="flex items-center gap-3 group">
+                        <div className="w-8 h-8 rounded-lg bg-[#D93A35] flex items-center justify-center text-xs font-bold text-white flex-shrink-0">
+                          {initials(c.contacto_nombre)}
+                        </div>
+                        <span className="text-sm font-semibold text-gray-900 group-hover:text-[#D93A35] transition-colors">
+                          {c.contacto_nombre}
+                        </span>
+                      </Link>
+                    </td>
+                    <td className="px-5 py-3 text-sm text-gray-500">{c.company_name}</td>
+                    <td className="px-5 py-3 font-mono text-xs text-gray-400">{c.email}</td>
+                    <td className="px-5 py-3 font-mono text-xs text-gray-400">{c.telefono ?? '—'}</td>
+                    <td className="px-5 py-3 text-sm text-gray-500">{(c.direccion_envio as any)?.city ?? '—'}</td>
+                    <td className="px-5 py-3">
+                      <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-[11px] font-semibold border rounded-md ${
+                        c.estado === 'active'
+                          ? 'text-[#0DA265] bg-green-50 border-green-200'
+                          : 'text-gray-400 bg-gray-100 border-gray-200'
+                      }`}>
+                        <span className="w-1.5 h-1.5 rounded-full bg-current opacity-80" />
+                        {c.estado === 'active' ? 'Active' : 'Inactive'}
+                      </span>
+                    </td>
+                    <td className="px-5 py-3 font-mono text-xs text-gray-400">
+                      {new Date(c.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
