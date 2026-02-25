@@ -206,17 +206,9 @@ export default async function PedidoDetallePage({ params }: Props) {
             </div>
           </div>
 
-          {/* Logística — con botón actualizar tracking */}
           <div className="bg-[#141414] border border-[#282828] rounded-lg overflow-hidden">
-            <div className="px-4 py-3 border-b border-[#282828] flex items-center justify-between">
+            <div className="px-4 py-3 border-b border-[#282828]">
               <span className="text-[10px] font-bold tracking-[0.12em] uppercase text-zinc-500">Logística</span>
-              {order.status === 'enviado' && order.packlink_shipment_id && (
-                <form action={`/api/orders/${id}/tracking`} method="POST">
-                  <button type="submit" className="text-[10px] font-semibold text-zinc-500 hover:text-amber-400 transition-colors">
-                    ↻ Actualizar tracking
-                  </button>
-                </form>
-              )}
             </div>
             <div className="p-4 space-y-2">
               {[
