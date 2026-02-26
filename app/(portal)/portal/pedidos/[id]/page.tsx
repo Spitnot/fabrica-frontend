@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
+import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase/server';
 import type { Order, Customer, OrderItem } from '@/types';
-import { ShipmentPanel } from '@/app/(dashboard)/pedidos/[id]/ShipmentPanel';
 
 type OrderFull = Order & { customer: Customer; order_items: OrderItem[] };
 
@@ -51,6 +51,9 @@ export default async function PedidoDetallePage({ params }: Props) {
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-4 mb-6">
         <div>
+          <Link href="/portal" className="text-xs text-gray-400 hover:text-gray-600 transition-colors mb-2 inline-block">
+            ← My Orders
+          </Link>
           <div className="flex items-center gap-3 mb-1">
             <span className="font-mono text-xs text-gray-400">{order.id}</span>
             <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-[11px] font-semibold border rounded-md ${STATUS_STYLES[order.status]}`}>
@@ -62,33 +65,6 @@ export default async function PedidoDetallePage({ params }: Props) {
             {order.customer?.contacto_nombre} · {order.customer?.company_name} ·{' '}
             {new Date(order.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
           </div>
-        </div>
-
-        <div className="flex gap-2 flex-wrap">
-          {order.status === 'confirmado' && (
-            <form action={`/api/orders/${id}/status`} method="POST">
-              <input type="hidden" name="status" value="produccion" />
-              <button type="submit" className="px-3 py-1.5 text-xs font-semibold bg-white border border-gray-200 rounded-lg text-gray-700 hover:border-orange-300 hover:text-[#b85e00] transition-colors">
-                → Move to Production
-              </button>
-            </form>
-          )}
-          {order.status === 'produccion' && (
-            <form action={`/api/orders/${id}/status`} method="POST">
-              <input type="hidden" name="status" value="listo_envio" />
-              <button type="submit" className="px-3 py-1.5 text-xs font-semibold bg-white border border-gray-200 rounded-lg text-gray-700 hover:border-purple-300 hover:text-[#876693] transition-colors">
-                → Mark Ready to Ship
-              </button>
-            </form>
-          )}
-          {order.status !== 'cancelado' && order.status !== 'enviado' && order.status !== 'listo_envio' && (
-            <form action={`/api/orders/${id}/status`} method="POST">
-              <input type="hidden" name="status" value="cancelado" />
-              <button type="submit" className="px-3 py-1.5 text-xs font-semibold text-[#D93A35] border border-red-200 rounded-lg hover:bg-red-50 transition-colors">
-                Cancel
-              </button>
-            </form>
-          )}
         </div>
       </div>
 
@@ -161,15 +137,6 @@ export default async function PedidoDetallePage({ params }: Props) {
             </div>
           </section>
 
-          {order.status === 'listo_envio' && (
-            <section>
-              <div className="flex items-center gap-3 mb-4">
-                <span className="text-[10px] font-black tracking-[0.18em] uppercase text-gray-400 whitespace-nowrap">Generate Shipment</span>
-                <div className="flex-1 h-px bg-[#D93A35]/20" />
-              </div>
-              <ShipmentPanel orderId={id} pesoTotal={order.peso_total} destination={address} />
-            </section>
-          )}
         </div>
 
         {/* RIGHT */}
