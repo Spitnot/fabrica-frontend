@@ -1,8 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { createClient } from '@/lib/supabase/client';
 
 const NAV_ITEMS = [
   {
@@ -72,6 +73,13 @@ const FirmaLogo = () => (
 
 function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
   const pathname = usePathname();
+  const router = useRouter();
+
+  async function handleLogout() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push('/login');
+  }
 
   return (
     <>
@@ -124,18 +132,18 @@ function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
         </nav>
 
         <div className="border-t border-gray-200 px-3 py-3">
-          <div className="flex items-center gap-2.5 px-2 py-2 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
+          <button onClick={handleLogout} className="w-full flex items-center gap-2.5 px-2 py-2 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
             <div className="w-7 h-7 rounded-md bg-[#D93A35] flex items-center justify-center text-[11px] font-bold text-white flex-shrink-0">
               IA
             </div>
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 min-w-0 text-left">
               <div className="text-[12.5px] font-semibold text-gray-900 truncate">Isaac A.</div>
               <div className="text-[11px] text-gray-400">Administrator</div>
             </div>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#aaa" strokeWidth="2">
               <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/>
             </svg>
-          </div>
+          </button>
         </div>
       </aside>
     </>
