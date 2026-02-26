@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { createClient } from '@/lib/supabase/client';
+import { supabaseClient } from '@/lib/supabase/client';
 
 const NAV_ITEMS = [
   {
@@ -76,8 +76,7 @@ function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
   const router = useRouter();
 
   async function handleLogout() {
-    const supabase = createClient();
-    await supabase.auth.signOut();
+    await supabaseClient.auth.signOut();
     router.push('/login');
   }
 
