@@ -65,6 +65,14 @@ export default async function PedidoDetallePage({ params }: Props) {
         </div>
 
         <div className="flex gap-2 flex-wrap">
+          <a
+            href={`/api/orders/${id}/packslip`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-3 py-1.5 text-xs font-semibold bg-white border border-gray-200 rounded-lg text-gray-500 hover:border-gray-400 hover:text-gray-800 transition-colors"
+          >
+            ↓ Packslip
+          </a>
           {order.status === 'confirmado' && (
             <form action={`/api/orders/${id}/status`} method="POST">
               <input type="hidden" name="status" value="produccion" />

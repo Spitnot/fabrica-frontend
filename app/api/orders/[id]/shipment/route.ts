@@ -3,13 +3,55 @@ import { supabaseAdmin } from '@/lib/supabase/server';
 
 const PACKLINK_API_URL = process.env.PACKLINK_API_URL!;
 const PACKLINK_API_KEY = process.env.PACKLINK_API_KEY!;
-const FROM_NAME        = process.env.PACKLINK_FROM_NAME!;
-const FROM_STREET      = process.env.PACKLINK_FROM_STREET!;
-const FROM_CITY        = process.env.PACKLINK_FROM_CITY!;
-const FROM_POSTAL_CODE = process.env.PACKLINK_FROM_POSTAL_CODE!;
-const FROM_COUNTRY     = process.env.PACKLINK_FROM_COUNTRY!;
-const FROM_PHONE       = process.env.PACKLINK_FROM_PHONE!;
-const FROM_EMAIL       = process.env.PACKLINK_FROM_EMAIL!;
+
+// Env var fallbacks for sender (used if Packlink API call fails)
+const FROM_NAME        = process.env.PACKLINK_FROM_NAME        ?? '';
+const FROM_SURNAME     = process.env.PACKLINK_FROM_SURNAME     ?? '';
+const FROM_STREET      = process.env.PACKLINK_FROM_STREET      ?? '';
+const FROM_CITY        = process.env.PACKLINK_FROM_CITY        ?? '';
+const FROM_POSTAL_CODE = process.env.PACKLINK_FROM_POSTAL_CODE ?? '';
+const FROM_COUNTRY     = process.env.PACKLINK_FROM_COUNTRY     ?? 'ES';
+const FROM_PHONE       = process.env.PACKLINK_FROM_PHONE       ?? '';
+const FROM_EMAIL       = process.env.PACKLINK_FROM_EMAIL       ?? '';
+
+interface PacklinkSender {
+  name: string; surname: string;
+  street1: string; city: string;
+  zip_code: string; country: string;
+  phone: string; email: string;
+}
+
+async function getSenderFromPacklink(): Promise<PacklinkSender> {
+  try {
+    const res = await fetch(`${PACKLINK_API_URL}/user/address`, {
+      headers: { 'Authorization': PACKLINK_API_KEY },
+      next: { revalidate: 300 }, // cache 5 min
+    });
+    if (!res.ok) throw new Error(`Packlink /user/address → ${res.status}`);
+    const data = await res.json();
+    // Packlink returns array or single object depending on API version
+    const addr = Array.isArray(data) ? data[0] : data;
+    if (!addr) throw new Error('No address returned');
+    return {
+      name:     addr.name    ?? addr.first_name ?? FROM_NAME,
+      surname:  addr.surname ?? addr.last_name  ?? FROM_SURNAME,
+      street1:  addr.street1 ?? addr.address    ?? FROM_STREET,
+      city:     addr.city                       ?? FROM_CITY,
+      zip_code: addr.zip_code ?? addr.zipCode   ?? FROM_POSTAL_CODE,
+      country:  addr.country                    ?? FROM_COUNTRY,
+      phone:    addr.phone                      ?? FROM_PHONE,
+      email:    addr.email                      ?? FROM_EMAIL,
+    };
+  } catch (err) {
+    console.warn('[shipment] Could not fetch sender from Packlink API, using env vars:', err);
+    return {
+      name: FROM_NAME, surname: FROM_SURNAME,
+      street1: FROM_STREET, city: FROM_CITY,
+      zip_code: FROM_POSTAL_CODE, country: FROM_COUNTRY,
+      phone: FROM_PHONE, email: FROM_EMAIL,
+    };
+  }
+}
 
 interface Props { params: Promise<{ id: string }> }
 
@@ -34,20 +76,22 @@ export async function POST(req: NextRequest, { params }: Props) {
 
   const address = order.customer?.direccion_envio as any;
 
+  // Split contacto_nombre into name + surname for Packlink
+  const fullName = (order.customer?.contacto_nombre ?? '') as string;
+  const spaceIdx = fullName.indexOf(' ');
+  const toName    = spaceIdx > -1 ? fullName.slice(0, spaceIdx) : fullName;
+  const toSurname = spaceIdx > -1 ? fullName.slice(spaceIdx + 1) : (order.customer?.company_name ?? '');
+
+  // Fetch sender address from Packlink (falls back to env vars on error)
+  const sender = await getSenderFromPacklink();
+
   // 2. Crear envío en Packlink — formato correcto según API
   const shipmentBody = {
     service_id,
-    from: {
-      name:     FROM_NAME,
-      street1:  FROM_STREET,
-      city:     FROM_CITY,
-      zip_code: FROM_POSTAL_CODE,
-      country:  FROM_COUNTRY,
-      phone:    FROM_PHONE,
-      email:    FROM_EMAIL,
-    },
+    from: sender,
     to: {
-      name:     order.customer?.contacto_nombre,
+      name:     toName,
+      surname:  toSurname,
       company:  order.customer?.company_name,
       street1:  address?.street,
       city:     address?.city,
