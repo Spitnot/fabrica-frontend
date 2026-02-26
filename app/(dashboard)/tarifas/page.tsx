@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase/server';
 
+export const dynamic = 'force-dynamic';
+
 async function getTarifas() {
   const { data, error } = await supabaseAdmin
     .from('tarifas')

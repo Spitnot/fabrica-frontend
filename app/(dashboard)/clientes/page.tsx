@@ -2,6 +2,8 @@ import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase/server';
 import type { Customer } from '@/types';
 
+export const dynamic = 'force-dynamic';
+
 async function getClients(): Promise<Customer[]> {
   const [{ data, error }, { data: tarifas }] = await Promise.all([
     supabaseAdmin.from('customers').select('*').order('created_at', { ascending: false }),
