@@ -9,6 +9,13 @@ const QUERY = `
       edges {
         node {
           title
+          images(first: 1) {
+            edges {
+              node {
+                url
+              }
+            }
+          }
           variants(first: 50) {
             edges {
               node {
@@ -60,8 +67,9 @@ export async function GET() {
       return NextResponse.json({ error: 'Error GraphQL' }, { status: 502 });
     }
 
-    const products = json.data.products.edges.flatMap(({ node: product }: any) =>
-      product.variants.edges
+    const products = json.data.products.edges.flatMap(({ node: product }: any) => {
+      const imagen: string | undefined = product.images.edges[0]?.node?.url;
+      return product.variants.edges
         .filter(({ node: v }: any) => v.sku)
         .map(({ node: variant }: any) => {
           const weightRaw = variant.inventoryItem?.measurement?.weight;
@@ -76,9 +84,10 @@ export async function GET() {
             variante:         variant.title !== 'Default Title' ? variant.title : undefined,
             precio_mayorista: parseFloat(variant.price),
             peso_kg:          parseFloat(peso_kg.toFixed(3)),
+            imagen,
           };
-        })
-    );
+        });
+    });
 
     return NextResponse.json({ data: products });
 

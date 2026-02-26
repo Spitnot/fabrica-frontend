@@ -4,8 +4,8 @@ import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabaseClient } from '@/lib/supabase/client';
 
-interface Product { sku: string; nombre_producto: string; variante?: string; precio_mayorista: number; peso_kg: number; }
-interface ProductGroup { nombre: string; variantes: Product[]; }
+interface Product { sku: string; nombre_producto: string; variante?: string; precio_mayorista: number; peso_kg: number; imagen?: string; }
+interface ProductGroup { nombre: string; variantes: Product[]; imagen?: string; }
 interface Customer { id: string; contacto_nombre: string; company_name: string; direccion_envio: { street: string; city: string; postal_code: string; country: string; }; }
 interface LineItem { sku: string; nombre_producto: string; variante?: string; cantidad: number; precio_unitario: number; peso_unitario: number; }
 interface Quote { service_id: string; carrier: string; service_name: string; price: number; estimated_days: number; }
@@ -46,7 +46,7 @@ export default function NuevoPedidoPortalPage() {
       : products;
     const map = new Map<string, Product[]>();
     filtered.forEach(p => { const g = map.get(p.nombre_producto) ?? []; g.push(p); map.set(p.nombre_producto, g); });
-    return Array.from(map.entries()).map(([nombre, variantes]) => ({ nombre, variantes }));
+    return Array.from(map.entries()).map(([nombre, variantes]) => ({ nombre, variantes, imagen: variantes[0]?.imagen }));
   }, [products, search]);
 
   const subtotal = lineItems.reduce((s, i) => s + i.cantidad * i.precio_unitario, 0);
@@ -147,7 +147,12 @@ export default function NuevoPedidoPortalPage() {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {productGroups.map(group => (
-                  <div key={group.nombre} className="bg-white border border-gray-200 rounded-xl p-4">
+                  <div key={group.nombre} className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+                    {group.imagen && (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img src={group.imagen} alt={group.nombre} className="w-full h-36 object-cover" />
+                    )}
+                    <div className="p-4">
                     <div className="text-sm font-semibold text-gray-900 mb-3">{group.nombre}</div>
                     <div className="space-y-2">
                       {group.variantes.map(v => {
@@ -176,6 +181,7 @@ export default function NuevoPedidoPortalPage() {
                     <div className="mt-3 pt-3 border-t border-gray-100 flex justify-between text-xs text-gray-400">
                       <span>{fmt(group.variantes[0].precio_mayorista)}</span>
                       <span>{group.variantes[0].peso_kg} kg/u</span>
+                    </div>
                     </div>
                   </div>
                 ))}
