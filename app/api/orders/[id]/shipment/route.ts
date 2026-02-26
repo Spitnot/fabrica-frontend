@@ -3,13 +3,15 @@ import { supabaseAdmin } from '@/lib/supabase/server';
 
 const PACKLINK_API_URL = process.env.PACKLINK_API_URL!;
 const PACKLINK_API_KEY = process.env.PACKLINK_API_KEY!;
-const FROM_NAME        = process.env.PACKLINK_FROM_NAME!;
-const FROM_STREET      = process.env.PACKLINK_FROM_STREET!;
-const FROM_CITY        = process.env.PACKLINK_FROM_CITY!;
-const FROM_POSTAL_CODE = process.env.PACKLINK_FROM_POSTAL_CODE!;
-const FROM_COUNTRY     = process.env.PACKLINK_FROM_COUNTRY!;
-const FROM_PHONE       = process.env.PACKLINK_FROM_PHONE!;
-const FROM_EMAIL       = process.env.PACKLINK_FROM_EMAIL!;
+
+const FROM_NAME        = process.env.PACKLINK_FROM_NAME        ?? '';
+const FROM_SURNAME     = process.env.PACKLINK_FROM_SURNAME     ?? '';
+const FROM_STREET      = process.env.PACKLINK_FROM_STREET      ?? '';
+const FROM_CITY        = process.env.PACKLINK_FROM_CITY        ?? '';
+const FROM_POSTAL_CODE = process.env.PACKLINK_FROM_POSTAL_CODE ?? '';
+const FROM_COUNTRY     = process.env.PACKLINK_FROM_COUNTRY     || 'ES';
+const FROM_PHONE       = process.env.PACKLINK_FROM_PHONE       ?? '';
+const FROM_EMAIL       = process.env.PACKLINK_FROM_EMAIL       ?? '';
 
 interface Props { params: Promise<{ id: string }> }
 
@@ -17,7 +19,6 @@ export async function POST(req: NextRequest, { params }: Props) {
   const { id } = await params;
   const { service_id, coste_envio_final, ancho, alto, largo } = await req.json();
 
-  // 1. Leer el pedido completo
   const { data: order, error: fetchError } = await supabaseAdmin
     .from('orders')
     .select('*, customer:customers(*), order_items(*)')
@@ -34,11 +35,17 @@ export async function POST(req: NextRequest, { params }: Props) {
 
   const address = order.customer?.direccion_envio as any;
 
-  // 2. Crear envío en Packlink — formato correcto según API
+  // Split contacto_nombre into name + surname for Packlink
+  const fullName  = (order.customer?.contacto_nombre ?? '') as string;
+  const spaceIdx  = fullName.indexOf(' ');
+  const toName    = spaceIdx > -1 ? fullName.slice(0, spaceIdx) : fullName;
+  const toSurname = spaceIdx > -1 ? fullName.slice(spaceIdx + 1) : (order.customer?.company_name ?? '');
+
   const shipmentBody = {
     service_id,
     from: {
       name:     FROM_NAME,
+      surname:  FROM_SURNAME,
       street1:  FROM_STREET,
       city:     FROM_CITY,
       zip_code: FROM_POSTAL_CODE,
@@ -47,12 +54,13 @@ export async function POST(req: NextRequest, { params }: Props) {
       email:    FROM_EMAIL,
     },
     to: {
-      name:     order.customer?.contacto_nombre,
+      name:     toName,
+      surname:  toSurname,
       company:  order.customer?.company_name,
       street1:  address?.street,
       city:     address?.city,
-      zip_code: address?.postal_code,
-      country:  address?.country ?? 'ES',
+      zip_code: address?.postal_code || '',
+      country:  address?.country     || 'ES',
       phone:    order.customer?.telefono ?? FROM_PHONE,
       email:    order.customer?.email,
     },
@@ -88,7 +96,6 @@ export async function POST(req: NextRequest, { params }: Props) {
 
     const shipment = JSON.parse(responseText);
 
-    // 3. Actualizar pedido en Supabase
     const { error: updateError } = await supabaseAdmin
       .from('orders')
       .update({
