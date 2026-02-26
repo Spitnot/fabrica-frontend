@@ -2,10 +2,11 @@ import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase/server';
 
 async function getTarifas() {
-  const { data } = await supabaseAdmin
+  const { data, error } = await supabaseAdmin
     .from('tarifas')
     .select('id, nombre, descripcion, multiplicador, activo')
     .order('nombre');
+  if (error) console.error('[tarifas]', error.message);
   return data ?? [];
 }
 
