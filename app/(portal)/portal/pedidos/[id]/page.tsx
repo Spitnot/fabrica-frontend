@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 import { supabaseAdmin } from '@/lib/supabase/server';
 import type { Order, Customer, OrderItem } from '@/types';
-import { ShipmentPanel } from './ShipmentPanel';
+import { ShipmentPanel } from '@/app/(dashboard)/pedidos/[id]/ShipmentPanel';
 
 type OrderFull = Order & { customer: Customer; order_items: OrderItem[] };
 
