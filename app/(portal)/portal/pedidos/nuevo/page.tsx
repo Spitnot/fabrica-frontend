@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabaseClient } from '@/lib/supabase/client';
+import { getColorHex, parseVariant } from '@/lib/colors';
 
 interface Product { sku: string; nombre_producto: string; variante?: string; precio_mayorista: number; peso_kg: number; imagen?: string; }
 interface ProductGroup { nombre: string; variantes: Product[]; imagen?: string; }
@@ -157,10 +158,17 @@ export default function NuevoPedidoPortalPage() {
                     <div className="space-y-2">
                       {group.variantes.map(v => {
                         const qty = getQty(v.sku);
+                        const { color } = parseVariant(v.variante);
+                        const colorHex = color ? getColorHex(color) : null;
                         return (
                           <div key={v.sku} className="flex items-center justify-between gap-2">
                             <div className="min-w-0">
-                              {v.variante && <div className="text-xs text-gray-500 truncate">{v.variante}</div>}
+                              {v.variante && (
+                                <div className="flex items-center gap-1.5">
+                                  {colorHex && <span className="w-3 h-3 rounded-full flex-shrink-0 border border-black/10" style={{ backgroundColor: colorHex }} />}
+                                  <div className="text-xs text-gray-500 truncate">{v.variante}</div>
+                                </div>
+                              )}
                               <div className="font-mono text-[10px] text-gray-400">{v.sku}</div>
                             </div>
                             <div className="flex items-center gap-1.5 flex-shrink-0">
