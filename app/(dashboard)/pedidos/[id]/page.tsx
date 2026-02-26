@@ -6,14 +6,22 @@ import { ShipmentPanel } from './ShipmentPanel';
 type OrderFull = Order & { customer: Customer; order_items: OrderItem[] };
 
 async function getOrder(id: string): Promise<OrderFull | null> {
-  const { data, error } = await supabaseAdmin
+  const { data: order, error } = await supabaseAdmin
     .from('orders')
-    .select(`*, customer:customers(*), order_items(*)`)
+    .select(`*, customer:customers(*)`)
     .eq('id', id)
     .single();
-  if (error) return null;
-  return data;
+  if (error) { console.error('[getOrder]', error.message); return null; }
+
+  const { data: items, error: itemsError } = await supabaseAdmin
+    .from('order_items')
+    .select('*')
+    .eq('order_id', id);
+  if (itemsError) console.error('[getOrder items]', itemsError.message);
+
+  return { ...order, order_items: items ?? [] };
 }
+
 
 const STATUS_LABELS: Record<string, string> = {
   draft: 'Draft', confirmado: 'Confirmed', produccion: 'In Production',
