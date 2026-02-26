@@ -44,6 +44,15 @@ const NAV_ITEMS = [
     ),
   },
   {
+    href: '/tarifas',
+    label: 'Pricing',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+      </svg>
+    ),
+  },
+  {
     href: '/catalogo',
     label: 'Catalog',
     icon: (
@@ -108,6 +117,7 @@ function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
             const active = pathname === href ||
               (href === '/pedidos' && pathname.startsWith('/pedidos') && !pathname.startsWith('/pedidos/nuevo')) ||
               (href === '/clientes' && pathname.startsWith('/clientes')) ||
+              (href === '/tarifas' && pathname.startsWith('/tarifas')) ||
               (href === '/catalogo' && pathname.startsWith('/catalogo'));
             return (
               <Link

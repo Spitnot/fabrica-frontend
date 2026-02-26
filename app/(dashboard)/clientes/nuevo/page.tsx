@@ -1,25 +1,49 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+
+interface Tarifa { id: string; nombre: string; descripcion?: string; }
 
 export default function NuevoClientePage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState('');
+  const [tarifas, setTarifas] = useState<Tarifa[]>([]);
 
   const [form, setForm] = useState({
     contacto_nombre: '', company_name: '', email: '', password: '',
     telefono: '', nif_cif: '', street: '', city: '', postal_code: '', country: 'ES',
+    tarifa_id: '', descuento_pct: '0',
   });
+
+  useEffect(() => {
+    fetch('/api/tarifas')
+      .then(r => r.json())
+      .then(d => {
+        const list: Tarifa[] = d.data ?? [];
+        setTarifas(list);
+        // Default al primer Wholesale que encuentre
+        const wholesale = list.find(t => t.nombre.toLowerCase() === 'wholesale');
+        if (wholesale) setForm(p => ({ ...p, tarifa_id: wholesale.id }));
+      });
+  }, []);
 
   function set(key: string, value: string) { setForm((prev) => ({ ...prev, [key]: value })); }
 
   async function handleSubmit() {
     setError(''); setLoading(true);
     try {
-      const res = await fetch('/api/customers', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) });
+      const res = await fetch('/api/customers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...form,
+          tarifa_id:    form.tarifa_id || null,
+          descuento_pct: parseFloat(form.descuento_pct) || 0,
+        }),
+      });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? 'Error creating client');
       router.push(`/clientes/${data.id}`);
@@ -92,6 +116,41 @@ export default function NuevoClientePage() {
           </div>
         </section>
 
+        {/* Pricing */}
+        <section>
+          <div className="flex items-center gap-3 mb-4">
+            <span className="text-[10px] font-black tracking-[0.18em] uppercase text-gray-400 whitespace-nowrap">3 · Pricing</span>
+            <div className="flex-1 h-px bg-gray-100" />
+          </div>
+          <div className="bg-white border border-gray-200 rounded-xl p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-bold tracking-[0.1em] uppercase text-gray-400">
+                Pricing Tier <span className="text-[#D93A35]">*</span>
+              </label>
+              <select value={form.tarifa_id} onChange={e => set('tarifa_id', e.target.value)}
+                className={inputCls}>
+                <option value="">— Select tier —</option>
+                {tarifas.map(t => (
+                  <option key={t.id} value={t.id}>{t.nombre}{t.descripcion ? ` — ${t.descripcion}` : ''}</option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-bold tracking-[0.1em] uppercase text-gray-400">
+                Personal Discount (%)
+              </label>
+              <input
+                type="number" min="0" max="100" step="0.5"
+                value={form.descuento_pct}
+                onChange={e => set('descuento_pct', e.target.value)}
+                placeholder="0"
+                className={inputCls}
+              />
+              <p className="text-[10px] text-gray-400">Applied on top of the tier price. 0 = no discount.</p>
+            </div>
+          </div>
+        </section>
+
         {error && (
           <div className="px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-sm text-[#D93A35]">{error}</div>
         )}
@@ -106,10 +165,6 @@ export default function NuevoClientePage() {
             Cancel
           </Link>
         </div>
-
-        <p className="text-[11px] text-gray-400">
-          A Supabase Auth user will be created with role <span className="font-mono text-gray-600">customer</span> and access credentials sent to the client.
-        </p>
       </div>
     </div>
   );

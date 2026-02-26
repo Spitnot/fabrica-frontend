@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/server';
 
-// GET — lista de clientes activos
+// GET — lista de clientes activos (incluye tarifa básica para orden y badge)
 export async function GET() {
   const { data, error } = await supabaseAdmin
     .from('customers')
-    .select('id, contacto_nombre, company_name, direccion_envio')
+    .select('id, contacto_nombre, company_name, direccion_envio, tarifa_id, descuento_pct, tarifa:tarifa_id(id, nombre, multiplicador, descripcion)')
     .eq('estado', 'active')
     .order('company_name');
 
@@ -22,6 +22,7 @@ export async function POST(req: NextRequest) {
   const {
     contacto_nombre, company_name, email, password,
     telefono, nif_cif, street, city, postal_code, country,
+    tarifa_id, descuento_pct,
   } = await req.json();
 
   if (!contacto_nombre || !company_name || !email || !password || !nif_cif) {
@@ -53,13 +54,14 @@ export async function POST(req: NextRequest) {
       nif_cif,
       direccion_envio: { street, city, postal_code, country },
       estado:          'active',
+      tarifa_id:       tarifa_id || null,
+      descuento_pct:   descuento_pct ?? 0,
     })
     .select('id')
     .single();
 
   if (customerError || !customer) {
     console.error('[customers POST] customer error:', customerError?.message);
-    // Borrar el usuario de Auth si falla el customer
     await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
     return NextResponse.json({ error: customerError?.message ?? 'Error al crear cliente' }, { status: 500 });
   }

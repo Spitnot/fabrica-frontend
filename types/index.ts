@@ -16,6 +16,23 @@ export type OrderStatus =
   | 'enviado'
   | 'cancelado';
 
+// ─── TARIFA ───────────────────────────────────────────────────────────────────
+export interface TarifaPrecio {
+  tarifa_id: string;
+  sku: string;
+  precio: number;
+}
+
+export interface Tarifa {
+  id: string;
+  nombre: string;
+  descripcion?: string;
+  multiplicador: number;           // fallback: shopify_price × multiplicador
+  activo: boolean;
+  created_at: string;
+  precios?: TarifaPrecio[];        // incluido cuando se pide el detalle
+}
+
 // ─── CUSTOMER ────────────────────────────────────────────────────────────────
 // Refleja la tabla `customers` del backend
 export interface Customer {
@@ -33,6 +50,9 @@ export interface Customer {
   };
   nif_cif: string;
   estado: 'active' | 'inactive';
+  tarifa_id?: string;
+  descuento_pct: number;           // 0–100, descuento adicional sobre la tarifa
+  tarifa?: Tarifa;                 // join opcional
   created_at: string;
 }
 
