@@ -6,9 +6,18 @@ import { getColorHex, parseVariant } from '@/lib/colors';
 
 interface Product { sku: string; nombre_producto: string; variante?: string; precio_mayorista: number; peso_kg: number; imagen?: string; }
 interface ProductGroup { nombre: string; variantes: Product[]; imagen?: string; }
-interface Customer { id: string; contacto_nombre: string; company_name: string; direccion_envio: { street: string; city: string; postal_code: string; country: string; }; }
+interface TarifaPrecio { sku: string; precio: number; }
+interface Tarifa { id: string; nombre: string; multiplicador: number; precios?: TarifaPrecio[]; }
+interface Customer { id: string; contacto_nombre: string; company_name: string; tarifa_id?: string; descuento_pct: number; tarifa?: Tarifa; direccion_envio: { street: string; city: string; postal_code: string; country: string; }; }
 interface LineItem { sku: string; nombre_producto: string; variante?: string; cantidad: number; precio_unitario: number; peso_unitario: number; }
 interface Quote { service_id: string; carrier: string; service_name: string; price: number; estimated_days: number; }
+
+function computePrice(sku: string, shopifyPrice: number, tarifa?: Tarifa, descuento_pct?: number): number {
+  if (!tarifa) return shopifyPrice;
+  const specific = tarifa.precios?.find(p => p.sku === sku)?.precio;
+  const base = specific != null ? specific : shopifyPrice * tarifa.multiplicador;
+  return base * (1 - (descuento_pct ?? 0) / 100);
+}
 
 const fmt = (n: number) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n);
 
@@ -18,6 +27,8 @@ export default function NuevoPedidoPage() {
   const [products, setProducts]       = useState<Product[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [clientId, setClientId]       = useState('');
+  const [clientTarifa, setClientTarifa] = useState<Tarifa | undefined>(undefined);
+  const [clientDescuento, setClientDescuento] = useState(0);
   const [search, setSearch]           = useState('');
   const [lineItems, setLineItems]     = useState<LineItem[]>([]);
   const [quotes, setQuotes]           = useState<Quote[]>([]);
@@ -30,6 +41,17 @@ export default function NuevoPedidoPage() {
     fetch('/api/customers').then(r => r.json()).then(d => setCustomers(d.data ?? []));
     fetch('/api/products').then(r => r.json()).then(d => { setProducts(d.data ?? []); setLoadingProducts(false); });
   }, []);
+
+  // When customer changes, fetch their full tarifa (with per-SKU precios)
+  useEffect(() => {
+    if (!clientId) { setClientTarifa(undefined); setClientDescuento(0); return; }
+    fetch(`/api/customers/${clientId}`)
+      .then(r => r.json())
+      .then(d => {
+        setClientTarifa(d.customer?.tarifa ?? undefined);
+        setClientDescuento(d.customer?.descuento_pct ?? 0);
+      });
+  }, [clientId]);
 
   const productGroups = useMemo<ProductGroup[]>(() => {
     const filtered = search.length >= 2
@@ -52,7 +74,8 @@ export default function NuevoPedidoPage() {
     setLineItems(prev => {
       const ex = prev.find(i => i.sku === p.sku);
       if (ex) return prev.map(i => i.sku === p.sku ? { ...i, cantidad: i.cantidad + 1 } : i);
-      return [...prev, { sku: p.sku, nombre_producto: p.nombre_producto, variante: p.variante, cantidad: 1, precio_unitario: p.precio_mayorista, peso_unitario: p.peso_kg }];
+      const precio = computePrice(p.sku, p.precio_mayorista, clientTarifa, clientDescuento);
+      return [...prev, { sku: p.sku, nombre_producto: p.nombre_producto, variante: p.variante, cantidad: 1, precio_unitario: precio, peso_unitario: p.peso_kg }];
     });
     setSelectedQuote(null); setQuotes([]);
   }
@@ -117,8 +140,18 @@ export default function NuevoPedidoPage() {
                   <div className="w-8 h-8 rounded-lg bg-[#D93A35] flex items-center justify-center text-xs font-bold text-white flex-shrink-0">
                     {client.contacto_nombre.split(' ').map((w: string) => w[0]).slice(0, 2).join('')}
                   </div>
-                  <div>
-                    <div className="text-sm font-semibold text-gray-900">{client.contacto_nombre}</div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <div className="text-sm font-semibold text-gray-900">{client.contacto_nombre}</div>
+                      {clientTarifa && (
+                        <span className="px-1.5 py-0.5 text-[10px] font-bold border rounded uppercase tracking-wide text-[#876693] bg-purple-50 border-purple-200">
+                          {clientTarifa.nombre}
+                        </span>
+                      )}
+                      {clientDescuento > 0 && (
+                        <span className="text-[10px] font-mono font-bold text-[#D93A35]">-{clientDescuento}%</span>
+                      )}
+                    </div>
                     <div className="text-xs text-gray-400">{client.company_name}</div>
                     <div className="font-mono text-xs text-gray-400 mt-0.5">{client.direccion_envio?.street} · {client.direccion_envio?.postal_code} {client.direccion_envio?.city}</div>
                   </div>
@@ -183,7 +216,10 @@ export default function NuevoPedidoPage() {
                       })}
                     </div>
                     <div className="mt-3 pt-3 border-t border-gray-100 flex justify-between text-xs text-gray-400">
-                      <span>{fmt(group.variantes[0].precio_mayorista)}</span>
+                      <span className={clientTarifa ? 'text-[#D93A35] font-semibold' : ''}>
+                        {fmt(computePrice(group.variantes[0].sku, group.variantes[0].precio_mayorista, clientTarifa, clientDescuento))}
+                        {clientTarifa && <span className="ml-1 font-normal text-[#D93A35]/70">{clientTarifa.nombre}</span>}
+                      </span>
                       <span>{group.variantes[0].peso_kg} kg/u</span>
                     </div>
                     </div>

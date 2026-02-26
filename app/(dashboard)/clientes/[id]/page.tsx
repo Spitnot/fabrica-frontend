@@ -16,6 +16,12 @@ const STATUS_STYLES: Record<string, string> = {
   enviado:     'text-[#0DA265] bg-green-50 border-green-200',
   cancelado:   'text-[#D93A35] bg-red-50 border-red-200',
 };
+const TARIFA_STYLES: Record<string, string> = {
+  retail:    'text-[#0087B8] bg-blue-50 border-blue-200',
+  wholesale: 'text-[#876693] bg-purple-50 border-purple-200',
+};
+
+interface Tarifa { id: string; nombre: string; descripcion?: string; }
 
 const fmt = (n: number) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n);
 function initials(name: string) { return name.split(' ').map((w) => w[0]).slice(0, 2).join(''); }
@@ -24,20 +30,61 @@ export default function ClientePerfilPage() {
   const { id } = useParams<{ id: string }>();
   const [client, setClient]   = useState<any>(null);
   const [orders, setOrders]   = useState<any[]>([]);
+  const [tarifas, setTarifas] = useState<Tarifa[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState('');
 
+  // Pricing edit
+  const [editingPricing, setEditingPricing] = useState(false);
+  const [pricingForm, setPricingForm]       = useState({ tarifa_id: '', descuento_pct: '0' });
+  const [savingPricing, setSavingPricing]   = useState(false);
+  const [pricingSuccess, setPricingSuccess] = useState('');
+
   useEffect(() => {
     async function load() {
-      const res = await fetch(`/api/customers/${id}`);
-      if (!res.ok) { setError('Client not found'); setLoading(false); return; }
-      const data = await res.json();
-      setClient(data.customer);
-      setOrders(data.orders ?? []);
+      const [clientRes, tarifasRes] = await Promise.all([
+        fetch(`/api/customers/${id}`),
+        fetch('/api/tarifas'),
+      ]);
+      if (!clientRes.ok) { setError('Client not found'); setLoading(false); return; }
+      const clientData  = await clientRes.json();
+      const tarifasData = await tarifasRes.json();
+      setClient(clientData.customer);
+      setOrders(clientData.orders ?? []);
+      setTarifas(tarifasData.data ?? []);
+      setPricingForm({
+        tarifa_id:    clientData.customer.tarifa_id ?? '',
+        descuento_pct: String(clientData.customer.descuento_pct ?? 0),
+      });
       setLoading(false);
     }
     load();
   }, [id]);
+
+  async function savePricing() {
+    setSavingPricing(true); setPricingSuccess('');
+    const res = await fetch(`/api/customers/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        tarifa_id:    pricingForm.tarifa_id || null,
+        descuento_pct: parseFloat(pricingForm.descuento_pct) || 0,
+      }),
+    });
+    setSavingPricing(false);
+    if (res.ok) {
+      const tarifa = tarifas.find(t => t.id === pricingForm.tarifa_id);
+      setClient((prev: any) => ({
+        ...prev,
+        tarifa_id:    pricingForm.tarifa_id || null,
+        descuento_pct: parseFloat(pricingForm.descuento_pct) || 0,
+        tarifa,
+      }));
+      setPricingSuccess('Saved');
+      setEditingPricing(false);
+      setTimeout(() => setPricingSuccess(''), 3000);
+    }
+  }
 
   if (loading) {
     return (
@@ -59,6 +106,10 @@ export default function ClientePerfilPage() {
 
   const address = client.direccion_envio as any;
   const totalBilled = orders.reduce((s: number, o: any) => s + (o.total_productos ?? 0), 0);
+  const tarifaNombre = client.tarifa?.nombre ?? '—';
+  const tarifaKey    = tarifaNombre.toLowerCase();
+  const tarifaCls    = TARIFA_STYLES[tarifaKey] ?? 'text-gray-600 bg-gray-100 border-gray-200';
+  const inputCls = "w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:border-[#D93A35] outline-none transition-colors";
 
   return (
     <div className="p-6 md:p-7">
@@ -144,6 +195,67 @@ export default function ClientePerfilPage() {
             <div className="bg-white border border-gray-200 rounded-xl p-4">
               <div className="text-[10px] uppercase tracking-[0.12em] font-bold text-gray-400 mb-1">Billed</div>
               <div className="text-lg font-black text-[#D93A35]" style={{ fontFamily: 'var(--font-alexandria)' }}>{fmt(totalBilled)}</div>
+            </div>
+          </div>
+
+          {/* Pricing card */}
+          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+            <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+              <span className="text-[10px] font-black tracking-[0.12em] uppercase text-gray-400"
+                    style={{ fontFamily: 'var(--font-alexandria)' }}>Pricing</span>
+              <button onClick={() => setEditingPricing(p => !p)}
+                className="text-[11px] text-[#D93A35] font-semibold hover:text-[#b52e2a] transition-colors">
+                {editingPricing ? 'Cancel' : 'Edit'}
+              </button>
+            </div>
+            <div className="p-4">
+              {!editingPricing ? (
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs text-gray-400">Tier</span>
+                    {client.tarifa ? (
+                      <span className={`inline-flex px-2 py-0.5 text-[10px] font-bold border rounded-md tracking-wide uppercase ${tarifaCls}`}>
+                        {tarifaNombre}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-gray-400">—</span>
+                    )}
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs text-gray-400">Personal discount</span>
+                    <span className={`font-mono text-xs font-bold ${client.descuento_pct > 0 ? 'text-[#D93A35]' : 'text-gray-400'}`}>
+                      {client.descuento_pct > 0 ? `-${client.descuento_pct}%` : '—'}
+                    </span>
+                  </div>
+                  {pricingSuccess && (
+                    <div className="text-[11px] text-[#0DA265] font-semibold text-center pt-1">{pricingSuccess}</div>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] font-bold tracking-[0.1em] uppercase text-gray-400">Tier</label>
+                    <select value={pricingForm.tarifa_id} onChange={e => setPricingForm(p => ({ ...p, tarifa_id: e.target.value }))}
+                      className={inputCls}>
+                      <option value="">— No tier —</option>
+                      {tarifas.map(t => <option key={t.id} value={t.id}>{t.nombre}</option>)}
+                    </select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] font-bold tracking-[0.1em] uppercase text-gray-400">Personal discount (%)</label>
+                    <input
+                      type="number" min="0" max="100" step="0.5"
+                      value={pricingForm.descuento_pct}
+                      onChange={e => setPricingForm(p => ({ ...p, descuento_pct: e.target.value }))}
+                      className={inputCls}
+                    />
+                  </div>
+                  <button onClick={savePricing} disabled={savingPricing}
+                    className="w-full py-2 bg-[#D93A35] text-white text-sm font-bold rounded-lg hover:bg-[#b52e2a] disabled:opacity-40 transition-colors">
+                    {savingPricing ? 'Saving…' : 'Save Pricing'}
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 

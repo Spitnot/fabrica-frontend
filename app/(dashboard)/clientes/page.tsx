@@ -5,7 +5,7 @@ import type { Customer } from '@/types';
 async function getClients(): Promise<Customer[]> {
   const { data, error } = await supabaseAdmin
     .from('customers')
-    .select('*')
+    .select('*, tarifa:tarifa_id(id, nombre)')
     .order('created_at', { ascending: false });
   if (error) { console.error('[clients]', error.message); return []; }
   return data ?? [];
@@ -13,6 +13,22 @@ async function getClients(): Promise<Customer[]> {
 
 function initials(name: string) {
   return name.split(' ').map((w) => w[0]).slice(0, 2).join('');
+}
+
+const TARIFA_STYLES: Record<string, string> = {
+  retail:    'text-[#0087B8] bg-blue-50 border-blue-200',
+  wholesale: 'text-[#876693] bg-purple-50 border-purple-200',
+};
+
+function tarifaBadge(tarifa?: { nombre: string }) {
+  if (!tarifa) return null;
+  const key = tarifa.nombre.toLowerCase();
+  const cls = TARIFA_STYLES[key] ?? 'text-gray-600 bg-gray-100 border-gray-200';
+  return (
+    <span className={`inline-flex px-2 py-0.5 text-[10px] font-bold border rounded-md tracking-wide uppercase ${cls}`}>
+      {tarifa.nombre}
+    </span>
+  );
 }
 
 export default async function ClientesPage() {
@@ -36,10 +52,10 @@ export default async function ClientesPage() {
 
       <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse min-w-[700px]">
+          <table className="w-full border-collapse min-w-[780px]">
             <thead>
               <tr className="bg-gray-50">
-                {['Client', 'Company', 'Email', 'Phone', 'City', 'Status', 'Joined'].map((h) => (
+                {['Client', 'Company', 'Tier', 'Email', 'Phone', 'City', 'Status', 'Joined'].map((h) => (
                   <th key={h} className="text-left px-5 py-3 text-[10px] font-bold uppercase tracking-[0.1em] text-gray-400 border-b border-gray-100">{h}</th>
                 ))}
               </tr>
@@ -47,7 +63,7 @@ export default async function ClientesPage() {
             <tbody>
               {clients.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-5 py-12 text-center text-sm text-gray-400">No clients registered yet</td>
+                  <td colSpan={8} className="px-5 py-12 text-center text-sm text-gray-400">No clients registered yet</td>
                 </tr>
               ) : (
                 clients.map((c) => (
@@ -63,6 +79,12 @@ export default async function ClientesPage() {
                       </Link>
                     </td>
                     <td className="px-5 py-3 text-sm text-gray-500">{c.company_name}</td>
+                    <td className="px-5 py-3">
+                      {tarifaBadge(c.tarifa)}
+                      {c.descuento_pct > 0 && (
+                        <span className="ml-1.5 text-[10px] font-mono text-[#D93A35] font-bold">-{c.descuento_pct}%</span>
+                      )}
+                    </td>
                     <td className="px-5 py-3 font-mono text-xs text-gray-400">{c.email}</td>
                     <td className="px-5 py-3 font-mono text-xs text-gray-400">{c.telefono ?? '—'}</td>
                     <td className="px-5 py-3 text-sm text-gray-500">{(c.direccion_envio as any)?.city ?? '—'}</td>
