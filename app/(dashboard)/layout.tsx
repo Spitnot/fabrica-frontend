@@ -42,6 +42,15 @@ const NAV_ITEMS = [
       </svg>
     ),
   },
+  {
+    href: '/catalogo',
+    label: 'Catalog',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
+      </svg>
+    ),
+  },
 ];
 
 const FirmaLogo = () => (
@@ -91,7 +100,8 @@ function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
           {NAV_ITEMS.map(({ href, label, icon }) => {
             const active = pathname === href ||
               (href === '/pedidos' && pathname.startsWith('/pedidos') && !pathname.startsWith('/pedidos/nuevo')) ||
-              (href === '/clientes' && pathname.startsWith('/clientes'));
+              (href === '/clientes' && pathname.startsWith('/clientes')) ||
+              (href === '/catalogo' && pathname.startsWith('/catalogo'));
             return (
               <Link
                 key={href}
