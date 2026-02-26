@@ -3,12 +3,13 @@ import { supabaseAdmin } from '@/lib/supabase/server';
 import type { Customer } from '@/types';
 
 async function getClients(): Promise<Customer[]> {
-  const { data, error } = await supabaseAdmin
-    .from('customers')
-    .select('*, tarifa:tarifa_id(id, nombre)')
-    .order('created_at', { ascending: false });
+  const [{ data, error }, { data: tarifas }] = await Promise.all([
+    supabaseAdmin.from('customers').select('*').order('created_at', { ascending: false }),
+    supabaseAdmin.from('tarifas').select('id, nombre'),
+  ]);
   if (error) { console.error('[clients]', error.message); return []; }
-  return data ?? [];
+  const tarifaMap = Object.fromEntries((tarifas ?? []).map((t) => [t.id, t]));
+  return (data ?? []).map((c) => ({ ...c, tarifa: c.tarifa_id ? tarifaMap[c.tarifa_id] : undefined }));
 }
 
 function initials(name: string) {
