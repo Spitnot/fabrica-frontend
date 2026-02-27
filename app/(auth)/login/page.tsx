@@ -15,15 +15,7 @@ export default function LoginPage() {
     setError(''); setLoading(true);
 
     try {
-      console.log('[login] calling signInWithPassword…', { url: process.env.NEXT_PUBLIC_SUPABASE_URL });
-      const result = await Promise.race([
-        supabaseClient.auth.signInWithPassword({ email, password }),
-        new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('signInWithPassword timed out after 10 s')), 10_000)
-        ),
-      ]);
-      console.log('[login] result:', result);
-      const { data, error: authError } = result as Awaited<ReturnType<typeof supabaseClient.auth.signInWithPassword>>;
+      const { data, error: authError } = await supabaseClient.auth.signInWithPassword({ email, password });
 
       if (authError || !data.user) {
         setError('Incorrect credentials. Please check your email and password.');
