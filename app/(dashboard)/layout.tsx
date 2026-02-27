@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { supabaseClient } from '@/lib/supabase/client';
 
 const NAV_ITEMS = [
@@ -161,6 +161,15 @@ function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const router = useRouter();
+
+  useEffect(() => {
+    supabaseClient.auth.getSession().then(({ data: { session } }) => {
+      if (!session || session.user.user_metadata?.role !== 'admin') {
+        router.push('/portal');
+      }
+    });
+  }, [router]);
 
   return (
     <div className="flex h-screen overflow-hidden bg-white text-gray-900">
