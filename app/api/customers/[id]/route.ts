@@ -25,13 +25,25 @@ export async function GET(_req: NextRequest, { params }: Props) {
   return NextResponse.json({ customer, orders: orders ?? [] });
 }
 
-// PUT — actualizar tarifa, descuento y otros campos editables
 export async function PUT(req: NextRequest, { params }: Props) {
   const { id } = await params;
   const body = await req.json();
 
-  const allowed = ['contacto_nombre', 'company_name', 'telefono', 'nif_cif',
-                   'direccion_envio', 'estado', 'tarifa_id', 'descuento_pct'];
+  const allowed = [
+    // Contact
+    'contacto_nombre', 'company_name', 'telefono', 'email',
+    // Legal identity
+    'nombre_comercial', 'tipo_empresa', 'nif_cif', 'tipo_fiscal', 'numero_eori', 'fecha_constitucion',
+    // Addresses
+    'direccion_fiscal', 'direccion_envio',
+    // Commercial profile
+    'tipo_cliente', 'zona_distribucion', 'marcas_comercializadas', 'volumen_estimado', 'num_puntos_venta',
+    // Legal
+    'condiciones_legales',
+    // Internal
+    'estado', 'tarifa_id', 'descuento_pct', 'condiciones_comerciales',
+  ];
+
   const updates: Record<string, unknown> = {};
   for (const key of allowed) {
     if (key in body) updates[key] = body[key];

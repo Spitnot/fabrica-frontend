@@ -1,10 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-
-interface Tarifa { id: string; nombre: string; descripcion?: string; }
+import { supabaseClient } from '@/lib/supabase/client';
 
 const PHONE_PREFIXES = [
   { code: '+34', flag: '🇪🇸', name: 'España' },
@@ -24,13 +21,12 @@ const PHONE_PREFIXES = [
   { code: '+45', flag: '🇩🇰', name: 'Danmark' },
   { code: '+358', flag: '🇫🇮', name: 'Suomi' },
   { code: '+48', flag: '🇵🇱', name: 'Polska' },
-  { code: '+420', flag: '🇨🇿', name: 'Česko' },
   { code: '+36', flag: '🇭🇺', name: 'Magyar' },
   { code: '+40', flag: '🇷🇴', name: 'România' },
 ];
 
 const TIPOS_EMPRESA = ['SL', 'SA', 'LLC', 'Ltd', 'GmbH', 'SAS', 'AG', 'Autónomo', 'Otro'];
-const TIPOS_FISCAL = ['NIF/CIF', 'VAT Number', 'EIN', 'Tax ID'];
+const TIPOS_FISCAL  = ['NIF/CIF', 'VAT Number', 'EIN', 'Tax ID'];
 const TIPOS_CLIENTE = [
   { value: 'distribuidor',  label: 'Distribuidor' },
   { value: 'mayorista',     label: 'Mayorista' },
@@ -39,33 +35,28 @@ const TIPOS_CLIENTE = [
   { value: 'cadena',        label: 'Cadena' },
   { value: 'marketplace',   label: 'Marketplace' },
 ];
-const FORMAS_PAGO = [
-  { value: 'transferencia',   label: 'Transferencia bancaria' },
-  { value: 'sepa',            label: 'SEPA (domiciliación)' },
-  { value: 'carta_credito',   label: 'Carta de crédito' },
-  { value: 'pago_anticipado', label: 'Pago anticipado' },
-];
-const CONDICIONES_PAGO = [
-  { value: 'prepago', label: 'Prepago' },
-  { value: '30dias',  label: '30 días' },
-  { value: '60dias',  label: '60 días' },
-  { value: '90dias',  label: '90 días' },
-];
 
-export default function NuevoClientePage() {
-  const router   = useRouter();
-  const [loading, setLoading]   = useState(false);
+function parseTelefono(tel?: string) {
+  if (!tel) return { prefix: '+34', number: '' };
+  for (const p of PHONE_PREFIXES.sort((a, b) => b.code.length - a.code.length)) {
+    if (tel.startsWith(p.code)) return { prefix: p.code, number: tel.slice(p.code.length).trim() };
+  }
+  return { prefix: '+34', number: tel };
+}
+
+export default function PerfilPage() {
+  const [loading, setLoading]   = useState(true);
+  const [saving, setSaving]     = useState(false);
+  const [success, setSuccess]   = useState('');
   const [error, setError]       = useState('');
-  const [tarifas, setTarifas]   = useState<Tarifa[]>([]);
-  const [sameAddress, setSameAddress] = useState(true);
+  const [customerId, setCustomerId] = useState('');
 
   const [form, setForm] = useState({
     // Legal identity
     company_name: '', nombre_comercial: '', tipo_empresa: '',
     tipo_fiscal: 'NIF/CIF', nif_cif: '', numero_eori: '', fecha_constitucion: '',
     // Contact
-    contacto_nombre: '', email: '', password: '',
-    telefono_prefijo: '+34', telefono_numero: '',
+    contacto_nombre: '', telefono_prefijo: '+34', telefono_numero: '',
     // Fiscal address
     fiscal_street: '', fiscal_city: '', fiscal_state: '', fiscal_postal_code: '', fiscal_country: 'ES',
     // Shipping address
@@ -75,105 +66,128 @@ export default function NuevoClientePage() {
     // Legal
     acepta_condiciones: false, acepta_privacidad: false,
     consentimiento_comunicaciones: false, declaracion_cumplimiento: false,
-    // Internal
-    tarifa_id: '', descuento_pct: '0', forma_pago: '', condiciones_pago: '', notas_especiales: '',
   });
 
   useEffect(() => {
-    fetch('/api/tarifas')
-      .then(r => r.json())
-      .then(d => {
-        const list: Tarifa[] = d.data ?? [];
-        setTarifas(list);
-        const wholesale = list.find(t => t.nombre.toLowerCase() === 'wholesale');
-        if (wholesale) setForm(p => ({ ...p, tarifa_id: wholesale.id }));
+    async function load() {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      if (!session?.user) { setLoading(false); return; }
+
+      const { data: cust } = await supabaseClient
+        .from('customers')
+        .select('*')
+        .eq('auth_user_id', session.user.id)
+        .single();
+
+      if (!cust) { setLoading(false); return; }
+      setCustomerId(cust.id);
+
+      const tel  = parseTelefono(cust.telefono);
+      const env  = (cust.direccion_envio as any) ?? {};
+      const fisc = (cust.direccion_fiscal as any) ?? {};
+      const cl   = (cust.condiciones_legales as any) ?? {};
+
+      setForm({
+        company_name:    cust.company_name     ?? '',
+        nombre_comercial: cust.nombre_comercial ?? '',
+        tipo_empresa:    cust.tipo_empresa      ?? '',
+        tipo_fiscal:     cust.tipo_fiscal       ?? 'NIF/CIF',
+        nif_cif:         cust.nif_cif           ?? '',
+        numero_eori:     cust.numero_eori       ?? '',
+        fecha_constitucion: cust.fecha_constitucion ?? '',
+        contacto_nombre: cust.contacto_nombre   ?? '',
+        telefono_prefijo: tel.prefix,
+        telefono_numero:  tel.number,
+        fiscal_street:   fisc.street            ?? '',
+        fiscal_city:     fisc.city              ?? '',
+        fiscal_state:    fisc.state             ?? '',
+        fiscal_postal_code: fisc.postal_code    ?? '',
+        fiscal_country:  fisc.country           ?? 'ES',
+        street:    env.street                   ?? '',
+        city:      env.city                     ?? '',
+        postal_code: env.postal_code            ?? '',
+        country:   env.country                  ?? 'ES',
+        tipo_cliente:           cust.tipo_cliente            ?? '',
+        zona_distribucion:      cust.zona_distribucion       ?? '',
+        marcas_comercializadas: cust.marcas_comercializadas  ?? '',
+        volumen_estimado:       cust.volumen_estimado        ?? '',
+        num_puntos_venta:       cust.num_puntos_venta ? String(cust.num_puntos_venta) : '',
+        acepta_condiciones:             cl.acepta_condiciones            ?? false,
+        acepta_privacidad:              cl.acepta_privacidad             ?? false,
+        consentimiento_comunicaciones:  cl.consentimiento_comunicaciones ?? false,
+        declaracion_cumplimiento:       cl.declaracion_cumplimiento      ?? false,
       });
+      setLoading(false);
+    }
+    load();
   }, []);
 
   function set(key: string, value: string | boolean) {
     setForm(prev => ({ ...prev, [key]: value }));
   }
 
-  async function handleSubmit() {
-    if (!form.acepta_condiciones || !form.acepta_privacidad) {
-      setError('Debes aceptar las condiciones generales y la política de privacidad.');
-      return;
-    }
-    setError(''); setLoading(true);
+  async function handleSave() {
+    if (!customerId) return;
+    setSaving(true); setError(''); setSuccess('');
 
-    const fiscalAddress = sameAddress
-      ? { street: form.street, city: form.city, state: '', postal_code: form.postal_code, country: form.country }
-      : { street: form.fiscal_street, city: form.fiscal_city, state: form.fiscal_state, postal_code: form.fiscal_postal_code, country: form.fiscal_country };
-
-    const payload = {
-      // Contact & auth
-      contacto_nombre: form.contacto_nombre,
+    const payload: Record<string, unknown> = {
       company_name:    form.company_name,
-      email:           form.email,
-      password:        form.password,
+      nombre_comercial: form.nombre_comercial || null,
+      tipo_empresa:    form.tipo_empresa      || null,
+      nif_cif:         form.nif_cif,
+      tipo_fiscal:     form.tipo_fiscal,
+      numero_eori:     form.numero_eori       || null,
+      fecha_constitucion: form.fecha_constitucion || null,
+      contacto_nombre: form.contacto_nombre,
       telefono:        `${form.telefono_prefijo} ${form.telefono_numero}`.trim(),
-      // Legal identity
-      nombre_comercial:   form.nombre_comercial   || null,
-      tipo_empresa:       form.tipo_empresa        || null,
-      nif_cif:            form.nif_cif,
-      tipo_fiscal:        form.tipo_fiscal,
-      numero_eori:        form.numero_eori         || null,
-      fecha_constitucion: form.fecha_constitucion  || null,
-      // Fiscal address
-      fiscal_street:      fiscalAddress.street,
-      fiscal_city:        fiscalAddress.city,
-      fiscal_state:       fiscalAddress.state      || null,
-      fiscal_postal_code: fiscalAddress.postal_code,
-      fiscal_country:     fiscalAddress.country,
-      // Shipping address (copy from fiscal when sameAddress)
-      street:       sameAddress ? form.fiscal_street      : form.street,
-      city:         sameAddress ? form.fiscal_city        : form.city,
-      postal_code:  sameAddress ? form.fiscal_postal_code : form.postal_code,
-      country:      sameAddress ? form.fiscal_country     : form.country,
-      // Commercial profile
+      direccion_fiscal: form.fiscal_street ? {
+        street:      form.fiscal_street,
+        city:        form.fiscal_city,
+        state:       form.fiscal_state  || null,
+        postal_code: form.fiscal_postal_code,
+        country:     form.fiscal_country,
+      } : null,
+      direccion_envio: {
+        street:      form.street,
+        city:        form.city,
+        postal_code: form.postal_code,
+        country:     form.country,
+      },
       tipo_cliente:           form.tipo_cliente            || null,
       zona_distribucion:      form.zona_distribucion       || null,
       marcas_comercializadas: form.marcas_comercializadas  || null,
       volumen_estimado:       form.volumen_estimado        || null,
       num_puntos_venta:       form.num_puntos_venta ? parseInt(form.num_puntos_venta) : null,
-      // Legal
       condiciones_legales: {
         acepta_condiciones:             form.acepta_condiciones,
         acepta_privacidad:              form.acepta_privacidad,
         consentimiento_comunicaciones:  form.consentimiento_comunicaciones,
         declaracion_cumplimiento:       form.declaracion_cumplimiento,
       },
-      // Internal
-      tarifa_id:     form.tarifa_id     || null,
-      descuento_pct: parseFloat(form.descuento_pct) || 0,
-      condiciones_comerciales: {
-        forma_pago:        form.forma_pago       || null,
-        condiciones_pago:  form.condiciones_pago || null,
-        notas_especiales:  form.notas_especiales || null,
-      },
     };
 
-    try {
-      const res  = await fetch('/api/customers', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? 'Error al crear cliente');
-      router.push(`/clientes/${data.id}`);
-    } catch (err: any) {
-      setError(err.message);
-      setLoading(false);
+    const res = await fetch(`/api/customers/${customerId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    setSaving(false);
+    if (res.ok) {
+      setSuccess('Perfil actualizado correctamente.');
+      setTimeout(() => setSuccess(''), 4000);
+    } else {
+      const d = await res.json();
+      setError(d.error ?? 'Error al guardar');
     }
   }
 
-  const inputCls = "w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-[#D93A35] outline-none transition-colors";
+  const inputCls  = "w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-[#D93A35] outline-none transition-colors";
   const selectCls = inputCls;
   const labelCls  = "text-[11px] font-bold tracking-[0.1em] uppercase text-gray-400";
   const req       = <span className="text-[#D93A35]">*</span>;
 
-  function Section({ n, title }: { n: number; title: string }) {
+  function SectionTitle({ n, title }: { n: number; title: string }) {
     return (
       <div className="flex items-center gap-3 mb-4">
         <span className="text-[10px] font-black tracking-[0.18em] uppercase text-gray-400 whitespace-nowrap">{n} · {title}</span>
@@ -182,20 +196,26 @@ export default function NuevoClientePage() {
     );
   }
 
+  if (loading) return (
+    <div className="p-7 flex items-center gap-2 text-gray-400 text-sm">
+      <div className="w-4 h-4 border border-gray-200 border-t-[#D93A35] rounded-full animate-spin" />
+      Cargando perfil…
+    </div>
+  );
+
   return (
-    <div className="p-6 md:p-7 max-w-3xl">
-      <div className="flex items-center gap-2 mb-6 text-xs text-gray-400">
-        <Link href="/clientes" className="hover:text-gray-600 transition-colors">← Clientes</Link>
-        <span>/</span>
+    <div className="p-6 md:p-7 max-w-2xl">
+      <div className="mb-6">
         <h1 className="text-lg font-black tracking-wider uppercase text-gray-900"
-            style={{ fontFamily: 'var(--font-alexandria)' }}>Nuevo Cliente</h1>
+            style={{ fontFamily: 'var(--font-alexandria)' }}>Mi Perfil</h1>
+        <p className="text-xs text-gray-400 mt-0.5">Información de tu empresa y datos de contacto</p>
       </div>
 
       <div className="space-y-6">
 
         {/* ── 1. Datos Jurídicos ─────────────────────────────────────────── */}
         <section>
-          <Section n={1} title="Datos Jurídicos" />
+          <SectionTitle n={1} title="Datos Jurídicos" />
           <div className="bg-white border border-gray-200 rounded-xl p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="sm:col-span-2 space-y-1.5">
               <label className={labelCls}>Razón social {req}</label>
@@ -240,7 +260,7 @@ export default function NuevoClientePage() {
 
         {/* ── 2. Dirección Fiscal ────────────────────────────────────────── */}
         <section>
-          <Section n={2} title="Dirección Fiscal" />
+          <SectionTitle n={2} title="Dirección Fiscal" />
           <div className="bg-white border border-gray-200 rounded-xl p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="sm:col-span-2 space-y-1.5">
               <label className={labelCls}>Calle y número {req}</label>
@@ -272,60 +292,39 @@ export default function NuevoClientePage() {
 
         {/* ── 3. Dirección de Envío ──────────────────────────────────────── */}
         <section>
-          <Section n={3} title="Dirección de Envío" />
-          <div className="bg-white border border-gray-200 rounded-xl p-4">
-            <label className="flex items-center gap-2.5 mb-4 cursor-pointer select-none">
-              <input
-                type="checkbox" checked={sameAddress} onChange={e => setSameAddress(e.target.checked)}
-                className="w-4 h-4 rounded border-gray-300 text-[#D93A35] cursor-pointer"
-              />
-              <span className="text-sm text-gray-600">Igual a la dirección fiscal</span>
-            </label>
-            {!sameAddress && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="sm:col-span-2 space-y-1.5">
-                  <label className={labelCls}>Calle y número {req}</label>
-                  <input type="text" value={form.street} onChange={e => set('street', e.target.value)}
-                    placeholder="Calle Ejemplo 1" className={inputCls} />
-                </div>
-                <div className="space-y-1.5">
-                  <label className={labelCls}>Ciudad {req}</label>
-                  <input type="text" value={form.city} onChange={e => set('city', e.target.value)}
-                    placeholder="Barcelona" className={inputCls} />
-                </div>
-                <div className="space-y-1.5">
-                  <label className={labelCls}>Código postal {req}</label>
-                  <input type="text" value={form.postal_code} onChange={e => set('postal_code', e.target.value)}
-                    placeholder="08001" className={inputCls} />
-                </div>
-                <div className="space-y-1.5">
-                  <label className={labelCls}>País {req}</label>
-                  <input type="text" value={form.country} onChange={e => set('country', e.target.value)}
-                    placeholder="ES" className={inputCls} />
-                </div>
-              </div>
-            )}
+          <SectionTitle n={3} title="Dirección de Envío" />
+          <div className="bg-white border border-gray-200 rounded-xl p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="sm:col-span-2 space-y-1.5">
+              <label className={labelCls}>Calle y número {req}</label>
+              <input type="text" value={form.street} onChange={e => set('street', e.target.value)}
+                placeholder="Calle Ejemplo 1" className={inputCls} />
+            </div>
+            <div className="space-y-1.5">
+              <label className={labelCls}>Ciudad {req}</label>
+              <input type="text" value={form.city} onChange={e => set('city', e.target.value)}
+                placeholder="Barcelona" className={inputCls} />
+            </div>
+            <div className="space-y-1.5">
+              <label className={labelCls}>Código postal {req}</label>
+              <input type="text" value={form.postal_code} onChange={e => set('postal_code', e.target.value)}
+                placeholder="08001" className={inputCls} />
+            </div>
+            <div className="space-y-1.5">
+              <label className={labelCls}>País {req}</label>
+              <input type="text" value={form.country} onChange={e => set('country', e.target.value)}
+                placeholder="ES" className={inputCls} />
+            </div>
           </div>
         </section>
 
         {/* ── 4. Persona de Contacto ─────────────────────────────────────── */}
         <section>
-          <Section n={4} title="Persona de Contacto" />
+          <SectionTitle n={4} title="Persona de Contacto" />
           <div className="bg-white border border-gray-200 rounded-xl p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <label className={labelCls}>Nombre completo {req}</label>
               <input type="text" value={form.contacto_nombre} onChange={e => set('contacto_nombre', e.target.value)}
                 placeholder="Carlos Mendez" className={inputCls} />
-            </div>
-            <div className="space-y-1.5">
-              <label className={labelCls}>Email {req}</label>
-              <input type="email" value={form.email} onChange={e => set('email', e.target.value)}
-                placeholder="carlos@empresa.com" className={inputCls} />
-            </div>
-            <div className="space-y-1.5">
-              <label className={labelCls}>Contraseña inicial {req}</label>
-              <input type="password" value={form.password} onChange={e => set('password', e.target.value)}
-                placeholder="••••••••" className={inputCls} />
             </div>
             <div className="space-y-1.5">
               <label className={labelCls}>Teléfono {req}</label>
@@ -345,7 +344,7 @@ export default function NuevoClientePage() {
 
         {/* ── 5. Perfil Comercial ────────────────────────────────────────── */}
         <section>
-          <Section n={5} title="Perfil Comercial" />
+          <SectionTitle n={5} title="Perfil Comercial" />
           <div className="bg-white border border-gray-200 rounded-xl p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <label className={labelCls}>Tipo de cliente</label>
@@ -379,21 +378,17 @@ export default function NuevoClientePage() {
 
         {/* ── 6. Legal / GDPR ───────────────────────────────────────────── */}
         <section>
-          <Section n={6} title="Legal / GDPR" />
+          <SectionTitle n={6} title="Legal / GDPR" />
           <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-3">
             {[
-              { key: 'acepta_condiciones',            label: 'Aceptación de condiciones generales de venta',                  required: true  },
-              { key: 'acepta_privacidad',              label: 'Aceptación de la política de privacidad (RGPD / GDPR)',          required: true  },
-              { key: 'consentimiento_comunicaciones',  label: 'Consentimiento para comunicaciones comerciales',                 required: false },
-              { key: 'declaracion_cumplimiento',       label: 'Declaración de cumplimiento normativo (import/export si aplica)', required: false },
+              { key: 'acepta_condiciones',           label: 'Aceptación de condiciones generales de venta',                   required: true  },
+              { key: 'acepta_privacidad',             label: 'Aceptación de la política de privacidad (RGPD / GDPR)',           required: true  },
+              { key: 'consentimiento_comunicaciones', label: 'Consentimiento para comunicaciones comerciales',                  required: false },
+              { key: 'declaracion_cumplimiento',      label: 'Declaración de cumplimiento normativo (import/export si aplica)', required: false },
             ].map(({ key, label, required }) => (
               <label key={key} className="flex items-start gap-3 cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={(form as any)[key]}
-                  onChange={e => set(key, e.target.checked)}
-                  className="mt-0.5 w-4 h-4 rounded border-gray-300 text-[#D93A35] cursor-pointer flex-shrink-0"
-                />
+                <input type="checkbox" checked={(form as any)[key]} onChange={e => set(key, e.target.checked)}
+                  className="mt-0.5 w-4 h-4 rounded border-gray-300 text-[#D93A35] cursor-pointer flex-shrink-0" />
                 <span className="text-sm text-gray-700">
                   {label} {required && req}
                 </span>
@@ -402,78 +397,14 @@ export default function NuevoClientePage() {
           </div>
         </section>
 
-        {/* ── 7. Condiciones Comerciales (interno) ──────────────────────── */}
-        <section>
-          <Section n={7} title="Condiciones Comerciales — Interno" />
-          <div className="bg-white border border-gray-200 rounded-xl p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label className={labelCls}>Lista de precios {req}</label>
-              <select value={form.tarifa_id} onChange={e => set('tarifa_id', e.target.value)} className={selectCls}>
-                <option value="">— Sin tarifa —</option>
-                {tarifas.map(t => (
-                  <option key={t.id} value={t.id}>{t.nombre}{t.descripcion ? ` — ${t.descripcion}` : ''}</option>
-                ))}
-              </select>
-            </div>
-            <div className="space-y-1.5">
-              <label className={labelCls}>Descuento acordado (%)</label>
-              <input type="number" min="0" max="100" step="0.5" value={form.descuento_pct}
-                onChange={e => set('descuento_pct', e.target.value)} placeholder="0" className={inputCls} />
-              <p className="text-[10px] text-gray-400">Aplicado sobre la tarifa. 0 = sin descuento adicional.</p>
-            </div>
+        {error   && <div className="px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-sm text-[#D93A35]">{error}</div>}
+        {success && <div className="px-4 py-3 bg-green-50 border border-green-200 rounded-xl text-sm text-[#0DA265] font-semibold">{success}</div>}
 
-            <div className="space-y-2">
-              <label className={labelCls}>Forma de pago</label>
-              <div className="grid grid-cols-1 gap-2">
-                {FORMAS_PAGO.map(fp => (
-                  <label key={fp.value} className="flex items-center gap-2.5 cursor-pointer">
-                    <input type="radio" name="forma_pago" value={fp.value}
-                      checked={form.forma_pago === fp.value}
-                      onChange={() => set('forma_pago', fp.value)}
-                      className="text-[#D93A35]" />
-                    <span className="text-sm text-gray-700">{fp.label}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className={labelCls}>Condiciones de pago</label>
-              <div className="grid grid-cols-1 gap-2">
-                {CONDICIONES_PAGO.map(cp => (
-                  <label key={cp.value} className="flex items-center gap-2.5 cursor-pointer">
-                    <input type="radio" name="condiciones_pago" value={cp.value}
-                      checked={form.condiciones_pago === cp.value}
-                      onChange={() => set('condiciones_pago', cp.value)}
-                      className="text-[#D93A35]" />
-                    <span className="text-sm text-gray-700">{cp.label}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            <div className="sm:col-span-2 space-y-1.5">
-              <label className={labelCls}>Condiciones comerciales especiales</label>
-              <textarea value={form.notas_especiales} onChange={e => set('notas_especiales', e.target.value)}
-                rows={3} placeholder="Notas internas, condiciones negociadas, excepciones…"
-                className={inputCls + ' resize-none'} />
-            </div>
-          </div>
-        </section>
-
-        {error && (
-          <div className="px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-sm text-[#D93A35]">{error}</div>
-        )}
-
-        <div className="flex gap-3">
-          <button onClick={handleSubmit} disabled={loading}
+        <div>
+          <button onClick={handleSave} disabled={saving}
             className="px-6 py-2.5 bg-[#D93A35] text-white text-sm font-bold rounded-lg hover:bg-[#b52e2a] disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
-            {loading ? 'Creando cliente…' : 'Crear Cliente'}
+            {saving ? 'Guardando…' : 'Guardar cambios'}
           </button>
-          <Link href="/clientes"
-            className="px-6 py-2.5 bg-white border border-gray-200 text-sm font-semibold text-gray-600 rounded-lg hover:border-gray-300 transition-colors">
-            Cancelar
-          </Link>
         </div>
       </div>
     </div>

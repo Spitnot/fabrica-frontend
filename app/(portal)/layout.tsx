@@ -8,7 +8,7 @@ import { supabaseClient } from '@/lib/supabase/client';
 const NAV_ITEMS = [
   {
     href: '/portal',
-    label: 'My Orders',
+    label: 'Mis Pedidos',
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
         <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
@@ -17,10 +17,19 @@ const NAV_ITEMS = [
   },
   {
     href: '/portal/pedidos/nuevo',
-    label: 'New Order',
+    label: 'Nuevo Pedido',
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
         <circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/>
+      </svg>
+    ),
+  },
+  {
+    href: '/portal/perfil',
+    label: 'Mi Perfil',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>
       </svg>
     ),
   },
@@ -83,7 +92,7 @@ function PortalSidebar({ open, onClose }: { open: boolean; onClose: () => void }
           <FirmaLogo />
           <div className="mt-2 text-[9px] font-black tracking-[.2em] uppercase text-[#D93A35]"
                style={{ fontFamily: "'Alexandria', sans-serif" }}>
-            CUSTOMER PORTAL
+            PORTAL B2B
           </div>
         </div>
 
@@ -93,7 +102,8 @@ function PortalSidebar({ open, onClose }: { open: boolean; onClose: () => void }
           </div>
           {NAV_ITEMS.map(({ href, label, icon }) => {
             const active = pathname === href ||
-              (href === '/portal' && pathname.startsWith('/portal/pedidos/') && !pathname.startsWith('/portal/pedidos/nuevo'));
+              (href === '/portal' && pathname.startsWith('/portal/pedidos/') && !pathname.startsWith('/portal/pedidos/nuevo')) ||
+              (href === '/portal/perfil' && pathname.startsWith('/portal/perfil'));
             return (
               <Link
                 key={href}
