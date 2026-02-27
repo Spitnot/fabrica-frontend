@@ -23,13 +23,22 @@ function getRoleFromRequest(req: NextRequest): string | null {
   if (!raw) return null;
 
   try {
-    const session = JSON.parse(raw);
+    // @supabase/ssr ≥0.5 stores the session as base64url-encoded JSON.
+    // Older versions stored it as plain JSON. Try base64url first, then fallback.
+    let sessionStr = raw;
+    try {
+      sessionStr = atob(raw.replace(/-/g, '+').replace(/_/g, '/'));
+    } catch {
+      // not base64 — use raw string as-is
+    }
+
+    const session = JSON.parse(sessionStr);
     const token: string = session?.access_token;
     if (!token) return null;
 
     // Decode the JWT payload (second segment, base64url-encoded)
     const payloadPart = token.split('.')[1];
-    const payload = JSON.parse(atob(payloadPart));
+    const payload = JSON.parse(atob(payloadPart.replace(/-/g, '+').replace(/_/g, '/')));
     return (payload?.user_metadata?.role as string) ?? null;
   } catch {
     return null;

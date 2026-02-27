@@ -14,33 +14,39 @@ export default function LoginPage() {
   async function handleLogin() {
     setError(''); setLoading(true);
 
-    const { data, error: authError } = await supabaseClient.auth.signInWithPassword({ email, password });
+    try {
+      const { data, error: authError } = await supabaseClient.auth.signInWithPassword({ email, password });
 
-    if (authError || !data.user) {
-      setError('Incorrect credentials. Please check your email and password.');
+      if (authError || !data.user) {
+        setError('Incorrect credentials. Please check your email and password.');
+        setLoading(false);
+        return;
+      }
+
+      const role = data.user.user_metadata?.role as string | undefined;
+
+      if (!role) {
+        setError('This user has no role assigned. Contact the administrator.');
+        setLoading(false);
+        return;
+      }
+
+      if (role === 'admin') {
+        router.push('/dashboard');
+      } else if (role === 'customer') {
+        router.push('/portal');
+      } else {
+        setError(`Unknown role: ${role}. Contact the administrator.`);
+        setLoading(false);
+        return;
+      }
+
+      router.refresh();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      setError(`Connection error: ${msg}`);
       setLoading(false);
-      return;
     }
-
-    const role = data.user.user_metadata?.role as string | undefined;
-
-    if (!role) {
-      setError('This user has no role assigned. Contact the administrator.');
-      setLoading(false);
-      return;
-    }
-
-    if (role === 'admin') {
-      router.push('/dashboard');
-    } else if (role === 'customer') {
-      router.push('/portal');
-    } else {
-      setError(`Unknown role: ${role}. Contact the administrator.`);
-      setLoading(false);
-      return;
-    }
-
-    router.refresh();
   }
 
   return (
