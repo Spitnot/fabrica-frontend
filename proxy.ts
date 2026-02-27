@@ -36,7 +36,7 @@ function getRoleFromRequest(req: NextRequest): string | null {
   }
 }
 
-export async function middleware(req: NextRequest) {
+export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   const isDashboard = DASHBOARD_PATHS.some(
