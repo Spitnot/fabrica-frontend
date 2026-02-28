@@ -61,6 +61,15 @@ const NAV_ITEMS = [
       </svg>
     ),
   },
+  {
+    href: '/emails',
+    label: 'Email',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 7l10 7 10-7"/>
+      </svg>
+    ),
+  },
 ];
 
 const FirmaLogo = () => (
@@ -118,7 +127,8 @@ function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
               (href === '/pedidos' && pathname.startsWith('/pedidos') && !pathname.startsWith('/pedidos/nuevo')) ||
               (href === '/clientes' && pathname.startsWith('/clientes')) ||
               (href === '/tarifas' && pathname.startsWith('/tarifas')) ||
-              (href === '/catalogo' && pathname.startsWith('/catalogo'));
+              (href === '/catalogo' && pathname.startsWith('/catalogo')) ||
+              (href === '/emails' && pathname.startsWith('/emails'));
             return (
               <Link
                 key={href}

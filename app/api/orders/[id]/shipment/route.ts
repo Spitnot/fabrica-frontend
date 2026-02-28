@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/server';
+import { sendShippedEmail } from '@/lib/email';
 
 const PACKLINK_API_URL = process.env.PACKLINK_API_URL!;
 const PACKLINK_API_KEY = process.env.PACKLINK_API_KEY!;
@@ -150,6 +151,18 @@ export async function POST(req: NextRequest, { params }: Props) {
       console.error('[shipment] Supabase error:', updateError.message);
       return NextResponse.json({ error: updateError.message }, { status: 500 });
     }
+
+    // 4. Enviar email de envío al cliente (best-effort)
+    void sendShippedEmail({
+      to:          order.customer.email,
+      nombre:      order.customer.contacto_nombre,
+      company:     order.customer.company_name,
+      orderId:     id,
+      total:       order.total_productos,
+      itemCount:   order.order_items.length,
+      trackingUrl: shipment.tracking_url ?? shipment.carrier_tracking_url ?? null,
+      customerId:  order.customer.id,
+    }).catch((e) => console.error('[shipment] shipped email:', e));
 
     return NextResponse.json({ ok: true, shipment_reference: shipment.shipment_reference });
 

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/server';
+import { sendWelcomeEmail } from '@/lib/email';
 
 // GET — lista de clientes activos (incluye tarifa básica para orden y badge)
 export async function GET() {
@@ -65,6 +66,11 @@ export async function POST(req: NextRequest) {
     await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
     return NextResponse.json({ error: customerError?.message ?? 'Error al crear cliente' }, { status: 500 });
   }
+
+  // 3. Enviar email de bienvenida (best-effort, no bloquea la respuesta)
+  void sendWelcomeEmail({
+    to: email, nombre: contacto_nombre, company: company_name, customerId: customer.id,
+  }).catch((e) => console.error('[customers POST] welcome email:', e));
 
   return NextResponse.json({ id: customer.id }, { status: 201 });
 }
