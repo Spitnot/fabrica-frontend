@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/server';
+import { sendOrderConfirmationToCustomer, sendNewOrderToAdmin } from '@/lib/email';
 
 export async function POST(req: NextRequest) {
   const { customer_id, items, coste_envio_estimado } = await req.json();
@@ -53,6 +54,33 @@ export async function POST(req: NextRequest) {
     // Borrar el pedido si fallan los items
     await supabaseAdmin.from('orders').delete().eq('id', order.id);
     return NextResponse.json({ error: itemsError.message }, { status: 500 });
+  }
+
+  // 3. Enviar emails (best-effort, no bloquea la respuesta)
+  const { data: customer } = await supabaseAdmin
+    .from('customers')
+    .select('id, email, contacto_nombre, company_name')
+    .eq('id', customer_id)
+    .single();
+
+  if (customer) {
+    void Promise.allSettled([
+      sendOrderConfirmationToCustomer({
+        to: customer.email, nombre: customer.contacto_nombre,
+        orderId: order.id, total: total_productos, itemCount: items.length,
+        customerId: customer.id,
+      }),
+      sendNewOrderToAdmin({
+        orderId: order.id, customerName: customer.contacto_nombre,
+        company: customer.company_name, total: total_productos,
+        itemCount: items.length, customerId: customer.id,
+      }),
+    ]).then((results) =>
+      results.forEach((r, i) => {
+        if (r.status === 'rejected')
+          console.error(`[orders POST] email[${i}]:`, r.reason);
+      }),
+    );
   }
 
   return NextResponse.json({ id: order.id }, { status: 201 });
