@@ -20,9 +20,8 @@ async function logEmail(params: {
   status: 'sent' | 'failed';
   error?: string;
 }) {
-  await supabaseAdmin.from('email_logs').insert(params).catch(
-    (e) => console.error('[email log]', e),
-  );
+  const { error } = await supabaseAdmin.from('email_logs').insert(params);
+  if (error) console.error('[email log]', error);
 }
 
 // ─── 1. Bienvenida al portal (se envía cuando admin crea un cliente) ──────────
