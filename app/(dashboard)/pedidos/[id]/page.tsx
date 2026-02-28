@@ -3,6 +3,8 @@ import { supabaseAdmin } from '@/lib/supabase/server';
 import type { Order, Customer, OrderItem } from '@/types';
 import { ShipmentPanel } from './ShipmentPanel';
 
+export const dynamic = 'force-dynamic';
+
 type OrderFull = Order & { customer: Customer; order_items: OrderItem[] };
 
 async function getOrder(id: string): Promise<OrderFull | null> {
