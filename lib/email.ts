@@ -5,7 +5,7 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 
 const FROM_NO_REPLY = 'Firma Rollers <noreply@firmarollers.com>';
 const FROM_PEDIDOS  = 'Firma Rollers <pedidos@firmarollers.com>';
-const SITE_URL      = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://app.firmarollers.com';
+const SITE_URL      = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://b2b.firmarollers.com';
 
 function fmt(n: number) {
   return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n);
