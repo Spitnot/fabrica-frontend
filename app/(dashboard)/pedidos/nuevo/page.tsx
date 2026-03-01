@@ -63,6 +63,7 @@ export default function NuevoPedidoPage() {
   }, [products, search]);
 
   const client = customers.find(c => c.id === clientId);
+  const clientAddressOk = !!(client?.direccion_envio?.country && client?.direccion_envio?.postal_code);
   const subtotal = lineItems.reduce((s, i) => s + i.cantidad * i.precio_unitario, 0);
   const totalWeight = lineItems.reduce((s, i) => s + i.peso_unitario * i.cantidad, 0);
   const total = subtotal + (selectedQuote?.price ?? 0);
@@ -269,7 +270,8 @@ export default function NuevoPedidoPage() {
           <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
             <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
               <span className="text-[10px] font-black tracking-[0.12em] uppercase text-gray-400" style={{ fontFamily: 'var(--font-alexandria)' }}>Shipping · Packlink</span>
-              <button onClick={requestQuotes} disabled={!lineItems.length || !clientId || quotesLoading}
+              <button onClick={requestQuotes} disabled={!lineItems.length || !clientId || !clientAddressOk || quotesLoading}
+                title={clientId && !clientAddressOk ? 'Client address is missing country or postal code' : undefined}
                 className="px-2.5 py-1 text-[11px] font-semibold bg-gray-50 border border-gray-200 rounded-md text-gray-600 hover:border-[#D93A35]/40 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
                 Quote
               </button>
@@ -281,7 +283,10 @@ export default function NuevoPedidoPage() {
                   Querying Packlink…
                 </div>
               )}
-              {!quotesLoading && quotes.length === 0 && <div className="text-xs text-gray-400 text-center py-2">Add products and quote</div>}
+              {clientId && !clientAddressOk && (
+                <div className="text-xs text-[#D93A35] py-2">Client has no country/postal code — edit their profile first.</div>
+              )}
+              {!quotesLoading && quotes.length === 0 && clientAddressOk && <div className="text-xs text-gray-400 text-center py-2">Add products and quote</div>}
               {quotes.map(q => (
                 <button key={q.service_id} onClick={() => setSelectedQuote(q)}
                   className={`w-full flex items-center justify-between p-3 rounded-lg mb-1.5 last:mb-0 border transition-colors text-left ${selectedQuote?.service_id === q.service_id ? 'border-[#D93A35]/40 bg-red-50' : 'border-gray-200 hover:border-gray-300'}`}>
