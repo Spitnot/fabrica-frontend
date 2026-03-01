@@ -207,12 +207,10 @@ export default function TarifaDetailPage() {
                     group.variantes.map((v, vi) => {
                       const hasCustom = !!preciosEdit[v.sku] && parseFloat(preciosEdit[v.sku]) > 0;
                       const effective = effectivePrice(v.sku, v.precio_mayorista);
+                      const productId = group.nombre;
+                      const isHidden  = hiddenProducts.includes(productId);
                       return (
-                        {(() => {
-                          const productId = group.nombre; // use product name as ID key for hiding
-                          const isHidden  = hiddenProducts.includes(productId);
-                          return (
-                            <tr key={v.sku} className={`border-b border-gray-50 last:border-0 transition-colors ${isHidden ? 'opacity-40' : 'hover:bg-gray-50/50'}`}>
+                        <tr key={v.sku} className={`border-b border-gray-50 last:border-0 transition-colors ${isHidden ? 'opacity-40' : 'hover:bg-gray-50/50'}`}>
                               <td className="px-4 py-2.5">
                                 {vi === 0 && <div className="text-xs font-semibold text-gray-700">{group.nombre}</div>}
                                 {v.variante && <div className="text-[11px] text-gray-400">{v.variante}</div>}
@@ -265,9 +263,7 @@ export default function TarifaDetailPage() {
                                   </button>
                                 </td>
                               ) : null}
-                            </tr>
-                          );
-                        })()}
+                        </tr>
                       );
                     })
                   )
