@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, Suspense } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import Link from 'next/link';
 
@@ -27,7 +27,7 @@ interface Order {
   customer_id: string;
 }
 
-export default function PedidosPage() {
+function PedidosInner() {
   const router       = useRouter();
   const pathname     = usePathname();
   const searchParams = useSearchParams();
@@ -204,5 +204,13 @@ export default function PedidosPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function PedidosPage() {
+  return (
+    <Suspense fallback={<div className="p-7 text-sm text-gray-400">Loading…</div>}>
+      <PedidosInner />
+    </Suspense>
   );
 }
