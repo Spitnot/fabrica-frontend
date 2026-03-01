@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
   }
 
   // 3. Generate password-setup link (recovery type = one-time link to set password)
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://app.firmarollers.com';
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://b2b.firmarollers.com';
   const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
     type: 'recovery',
     email,
