@@ -24,25 +24,26 @@ async function logEmail(params: {
   if (error) console.error('[email log]', error);
 }
 
-// ─── 1. Bienvenida al portal (se envía cuando admin crea un cliente) ──────────
+// ─── 1. Welcome email with password-setup link ───────────────────────────────
 
 export async function sendWelcomeEmail({
-  to, nombre, company, customerId,
+  to, nombre, company, setupLink, customerId,
 }: {
   to: string;
   nombre: string;
   company: string;
+  setupLink: string;
   customerId?: string;
 }) {
-  const subject = `Bienvenido al portal B2B · ${company}`;
+  const subject = `Welcome to the Firma Rollers B2B Portal · ${company}`;
   try {
-    await resend.emails.send({
+    const { error: resendError } = await resend.emails.send({
       from:    FROM_NO_REPLY,
       to,
       subject,
       html: `
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="margin:0;padding:0;background:#f9fafb;font-family:Arial,sans-serif;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#f9fafb;padding:40px 20px;">
@@ -62,31 +63,31 @@ export async function sendWelcomeEmail({
         <tr>
           <td style="padding:32px;">
             <p style="margin:0 0 16px;color:#111827;font-size:16px;font-weight:700;">
-              Hola ${nombre},
+              Hi ${nombre},
             </p>
             <p style="margin:0 0 24px;color:#6b7280;font-size:14px;line-height:1.6;">
-              Tu acceso al portal B2B de Firma Rollers para <strong style="color:#111827;">${company}</strong>
-              ya está activo. Desde el portal podrás consultar el catálogo, hacer pedidos y
-              seguir el estado de tus envíos.
+              Your B2B portal account for <strong style="color:#111827;">${company}</strong> has been created.
+              Use the button below to set your password and access the portal, where you can
+              browse the catalogue, place orders and track your shipments.
             </p>
 
             <table width="100%" cellpadding="0" cellspacing="0" style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;margin-bottom:24px;">
               <tr>
                 <td style="padding:16px 20px;">
-                  <p style="margin:0 0 4px;color:#6b7280;font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;">Tu email de acceso</p>
+                  <p style="margin:0 0 4px;color:#6b7280;font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;">Your login email</p>
                   <p style="margin:0;color:#111827;font-size:14px;font-family:monospace;">${to}</p>
                 </td>
               </tr>
             </table>
 
-            <p style="margin:0 0 8px;color:#6b7280;font-size:13px;">
-              Tu contraseña inicial te la comunicará tu gestor de cuenta. Puedes cambiarla desde
-              tu perfil una vez dentro.
+            <p style="margin:0 0 20px;color:#6b7280;font-size:13px;">
+              This link is valid for 24 hours. After setting your password you can change it
+              at any time from your profile inside the portal.
             </p>
 
-            <a href="${SITE_URL}/login"
-               style="display:inline-block;margin-top:20px;padding:12px 28px;background:#D93A35;color:#ffffff;text-decoration:none;font-size:14px;font-weight:700;border-radius:8px;letter-spacing:0.02em;">
-              Acceder al portal →
+            <a href="${setupLink}"
+               style="display:inline-block;padding:12px 28px;background:#D93A35;color:#ffffff;text-decoration:none;font-size:14px;font-weight:700;border-radius:8px;letter-spacing:0.02em;">
+              Set your password →
             </a>
           </td>
         </tr>
@@ -95,7 +96,7 @@ export async function sendWelcomeEmail({
         <tr>
           <td style="padding:20px 32px;border-top:1px solid #f3f4f6;">
             <p style="margin:0;color:#9ca3af;font-size:12px;">
-              Si tienes alguna duda, contacta con tu gestor comercial en
+              Questions? Contact your account manager at
               <a href="mailto:pedidos@firmarollers.com" style="color:#D93A35;text-decoration:none;">pedidos@firmarollers.com</a>
             </p>
           </td>
@@ -107,6 +108,7 @@ export async function sendWelcomeEmail({
 </body>
 </html>`,
     });
+    if (resendError) throw new Error(resendError.message);
     void logEmail({ type: 'welcome', recipient: to, subject, customer_id: customerId, status: 'sent' });
   } catch (e: any) {
     void logEmail({ type: 'welcome', recipient: to, subject, customer_id: customerId, status: 'failed', error: e?.message });
@@ -129,7 +131,7 @@ export async function sendOrderConfirmationToCustomer({
   const shortId = orderId.slice(0, 8).toUpperCase();
   const subject = `Pedido confirmado #${shortId} · ${fmt(total)}`;
   try {
-    await resend.emails.send({
+    const { error: resendError } = await resend.emails.send({
       from:    FROM_PEDIDOS,
       to,
       subject,
@@ -215,6 +217,7 @@ export async function sendOrderConfirmationToCustomer({
 </body>
 </html>`,
     });
+    if (resendError) throw new Error(resendError.message);
     void logEmail({ type: 'order_confirmation', recipient: to, subject, customer_id: customerId, order_id: orderId, status: 'sent' });
   } catch (e: any) {
     void logEmail({ type: 'order_confirmation', recipient: to, subject, customer_id: customerId, order_id: orderId, status: 'failed', error: e?.message });
@@ -243,7 +246,7 @@ export async function sendNewOrderToAdmin({
   const shortId = orderId.slice(0, 8).toUpperCase();
   const subject = `Nuevo pedido · ${company} · ${fmt(total)}`;
   try {
-    await resend.emails.send({
+    const { error: resendError } = await resend.emails.send({
       from:    FROM_PEDIDOS,
       to:      adminEmail,
       subject,
@@ -319,6 +322,7 @@ export async function sendNewOrderToAdmin({
 </body>
 </html>`,
     });
+    if (resendError) throw new Error(resendError.message);
     void logEmail({ type: 'admin_notification', recipient: adminEmail, subject, customer_id: customerId, order_id: orderId, status: 'sent' });
   } catch (e: any) {
     void logEmail({ type: 'admin_notification', recipient: adminEmail, subject, customer_id: customerId, order_id: orderId, status: 'failed', error: e?.message });
@@ -343,7 +347,7 @@ export async function sendShippedEmail({
   const shortId = orderId.slice(0, 8).toUpperCase();
   const subject = `Tu pedido #${shortId} ha sido enviado · ${company}`;
   try {
-    await resend.emails.send({
+    const { error: resendError } = await resend.emails.send({
       from:    FROM_PEDIDOS,
       to,
       subject,
@@ -442,6 +446,7 @@ export async function sendShippedEmail({
 </body>
 </html>`,
     });
+    if (resendError) throw new Error(resendError.message);
     void logEmail({ type: 'order_shipped', recipient: to, subject, customer_id: customerId, order_id: orderId, status: 'sent' });
   } catch (e: any) {
     void logEmail({ type: 'order_shipped', recipient: to, subject, customer_id: customerId, order_id: orderId, status: 'failed', error: e?.message });
