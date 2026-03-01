@@ -22,7 +22,7 @@ const fmt = (n: number) =>
 
 interface Customer { id: string; contacto_nombre: string; company_name: string; }
 interface Order {
-  id: string; status: string; peso_total: number; total_produtos: number;
+  id: string; status: string; peso_total: number; total_productos: number;
   created_at: string; customer?: { contacto_nombre: string; company_name: string; };
   customer_id: string;
 }
@@ -190,7 +190,7 @@ function PedidosInner() {
                       </span>
                     </td>
                     <td className="px-5 py-3 font-mono text-xs text-gray-400">{o.peso_total} kg</td>
-                    <td className="px-5 py-3 text-sm font-semibold text-gray-900">{fmt(o.total_produtos)}</td>
+                    <td className="px-5 py-3 text-sm font-semibold text-gray-900">{fmt(o.total_productos)}</td>
                     <td className="px-5 py-3 font-mono text-xs text-gray-400">
                       {new Date(o.created_at).toLocaleDateString('en-GB', {
                         day: '2-digit', month: 'short', year: 'numeric',

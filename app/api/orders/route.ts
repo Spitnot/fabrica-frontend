@@ -6,7 +6,7 @@ import { sendOrderConfirmationToCustomer, sendNewOrderToAdmin } from '@/lib/emai
 export async function GET() {
   const { data, error } = await supabaseAdmin
     .from('orders')
-    .select('id, status, peso_total, total_produtos, created_at, customer_id, customer:customers(contacto_nombre, company_name)')
+    .select('id, status, peso_total, total_productos, created_at, customer_id, customer:customers(contacto_nombre, company_name)')
     .order('created_at', { ascending: false });
 
   if (error) {
