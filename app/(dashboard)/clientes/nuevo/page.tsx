@@ -13,7 +13,7 @@ export default function NuevoClientePage() {
   const [tarifas, setTarifas] = useState<Tarifa[]>([]);
 
   const [form, setForm] = useState({
-    contacto_nombre: '', company_name: '', email: '', password: '',
+    contacto_nombre: '', company_name: '', email: '',
     telefono: '', nif_cif: '', street: '', city: '', postal_code: '', country: 'ES',
     tarifa_id: '', descuento_pct: '0',
   });
@@ -51,12 +51,11 @@ export default function NuevoClientePage() {
   }
 
   const fields = [
-    { key: 'contacto_nombre', label: 'Contact name',     placeholder: 'Carlos Mendez',     required: true  },
-    { key: 'company_name',    label: 'Company',           placeholder: 'Fashion SL',        required: true  },
-    { key: 'email',           label: 'Email',             placeholder: 'carlos@company.com', required: true  },
-    { key: 'password',        label: 'Initial password',  placeholder: '••••••••',          required: true, type: 'password' },
-    { key: 'nif_cif',         label: 'VAT ID',            placeholder: 'B12345678',         required: true  },
-    { key: 'telefono',        label: 'Phone',             placeholder: '+34 612 345 678',   required: false },
+    { key: 'contacto_nombre', label: 'Contact name', placeholder: 'Carlos Mendez',      required: true  },
+    { key: 'company_name',    label: 'Company',       placeholder: 'Fashion SL',         required: true  },
+    { key: 'email',           label: 'Email',         placeholder: 'carlos@company.com', required: true  },
+    { key: 'nif_cif',         label: 'VAT ID',        placeholder: 'B12345678',          required: true  },
+    { key: 'telefono',        label: 'Phone',         placeholder: '+34 612 345 678',    required: false },
   ];
 
   const addressFields = [
@@ -85,12 +84,12 @@ export default function NuevoClientePage() {
             <div className="flex-1 h-px bg-gray-100" />
           </div>
           <div className="bg-white border border-gray-200 rounded-xl p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {fields.map(({ key, label, placeholder, required, type }) => (
+            {fields.map(({ key, label, placeholder, required }) => (
               <div key={key} className="space-y-1.5">
                 <label className="text-[11px] font-bold tracking-[0.1em] uppercase text-gray-400">
                   {label} {required && <span className="text-[#D93A35]">*</span>}
                 </label>
-                <input type={type ?? 'text'} value={(form as any)[key]} onChange={(e) => set(key, e.target.value)}
+                <input type="text" value={(form as any)[key]} onChange={(e) => set(key, e.target.value)}
                   placeholder={placeholder} className={inputCls} />
               </div>
             ))}

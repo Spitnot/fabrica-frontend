@@ -5,8 +5,12 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 
 interface TarifaPrecio { sku: string; precio: number; }
-interface Tarifa { id: string; nombre: string; descripcion?: string; multiplicador: number; activo: boolean; precios: TarifaPrecio[]; }
-interface Product { sku: string; nombre_producto: string; variante?: string; precio_mayorista: number; }
+interface Tarifa {
+  id: string; nombre: string; descripcion?: string; multiplicador: number; activo: boolean;
+  hidden_products: string[]; minimum_order_value: number; pack_size: number;
+  precios: TarifaPrecio[];
+}
+interface Product { sku: string; nombre_producto: string; variante?: string; precio_mayorista: number; shopify_product_id?: string; }
 
 const fmt = (n: number) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n);
 
@@ -26,7 +30,12 @@ export default function TarifaDetailPage() {
   const [preciosEdit, setPreciosEdit] = useState<Record<string, string>>({});
 
   // Meta edición
-  const [meta, setMeta] = useState({ nombre: '', descripcion: '', multiplicador: '' });
+  const [meta, setMeta] = useState({
+    nombre: '', descripcion: '', multiplicador: '',
+    minimum_order_value: '0', pack_size: '1',
+  });
+  // Hidden products: stored as set of product IDs (we use product name as key for display)
+  const [hiddenProducts, setHiddenProducts] = useState<string[]>([]);
 
   useEffect(() => {
     async function load() {
@@ -42,10 +51,13 @@ export default function TarifaDetailPage() {
       setTarifa(tData);
       setProducts(pData.data ?? []);
       setMeta({
-        nombre:       tData.nombre,
-        descripcion:  tData.descripcion ?? '',
-        multiplicador: String(tData.multiplicador),
+        nombre:              tData.nombre,
+        descripcion:         tData.descripcion ?? '',
+        multiplicador:       String(tData.multiplicador),
+        minimum_order_value: String(tData.minimum_order_value ?? 0),
+        pack_size:           String(tData.pack_size ?? 1),
       });
+      setHiddenProducts(tData.hidden_products ?? []);
 
       // Inicializar mapa de precios
       const map: Record<string, string> = {};
@@ -95,9 +107,12 @@ export default function TarifaDetailPage() {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        nombre: meta.nombre,
-        descripcion: meta.descripcion || null,
-        multiplicador: parseFloat(meta.multiplicador),
+        nombre:              meta.nombre,
+        descripcion:         meta.descripcion || null,
+        multiplicador:       parseFloat(meta.multiplicador),
+        minimum_order_value: parseFloat(meta.minimum_order_value) || 0,
+        pack_size:           parseInt(meta.pack_size) || 1,
+        hidden_products:     hiddenProducts,
       }),
     });
     setSavingMeta(false);
@@ -179,53 +194,80 @@ export default function TarifaDetailPage() {
             <table className="w-full border-collapse min-w-[520px]">
               <thead>
                 <tr className="bg-gray-50">
-                  {['Product / Variant', 'SKU', 'Shopify', 'Custom Price', 'Effective'].map((h) => (
+                  {['Product / Variant', 'SKU', 'Shopify', 'Custom Price', 'Effective', ''].map((h) => (
                     <th key={h} className="text-left px-4 py-3 text-[10px] font-bold uppercase tracking-[0.1em] text-gray-400 border-b border-gray-100">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {productGroups.length === 0 ? (
-                  <tr><td colSpan={5} className="px-4 py-10 text-center text-sm text-gray-400">No products found</td></tr>
+                  <tr><td colSpan={6} className="px-4 py-10 text-center text-sm text-gray-400">No products found</td></tr>
                 ) : (
                   productGroups.flatMap(group =>
                     group.variantes.map((v, vi) => {
                       const hasCustom = !!preciosEdit[v.sku] && parseFloat(preciosEdit[v.sku]) > 0;
                       const effective = effectivePrice(v.sku, v.precio_mayorista);
                       return (
-                        <tr key={v.sku} className="border-b border-gray-50 last:border-0 hover:bg-gray-50/50 transition-colors">
-                          <td className="px-4 py-2.5">
-                            {vi === 0 && <div className="text-xs font-semibold text-gray-700">{group.nombre}</div>}
-                            {v.variante && <div className="text-[11px] text-gray-400">{v.variante}</div>}
-                          </td>
-                          <td className="px-4 py-2.5 font-mono text-[11px] text-gray-400">{v.sku}</td>
-                          <td className="px-4 py-2.5 font-mono text-xs text-gray-500">{fmt(v.precio_mayorista)}</td>
-                          <td className="px-4 py-2.5">
-                            <div className="flex items-center gap-1.5">
-                              <input
-                                type="number"
-                                step="0.01"
-                                min="0"
-                                value={preciosEdit[v.sku] ?? ''}
-                                onChange={e => setPrice(v.sku, e.target.value)}
-                                placeholder={fmt(v.precio_mayorista * parseFloat(meta.multiplicador || '1'))}
-                                className="w-24 bg-gray-50 border border-gray-200 rounded-md px-2 py-1 text-xs font-mono text-gray-900 focus:border-[#D93A35] outline-none"
-                              />
-                              {hasCustom && (
-                                <button onClick={() => clearPrice(v.sku)} title="Clear custom price"
-                                  className="text-gray-300 hover:text-[#D93A35] transition-colors text-sm leading-none">×</button>
-                              )}
-                            </div>
-                          </td>
-                          <td className="px-4 py-2.5">
-                            <span className={`font-mono text-xs font-bold ${hasCustom ? 'text-[#D93A35]' : 'text-gray-500'}`}>
-                              {fmt(effective)}
-                            </span>
-                            {hasCustom && (
-                              <span className="ml-1.5 text-[9px] text-[#D93A35] font-bold uppercase tracking-wide">custom</span>
-                            )}
-                          </td>
-                        </tr>
+                        {(() => {
+                          const productId = group.nombre; // use product name as ID key for hiding
+                          const isHidden  = hiddenProducts.includes(productId);
+                          return (
+                            <tr key={v.sku} className={`border-b border-gray-50 last:border-0 transition-colors ${isHidden ? 'opacity-40' : 'hover:bg-gray-50/50'}`}>
+                              <td className="px-4 py-2.5">
+                                {vi === 0 && <div className="text-xs font-semibold text-gray-700">{group.nombre}</div>}
+                                {v.variante && <div className="text-[11px] text-gray-400">{v.variante}</div>}
+                              </td>
+                              <td className="px-4 py-2.5 font-mono text-[11px] text-gray-400">{v.sku}</td>
+                              <td className="px-4 py-2.5 font-mono text-xs text-gray-500">{fmt(v.precio_mayorista)}</td>
+                              <td className="px-4 py-2.5">
+                                <div className="flex items-center gap-1.5">
+                                  <input
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    value={preciosEdit[v.sku] ?? ''}
+                                    onChange={e => setPrice(v.sku, e.target.value)}
+                                    placeholder={fmt(v.precio_mayorista * parseFloat(meta.multiplicador || '1'))}
+                                    className="w-24 bg-gray-50 border border-gray-200 rounded-md px-2 py-1 text-xs font-mono text-gray-900 focus:border-[#D93A35] outline-none"
+                                  />
+                                  {hasCustom && (
+                                    <button onClick={() => clearPrice(v.sku)} title="Clear custom price"
+                                      className="text-gray-300 hover:text-[#D93A35] transition-colors text-sm leading-none">×</button>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="px-4 py-2.5">
+                                <span className={`font-mono text-xs font-bold ${hasCustom ? 'text-[#D93A35]' : 'text-gray-500'}`}>
+                                  {fmt(effective)}
+                                </span>
+                                {hasCustom && (
+                                  <span className="ml-1.5 text-[9px] text-[#D93A35] font-bold uppercase tracking-wide">custom</span>
+                                )}
+                              </td>
+                              {vi === 0 ? (
+                                <td className="px-4 py-2.5" rowSpan={group.variantes.length}>
+                                  <button
+                                    title={isHidden ? 'Show product for this tier' : 'Hide product for this tier'}
+                                    onClick={() => setHiddenProducts(p =>
+                                      isHidden ? p.filter(x => x !== productId) : [...p, productId]
+                                    )}
+                                    className="p-1 rounded hover:bg-gray-100 transition-colors"
+                                  >
+                                    {isHidden ? (
+                                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#D93A35" strokeWidth="2">
+                                        <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24M1 1l22 22"/>
+                                      </svg>
+                                    ) : (
+                                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2">
+                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                                      </svg>
+                                    )}
+                                  </button>
+                                </td>
+                              ) : null}
+                            </tr>
+                          );
+                        })()}
                       );
                     })
                   )
@@ -279,6 +321,62 @@ export default function TarifaDetailPage() {
                   e.g. 0.65 = 65% of retail · 1.0 = full price
                 </p>
               </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-bold tracking-[0.1em] uppercase text-gray-400">
+                  Minimum Order Value (€)
+                </label>
+                <input
+                  type="number" step="0.01" min="0"
+                  value={meta.minimum_order_value}
+                  onChange={e => setMeta(p => ({ ...p, minimum_order_value: e.target.value }))}
+                  className={`w-full ${inputCls}`}
+                />
+                <p className="text-[10px] text-gray-400">
+                  Customers on this tier cannot submit orders below this amount. 0 = no minimum.
+                </p>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-bold tracking-[0.1em] uppercase text-gray-400">
+                  Pack Size
+                </label>
+                <input
+                  type="number" step="1" min="1"
+                  value={meta.pack_size}
+                  onChange={e => setMeta(p => ({ ...p, pack_size: e.target.value }))}
+                  className={`w-full ${inputCls}`}
+                />
+                <p className="text-[10px] text-gray-400">
+                  Quantities must be a multiple of this number. 1 = no restriction (e.g. 8 → 8, 16, 24…)
+                </p>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-bold tracking-[0.1em] uppercase text-gray-400">
+                  Hidden Products
+                  {hiddenProducts.length > 0 && (
+                    <span className="ml-1.5 font-mono text-[#D93A35]">({hiddenProducts.length})</span>
+                  )}
+                </label>
+                <p className="text-[10px] text-gray-400 mb-1">
+                  Toggle visibility per product in the table on the left using the eye button.
+                </p>
+                {hiddenProducts.length > 0 ? (
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-2 space-y-1 max-h-28 overflow-y-auto">
+                    {hiddenProducts.map(pid => (
+                      <div key={pid} className="flex items-center justify-between gap-2">
+                        <span className="font-mono text-[10px] text-gray-500 truncate">{pid}</span>
+                        <button onClick={() => setHiddenProducts(p => p.filter(x => x !== pid))}
+                          className="text-gray-300 hover:text-[#D93A35] transition-colors flex-shrink-0 text-sm leading-none">×</button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-[11px] text-gray-400 italic">No products hidden for this tier.</p>
+                )}
+              </div>
+
               <button onClick={handleSaveMeta} disabled={savingMeta}
                 className="w-full py-2 bg-gray-900 text-white text-sm font-bold rounded-lg hover:bg-gray-700 disabled:opacity-40 transition-colors">
                 {savingMeta ? 'Saving…' : 'Save Settings'}
@@ -292,6 +390,10 @@ export default function TarifaDetailPage() {
             <div>1. If a <strong>custom price</strong> is set for a SKU → use it</div>
             <div>2. Otherwise → <span className="font-mono">Shopify price × {meta.multiplicador || '1'}</span></div>
             <div>3. Then apply the client's <strong>personal discount</strong> on top</div>
+            <div className="pt-1 border-t border-gray-200 font-bold text-gray-700 text-[11px] uppercase tracking-wide">Order Rules</div>
+            <div>Min. order: <span className="font-mono">{parseFloat(meta.minimum_order_value) > 0 ? `€${meta.minimum_order_value}` : 'none'}</span></div>
+            <div>Pack size: <span className="font-mono">{meta.pack_size || '1'}</span> unit{parseInt(meta.pack_size) !== 1 ? 's' : ''} per step</div>
+            <div>Hidden products: <span className="font-mono">{hiddenProducts.length}</span></div>
           </div>
         </div>
       </div>

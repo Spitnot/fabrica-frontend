@@ -25,6 +25,42 @@ export async function GET(_req: NextRequest, { params }: Props) {
   return NextResponse.json({ customer, orders: orders ?? [] });
 }
 
+// DELETE — eliminar cliente (auth + registro en customers)
+export async function DELETE(_req: NextRequest, { params }: Props) {
+  const { id } = await params;
+
+  // Get auth_user_id before deleting the customer record
+  const { data: customer, error: fetchError } = await supabaseAdmin
+    .from('customers')
+    .select('auth_user_id')
+    .eq('id', id)
+    .single();
+
+  if (fetchError || !customer) {
+    return NextResponse.json({ error: 'Customer not found' }, { status: 404 });
+  }
+
+  // Delete from customers table first (cascade will handle related rows if FK set)
+  const { error: deleteError } = await supabaseAdmin
+    .from('customers')
+    .delete()
+    .eq('id', id);
+
+  if (deleteError) {
+    console.error('[customers DELETE] db:', deleteError.message);
+    return NextResponse.json({ error: deleteError.message }, { status: 500 });
+  }
+
+  // Delete auth user
+  const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(customer.auth_user_id);
+  if (authError) {
+    console.error('[customers DELETE] auth:', authError.message);
+    // Non-fatal — customer row is already gone
+  }
+
+  return NextResponse.json({ ok: true });
+}
+
 // PUT — actualizar tarifa, descuento y otros campos editables
 export async function PUT(req: NextRequest, { params }: Props) {
   const { id } = await params;

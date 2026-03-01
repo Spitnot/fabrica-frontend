@@ -20,16 +20,19 @@ export async function GET(_req: NextRequest, { params }: Props) {
   return NextResponse.json(data);
 }
 
-// PUT — actualizar nombre, descripcion, multiplicador
+// PUT — actualizar nombre, descripcion, multiplicador y campos extendidos
 export async function PUT(req: NextRequest, { params }: Props) {
   const { id } = await params;
-  const { nombre, descripcion, multiplicador, activo } = await req.json();
+  const { nombre, descripcion, multiplicador, activo, hidden_products, minimum_order_value, pack_size } = await req.json();
 
   const updates: Record<string, unknown> = {};
-  if (nombre        != null) updates.nombre        = nombre;
-  if (descripcion   != null) updates.descripcion   = descripcion;
-  if (multiplicador != null) updates.multiplicador = multiplicador;
-  if (activo        != null) updates.activo        = activo;
+  if (nombre               != null) updates.nombre               = nombre;
+  if (descripcion          != null) updates.descripcion          = descripcion;
+  if (multiplicador        != null) updates.multiplicador        = multiplicador;
+  if (activo               != null) updates.activo               = activo;
+  if (hidden_products      != null) updates.hidden_products      = hidden_products;
+  if (minimum_order_value  != null) updates.minimum_order_value  = minimum_order_value;
+  if (pack_size            != null) updates.pack_size            = pack_size;
 
   const { data, error } = await supabaseAdmin
     .from('tarifas')

@@ -24,6 +24,15 @@ const NAV_ITEMS = [
       </svg>
     ),
   },
+  {
+    href: '/portal/perfil',
+    label: 'My Profile',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+      </svg>
+    ),
+  },
 ];
 
 const FirmaLogo = () => (

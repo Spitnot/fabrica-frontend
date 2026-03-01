@@ -30,6 +30,9 @@ export interface Tarifa {
   multiplicador: number;           // fallback: shopify_price × multiplicador
   activo: boolean;
   created_at: string;
+  hidden_products: string[];       // Shopify product IDs hidden for this tier
+  minimum_order_value: number;     // minimum order total in EUR (0 = no minimum)
+  pack_size: number;               // quantity must be multiple of this (1 = no restriction)
   precios?: TarifaPrecio[];        // incluido cuando se pide el detalle
 }
 

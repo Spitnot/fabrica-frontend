@@ -18,7 +18,7 @@ export async function GET() {
 
 // POST — crear nueva tarifa
 export async function POST(req: NextRequest) {
-  const { nombre, descripcion, multiplicador } = await req.json();
+  const { nombre, descripcion, multiplicador, hidden_products, minimum_order_value, pack_size } = await req.json();
 
   if (!nombre || multiplicador == null) {
     return NextResponse.json({ error: 'nombre y multiplicador son obligatorios' }, { status: 400 });
@@ -26,7 +26,14 @@ export async function POST(req: NextRequest) {
 
   const { data, error } = await supabaseAdmin
     .from('tarifas')
-    .insert({ nombre, descripcion: descripcion || null, multiplicador })
+    .insert({
+      nombre,
+      descripcion:         descripcion || null,
+      multiplicador,
+      hidden_products:     hidden_products     ?? [],
+      minimum_order_value: minimum_order_value ?? 0,
+      pack_size:           pack_size           ?? 1,
+    })
     .select('*')
     .single();
 

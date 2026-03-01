@@ -2,6 +2,21 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/server';
 import { sendOrderConfirmationToCustomer, sendNewOrderToAdmin } from '@/lib/email';
 
+// GET — all orders with customer join (admin only, service_role bypasses RLS)
+export async function GET() {
+  const { data, error } = await supabaseAdmin
+    .from('orders')
+    .select('id, status, peso_total, total_produtos, created_at, customer_id, customer:customers(contacto_nombre, company_name)')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('[orders GET]', error.message);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ data: data ?? [] });
+}
+
 export async function POST(req: NextRequest) {
   const { customer_id, items, coste_envio_estimado } = await req.json();
 

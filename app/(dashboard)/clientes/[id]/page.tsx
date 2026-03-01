@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 const STATUS_LABELS: Record<string, string> = {
@@ -28,11 +28,16 @@ function initials(name: string) { return name.split(' ').map((w) => w[0]).slice(
 
 export default function ClientePerfilPage() {
   const { id } = useParams<{ id: string }>();
+  const router = useRouter();
   const [client, setClient]   = useState<any>(null);
   const [orders, setOrders]   = useState<any[]>([]);
   const [tarifas, setTarifas] = useState<Tarifa[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState('');
+
+  // Delete
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting]           = useState(false);
 
   // Pricing edit
   const [editingPricing, setEditingPricing] = useState(false);
@@ -86,6 +91,18 @@ export default function ClientePerfilPage() {
     }
   }
 
+  async function handleDelete() {
+    setDeleting(true);
+    const res = await fetch(`/api/customers/${id}`, { method: 'DELETE' });
+    if (res.ok) {
+      router.push('/clientes');
+    } else {
+      setDeleting(false);
+      setConfirmDelete(false);
+      setError('Failed to delete client. Try again.');
+    }
+  }
+
   if (loading) {
     return (
       <div className="p-7 flex items-center gap-2 text-gray-400 text-sm">
@@ -127,13 +144,49 @@ export default function ClientePerfilPage() {
               style={{ fontFamily: 'var(--font-alexandria)' }}>{client.contacto_nombre}</h1>
           <p className="text-sm text-gray-400 mt-0.5">{client.company_name}</p>
         </div>
-        <div className="ml-auto">
+        <div className="ml-auto flex items-center gap-2">
           <Link href={`/pedidos/nuevo?cliente=${id}`}
             className="px-4 py-2 bg-[#D93A35] text-white text-sm font-semibold rounded-lg hover:bg-[#b52e2a] transition-colors">
             + New Order
           </Link>
+          <button
+            onClick={() => setConfirmDelete(true)}
+            className="px-4 py-2 bg-white border border-gray-200 text-sm font-semibold text-gray-500 rounded-lg hover:border-red-300 hover:text-[#D93A35] transition-colors"
+          >
+            Delete
+          </button>
         </div>
       </div>
+
+      {/* Delete confirmation dialog */}
+      {confirmDelete && (
+        <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl border border-gray-200 shadow-xl p-6 max-w-sm w-full">
+            <h2 className="text-sm font-black uppercase tracking-wider text-gray-900 mb-2"
+                style={{ fontFamily: 'var(--font-alexandria)' }}>Delete Client</h2>
+            <p className="text-sm text-gray-500 mb-5">
+              This will permanently delete <strong className="text-gray-900">{client?.contacto_nombre}</strong> and
+              all their data. This action cannot be undone.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="flex-1 py-2 bg-[#D93A35] text-white text-sm font-bold rounded-lg hover:bg-[#b52e2a] disabled:opacity-40 transition-colors"
+              >
+                {deleting ? 'Deleting…' : 'Yes, delete'}
+              </button>
+              <button
+                onClick={() => setConfirmDelete(false)}
+                disabled={deleting}
+                className="flex-1 py-2 bg-white border border-gray-200 text-sm font-semibold text-gray-600 rounded-lg hover:border-gray-300 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-5">
 
