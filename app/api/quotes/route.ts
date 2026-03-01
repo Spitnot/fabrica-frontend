@@ -7,15 +7,14 @@ const FROM_COUNTRY     = process.env.PACKLINK_FROM_COUNTRY!;
 const FROM_POSTAL_CODE = process.env.PACKLINK_FROM_POSTAL_CODE!;
 
 export async function POST(req: NextRequest) {
-  if (!PACKLINK_API_KEY || !PACKLINK_API_URL || !FROM_COUNTRY || !FROM_POSTAL_CODE) {
-    console.error('[quotes] Faltan variables de entorno de Packlink');
-    return NextResponse.json({ error: 'Packlink no configurado (faltan variables de entorno)' }, { status: 503 });
-  }
-
   const { peso, ancho, alto, largo, destination } = await req.json();
 
   if (!peso || !ancho || !alto || !largo || !destination) {
     return NextResponse.json({ error: 'Faltan datos para cotizar' }, { status: 400 });
+  }
+
+  if (!destination.country || !destination.postal_code) {
+    return NextResponse.json({ error: 'El cliente no tiene país o código postal configurado en su dirección de envío' }, { status: 400 });
   }
 
   const params = new URLSearchParams({

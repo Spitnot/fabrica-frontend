@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase/server';
 
+
 export const dynamic = 'force-dynamic';
 
 async function getTarifas() {
@@ -35,6 +36,10 @@ export default async function TarifasPage() {
               style={{ fontFamily: 'var(--font-alexandria)' }}>Pricing Tiers</h1>
           <p className="text-xs text-gray-400 mt-0.5">{tarifas.length} tier{tarifas.length !== 1 ? 's' : ''} configured</p>
         </div>
+        <Link href="/tarifas/nuevo"
+          className="px-4 py-2 bg-[#D93A35] text-white text-sm font-semibold rounded-lg hover:bg-[#b52e2a] transition-colors">
+          + New Tier
+        </Link>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
