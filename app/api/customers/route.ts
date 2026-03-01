@@ -80,12 +80,24 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ id: customer.id }, { status: 201 });
   }
 
+  // Replace any localhost URL in the action_link's redirect_to parameter
+  // (Supabase uses the configured Site URL which may be localhost in dev)
+  let setupLink = linkData.properties.action_link;
+  try {
+    const u = new URL(setupLink);
+    const redirectTo = u.searchParams.get('redirect_to');
+    if (redirectTo?.includes('localhost')) {
+      u.searchParams.set('redirect_to', `${siteUrl}/portal/perfil`);
+      setupLink = u.toString();
+    }
+  } catch { /* keep original link if URL parsing fails */ }
+
   // 4. Send welcome email with the setup link (best-effort)
   void sendWelcomeEmail({
     to: email,
     nombre: contacto_nombre,
     company: company_name,
-    setupLink: linkData.properties.action_link,
+    setupLink,
     customerId: customer.id,
   }).catch((e) => console.error('[customers POST] welcome email:', e));
 
