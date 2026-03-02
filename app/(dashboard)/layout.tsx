@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabaseClient } from '@/lib/supabase/client';
 
 const NAV_ITEMS = [
@@ -70,6 +70,16 @@ const NAV_ITEMS = [
       </svg>
     ),
   },
+  {
+    href: '/usuarios',
+    label: 'Team',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/>
+        <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>
+      </svg>
+    ),
+  },
 ];
 
 const FirmaLogo = () => (
@@ -92,6 +102,17 @@ const FirmaLogo = () => (
 function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
   const pathname = usePathname();
   const router = useRouter();
+  const [userInfo, setUserInfo] = useState<{ name: string; role: string } | null>(null);
+
+  useEffect(() => {
+    supabaseClient.auth.getSession().then(({ data: { session } }) => {
+      if (!session?.user) return;
+      const meta = session.user.user_metadata ?? {};
+      const name = meta.full_name || session.user.email?.split('@')[0] || 'Admin';
+      const role = meta.role === 'manager' ? 'Manager' : meta.role === 'viewer' ? 'Viewer' : 'Administrator';
+      setUserInfo({ name, role });
+    });
+  }, []);
 
   async function handleLogout() {
     await supabaseClient.auth.signOut();
@@ -128,7 +149,8 @@ function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
               (href === '/clientes' && pathname.startsWith('/clientes')) ||
               (href === '/tarifas' && pathname.startsWith('/tarifas')) ||
               (href === '/catalogo' && pathname.startsWith('/catalogo')) ||
-              (href === '/emails' && pathname.startsWith('/emails'));
+              (href === '/emails' && pathname.startsWith('/emails')) ||
+              (href === '/usuarios' && pathname.startsWith('/usuarios'));
             return (
               <Link
                 key={href}
@@ -153,11 +175,13 @@ function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
         <div className="border-t border-gray-200 px-3 py-3">
           <button onClick={handleLogout} className="w-full flex items-center gap-2.5 px-2 py-2 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
             <div className="w-7 h-7 rounded-md bg-[#D93A35] flex items-center justify-center text-[11px] font-bold text-white flex-shrink-0">
-              IA
+              {userInfo
+                ? userInfo.name.split(' ').map((w: string) => w[0]).slice(0, 2).join('').toUpperCase()
+                : '—'}
             </div>
             <div className="flex-1 min-w-0 text-left">
-              <div className="text-[12.5px] font-semibold text-gray-900 truncate">Isaac A.</div>
-              <div className="text-[11px] text-gray-400">Administrator</div>
+              <div className="text-[12.5px] font-semibold text-gray-900 truncate">{userInfo?.name ?? '—'}</div>
+              <div className="text-[11px] text-gray-400">{userInfo?.role ?? 'Administrator'}</div>
             </div>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#aaa" strokeWidth="2">
               <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/>
