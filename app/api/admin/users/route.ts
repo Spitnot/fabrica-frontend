@@ -52,12 +52,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: authError?.message ?? 'Error creating user' }, { status: 500 });
   }
 
-  // Generate password-setup link (recovery type = one-time link)
+  // Generate an invite link — the correct type for new users.
+  // 'recovery' fires PASSWORD_RECOVERY and its OTP expires immediately for users
+  // with no existing password. 'invite' signs the user in directly.
+  // redirectTo points to /auth/callback which exchanges the PKCE code for a session.
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://b2b.firmarollers.com';
   const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
-    type: 'recovery',
+    type: 'invite',
     email,
-    options: { redirectTo: `${siteUrl}/dashboard` },
+    options: { redirectTo: `${siteUrl}/auth/callback?next=/dashboard` },
   });
 
   if (linkError || !linkData?.properties?.action_link) {
@@ -69,8 +72,8 @@ export async function POST(req: NextRequest) {
   try {
     const u = new URL(setupLink);
     const redirectTo = u.searchParams.get('redirect_to');
-    if (redirectTo?.includes('localhost')) {
-      u.searchParams.set('redirect_to', `${siteUrl}/dashboard`);
+    if (redirectTo && !redirectTo.startsWith(siteUrl)) {
+      u.searchParams.set('redirect_to', `${siteUrl}/auth/callback?next=/dashboard`);
       setupLink = u.toString();
     }
   } catch { /* keep original link */ }

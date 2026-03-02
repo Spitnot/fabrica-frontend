@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabaseClient } from '@/lib/supabase/client';
 
@@ -10,6 +10,13 @@ export default function LoginPage() {
   const [error, setError]       = useState('');
   const [loading, setLoading]   = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('error') === 'invalid_link') {
+      setError('This setup link has expired. Ask an admin to generate a new one.');
+    }
+  }, []);
 
   async function handleLogin() {
     setError(''); setLoading(true);
