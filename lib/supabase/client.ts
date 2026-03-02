@@ -1,13 +1,12 @@
 // lib/supabase/client.ts
 // ─── Solo para componentes cliente ('use client') ─────────────────────────────
 // Usa anon key → RLS activo → cada customer solo ve sus datos
+// Usa createBrowserClient (de @supabase/auth-helpers-nextjs / @supabase/ssr)
+// para que la sesión se guarde en cookies y el middleware pueda leerla.
 
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { createBrowserClient } from '@supabase/auth-helpers-nextjs';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
-// Lazy singleton: el cliente se crea en el primer acceso a cualquier propiedad,
-// no al importar el módulo. Esto evita el error "supabaseUrl is required" durante
-// `next build` en Vercel, donde los módulos se importan antes de que las variables
-// de entorno estén disponibles.
 let _client: SupabaseClient | null = null;
 
 function getClient(): SupabaseClient {
@@ -17,7 +16,7 @@ function getClient(): SupabaseClient {
   if (!url || !key) {
     throw new Error('[supabase/client] Faltan variables de entorno NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY');
   }
-  _client = createClient(url, key);
+  _client = createBrowserClient(url, key);
   return _client;
 }
 
