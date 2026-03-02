@@ -66,12 +66,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: customerError?.message ?? 'Error creating customer' }, { status: 500 });
   }
 
-  // 3. Generate password-setup link (recovery type = one-time link to set password)
+  // 3. Generate invite link — 'invite' signs the user in directly (unlike 'recovery'
+  //    which fires PASSWORD_RECOVERY and expires immediately for users with no password).
+  //    redirectTo points to /auth/callback which exchanges the PKCE code, then
+  //    forwards to /auth/set-password where the customer creates their password.
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://b2b.firmarollers.com';
   const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
-    type: 'recovery',
+    type: 'invite',
     email,
-    options: { redirectTo: `${siteUrl}/portal/perfil` },
+    options: { redirectTo: `${siteUrl}/auth/callback?next=/auth/set-password` },
   });
 
   if (linkError || !linkData?.properties?.action_link) {
@@ -80,14 +83,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ id: customer.id }, { status: 201 });
   }
 
-  // Replace any localhost URL in the action_link's redirect_to parameter
-  // (Supabase uses the configured Site URL which may be localhost in dev)
   let setupLink = linkData.properties.action_link;
   try {
     const u = new URL(setupLink);
     const redirectTo = u.searchParams.get('redirect_to');
-    if (redirectTo?.includes('localhost')) {
-      u.searchParams.set('redirect_to', `${siteUrl}/portal/perfil`);
+    if (redirectTo && !redirectTo.startsWith(siteUrl)) {
+      u.searchParams.set('redirect_to', `${siteUrl}/auth/callback?next=/auth/set-password`);
       setupLink = u.toString();
     }
   } catch { /* keep original link if URL parsing fails */ }

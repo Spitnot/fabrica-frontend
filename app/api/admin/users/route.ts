@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
   const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
     type: 'invite',
     email,
-    options: { redirectTo: `${siteUrl}/auth/callback?next=/dashboard` },
+    options: { redirectTo: `${siteUrl}/auth/callback?next=/auth/set-password` },
   });
 
   if (linkError || !linkData?.properties?.action_link) {
@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
     const u = new URL(setupLink);
     const redirectTo = u.searchParams.get('redirect_to');
     if (redirectTo && !redirectTo.startsWith(siteUrl)) {
-      u.searchParams.set('redirect_to', `${siteUrl}/auth/callback?next=/dashboard`);
+      u.searchParams.set('redirect_to', `${siteUrl}/auth/callback?next=/auth/set-password`);
       setupLink = u.toString();
     }
   } catch { /* keep original link */ }
