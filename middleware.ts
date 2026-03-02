@@ -1,4 +1,4 @@
-import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
+import { createServerClient } from '@supabase/auth-helpers-nextjs';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
@@ -9,11 +9,27 @@ const ADMIN_PREFIXES = ['/dashboard', '/pedidos', '/clientes', '/tarifas', '/cat
 const ADMIN_ROLES = ['admin', 'manager', 'viewer'];
 
 export async function middleware(req: NextRequest) {
-  const res = NextResponse.next();
+  let res = NextResponse.next({ request: req });
 
-  // createMiddlewareClient reads the session from cookies and refreshes it
-  // when it has expired — the updated Set-Cookie is forwarded via `res`.
-  const supabase = createMiddlewareClient({ req, res });
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return req.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) => req.cookies.set(name, value));
+          res = NextResponse.next({ request: req });
+          cookiesToSet.forEach(({ name, value, options }) =>
+            res.cookies.set(name, value, options)
+          );
+        },
+      },
+    }
+  );
+
   const { data: { session } } = await supabase.auth.getSession();
 
   const { pathname } = req.nextUrl;
@@ -24,7 +40,6 @@ export async function middleware(req: NextRequest) {
 
   // ── Unauthenticated ────────────────────────────────────────────────────────
   if (!session) {
-    // Send unauthenticated users to /login for both protected routes and root
     if (isProtected || pathname === '/') {
       return NextResponse.redirect(new URL('/login', req.url));
     }
@@ -55,13 +70,6 @@ export async function middleware(req: NextRequest) {
 
 export const config = {
   matcher: [
-    /*
-     * Run on all routes EXCEPT:
-     *  - Next.js internals  (_next/static, _next/image)
-     *  - favicon.ico
-     *  - public static assets (.svg, .png, .jpg, …)
-     *  - API routes (/api/…) — auth is handled at the handler level
-     */
     '/((?!_next/static|_next/image|favicon\\.ico|api/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 };
