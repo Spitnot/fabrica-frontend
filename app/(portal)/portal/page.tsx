@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { supabaseClient } from '@/lib/supabase/client';
 
 const fmt = (n: number) =>
-  new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n);
+  new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'EUR' }).format(n);
 
 const STATUS_LABELS: Record<string, string> = {
   draft: 'Draft', confirmado: 'Confirmed', produccion: 'In Production',
@@ -51,29 +51,83 @@ export default function PortalPage() {
     load();
   }, []);
 
+  const header = (
+    <div className="flex items-center justify-between mb-6">
+      <div>
+        <h1 className="text-lg font-black tracking-wider uppercase text-gray-900"
+            style={{ fontFamily: 'var(--font-alexandria)' }}>
+          My Orders
+        </h1>
+        {customer && (
+          <p className="text-xs text-gray-400 mt-0.5">
+            {customer.contacto_nombre} · {customer.company_name}
+          </p>
+        )}
+      </div>
+      <Link
+        href="/portal/pedidos/nuevo"
+        className="px-4 py-2 bg-[#D93A35] text-white text-sm font-semibold rounded-lg hover:bg-[#b52e2a] transition-colors"
+      >
+        + New Order
+      </Link>
+    </div>
+  );
+
+  const loadingRow = (
+    <div className="flex items-center justify-center gap-2 text-gray-400 text-sm py-12">
+      <div className="w-4 h-4 border border-gray-200 border-t-[#D93A35] rounded-full animate-spin" />
+      Loading orders…
+    </div>
+  );
+
+  const emptyRow = (
+    <div className="text-center text-sm text-gray-400 py-12">No orders yet</div>
+  );
+
   return (
-    <div className="p-6 md:p-7">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-lg font-black tracking-wider uppercase text-gray-900"
-              style={{ fontFamily: 'var(--font-alexandria)' }}>
-            My Orders
-          </h1>
-          {customer && (
-            <p className="text-xs text-gray-400 mt-0.5">
-              {customer.contacto_nombre} · {customer.company_name}
-            </p>
-          )}
-        </div>
-        <Link
-          href="/portal/pedidos/nuevo"
-          className="px-4 py-2 bg-[#D93A35] text-white text-sm font-semibold rounded-lg hover:bg-[#b52e2a] transition-colors"
-        >
-          + New Order
-        </Link>
+    <div className="p-4 md:p-7">
+      {header}
+
+      {/* ── Mobile card list (hidden on md+) ──────────────────────────── */}
+      <div className="md:hidden space-y-3">
+        {loading ? loadingRow : orders.length === 0 ? emptyRow : orders.map((o) => (
+          <Link key={o.id} href={`/portal/pedidos/${o.id}`}
+                className="block bg-white border border-gray-200 rounded-xl p-4 hover:border-gray-300 transition-colors active:bg-gray-50">
+            <div className="flex items-start justify-between gap-3 mb-3">
+              <span className="font-mono text-xs text-[#D93A35]">{o.id.slice(0, 8)}…</span>
+              <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold border rounded-md ${STATUS_STYLES[o.status]}`}>
+                <span className="w-1.5 h-1.5 rounded-full bg-current opacity-80" />
+                {STATUS_LABELS[o.status]}
+              </span>
+            </div>
+            <div className="flex items-end justify-between">
+              <div className="space-y-0.5">
+                <div className="text-[11px] text-gray-400">
+                  {new Date(o.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                </div>
+                {o.tracking_url && (
+                  <a href={o.tracking_url} target="_blank" rel="noopener noreferrer"
+                     onClick={(e) => e.stopPropagation()}
+                     className="text-xs text-[#0087B8] underline underline-offset-2">
+                    Track →
+                  </a>
+                )}
+              </div>
+              <div className="text-right">
+                <div className="text-base font-black text-gray-900" style={{ fontFamily: 'var(--font-alexandria)' }}>
+                  {fmt(o.total_productos + (o.coste_envio_final ?? o.coste_envio_estimado ?? 0))}
+                </div>
+                <div className="text-[11px] text-gray-400">
+                  Products {fmt(o.total_productos)}
+                </div>
+              </div>
+            </div>
+          </Link>
+        ))}
       </div>
 
-      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+      {/* ── Desktop table (hidden below md) ───────────────────────────── */}
+      <div className="hidden md:block bg-white border border-gray-200 rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full border-collapse min-w-[600px]">
             <thead>

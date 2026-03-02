@@ -100,7 +100,7 @@ export default function NuevoPedidoPortalPage() {
   }
 
   return (
-    <div className="p-6 md:p-7">
+    <div className="p-4 md:p-7 pb-32 lg:pb-7">
       <div className="mb-6">
         <h1 className="text-lg font-black tracking-wider uppercase text-gray-900" style={{ fontFamily: 'var(--font-alexandria)' }}>New Order</h1>
         <p className="text-xs text-gray-400 mt-0.5">Select products from the catalogue</p>
@@ -198,8 +198,8 @@ export default function NuevoPedidoPortalPage() {
           </section>
         </div>
 
-        {/* RIGHT */}
-        <div className="space-y-3 lg:sticky lg:top-4">
+        {/* RIGHT — hidden on mobile, shown on lg+ */}
+        <div className="hidden lg:block space-y-3 lg:sticky lg:top-4">
           <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
             <div className="px-4 py-3 border-b border-gray-100">
               <span className="text-[10px] font-black tracking-[0.12em] uppercase text-gray-400" style={{ fontFamily: 'var(--font-alexandria)' }}>Order</span>
@@ -272,6 +272,37 @@ export default function NuevoPedidoPortalPage() {
           </button>
           <p className="text-[11px] text-gray-400 text-center">Prices and weights will be locked on confirmation</p>
         </div>
+      </div>
+
+      {/* ── Mobile sticky bottom bar (hidden on lg+) ─────────────────── */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-3 z-30">
+        <div className="flex items-center gap-3">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-baseline gap-2">
+              <span className="text-xl font-black text-[#D93A35]" style={{ fontFamily: 'var(--font-alexandria)' }}>
+                {fmt(total)}
+              </span>
+              {lineItems.length > 0 && (
+                <span className="text-xs text-gray-400">{lineItems.length} item{lineItems.length !== 1 ? 's' : ''}</span>
+              )}
+            </div>
+            {selectedQuote && (
+              <div className="text-[11px] text-gray-400 truncate">
+                + {fmt(selectedQuote.price)} shipping ({selectedQuote.carrier})
+              </div>
+            )}
+          </div>
+          <button
+            onClick={handleConfirm}
+            disabled={!canConfirm || confirming}
+            className="px-5 py-2.5 bg-[#D93A35] text-white text-sm font-bold rounded-xl hover:bg-[#b52e2a] disabled:opacity-40 disabled:cursor-not-allowed transition-colors whitespace-nowrap"
+          >
+            {confirming ? 'Creating…' : 'Confirm Order'}
+          </button>
+        </div>
+        {error && (
+          <div className="mt-2 px-3 py-1.5 bg-red-50 border border-red-200 rounded-lg text-xs text-[#D93A35]">{error}</div>
+        )}
       </div>
     </div>
   );

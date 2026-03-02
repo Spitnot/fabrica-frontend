@@ -8,7 +8,7 @@ const FROM_PEDIDOS  = 'Firma Rollers <pedidos@firmarollers.com>';
 const SITE_URL      = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://b2b.firmarollers.com';
 
 function fmt(n: number) {
-  return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n);
+  return new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'EUR' }).format(n);
 }
 
 async function logEmail(params: {
@@ -116,7 +116,7 @@ export async function sendWelcomeEmail({
   }
 }
 
-// ─── 2. Confirmación de pedido (al cliente) ───────────────────────────────────
+// ─── 2. Order confirmation (to customer) ─────────────────────────────────────
 
 export async function sendOrderConfirmationToCustomer({
   to, nombre, orderId, total, itemCount, customerId,
@@ -129,7 +129,7 @@ export async function sendOrderConfirmationToCustomer({
   customerId?: string;
 }) {
   const shortId = orderId.slice(0, 8).toUpperCase();
-  const subject = `Pedido confirmado #${shortId} · ${fmt(total)}`;
+  const subject = `Order confirmed #${shortId} · ${fmt(total)}`;
   try {
     const { error: resendError } = await resend.emails.send({
       from:    FROM_PEDIDOS,
@@ -137,7 +137,7 @@ export async function sendOrderConfirmationToCustomer({
       subject,
       html: `
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="margin:0;padding:0;background:#f9fafb;font-family:Arial,sans-serif;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#f9fafb;padding:40px 20px;">
@@ -155,11 +155,11 @@ export async function sendOrderConfirmationToCustomer({
         <tr>
           <td style="padding:32px;">
             <p style="margin:0 0 16px;color:#111827;font-size:16px;font-weight:700;">
-              Pedido recibido, ${nombre}
+              Order received, ${nombre}
             </p>
             <p style="margin:0 0 24px;color:#6b7280;font-size:14px;line-height:1.6;">
-              Hemos recibido tu pedido y está siendo procesado por nuestro equipo.
-              Te notificaremos cuando haya novedades en el estado.
+              We've received your order and our team is processing it.
+              We'll notify you when the status changes.
             </p>
 
             <table width="100%" cellpadding="0" cellspacing="0" style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;margin-bottom:24px;">
@@ -168,7 +168,7 @@ export async function sendOrderConfirmationToCustomer({
                   <table width="100%" cellpadding="0" cellspacing="0">
                     <tr>
                       <td style="padding:4px 0;">
-                        <span style="color:#6b7280;font-size:12px;">Referencia</span>
+                        <span style="color:#6b7280;font-size:12px;">Reference</span>
                       </td>
                       <td align="right" style="padding:4px 0;">
                         <span style="color:#111827;font-size:12px;font-family:monospace;font-weight:700;">#${shortId}</span>
@@ -176,7 +176,7 @@ export async function sendOrderConfirmationToCustomer({
                     </tr>
                     <tr>
                       <td style="padding:4px 0;">
-                        <span style="color:#6b7280;font-size:12px;">Líneas de producto</span>
+                        <span style="color:#6b7280;font-size:12px;">Product lines</span>
                       </td>
                       <td align="right" style="padding:4px 0;">
                         <span style="color:#111827;font-size:12px;">${itemCount}</span>
@@ -184,7 +184,7 @@ export async function sendOrderConfirmationToCustomer({
                     </tr>
                     <tr>
                       <td style="padding:8px 0 4px;border-top:1px solid #e5e7eb;">
-                        <span style="color:#111827;font-size:14px;font-weight:700;">Total productos</span>
+                        <span style="color:#111827;font-size:14px;font-weight:700;">Products total</span>
                       </td>
                       <td align="right" style="padding:8px 0 4px;border-top:1px solid #e5e7eb;">
                         <span style="color:#D93A35;font-size:16px;font-weight:900;">${fmt(total)}</span>
@@ -197,7 +197,7 @@ export async function sendOrderConfirmationToCustomer({
 
             <a href="${SITE_URL}/portal/pedidos/${orderId}"
                style="display:inline-block;padding:12px 28px;background:#D93A35;color:#ffffff;text-decoration:none;font-size:14px;font-weight:700;border-radius:8px;">
-              Ver pedido en el portal →
+              View order in portal →
             </a>
           </td>
         </tr>
@@ -205,7 +205,7 @@ export async function sendOrderConfirmationToCustomer({
         <tr>
           <td style="padding:20px 32px;border-top:1px solid #f3f4f6;">
             <p style="margin:0;color:#9ca3af;font-size:12px;">
-              ¿Dudas sobre tu pedido? Escríbenos a
+              Questions about your order? Email us at
               <a href="mailto:pedidos@firmarollers.com" style="color:#D93A35;text-decoration:none;">pedidos@firmarollers.com</a>
             </p>
           </td>
@@ -225,7 +225,7 @@ export async function sendOrderConfirmationToCustomer({
   }
 }
 
-// ─── 3. Nuevo pedido (al admin) ───────────────────────────────────────────────
+// ─── 3. New order (to admin) ──────────────────────────────────────────────────
 
 export async function sendNewOrderToAdmin({
   orderId, customerName, company, total, itemCount, customerId,
@@ -244,7 +244,7 @@ export async function sendNewOrderToAdmin({
   }
 
   const shortId = orderId.slice(0, 8).toUpperCase();
-  const subject = `Nuevo pedido · ${company} · ${fmt(total)}`;
+  const subject = `New order · ${company} · ${fmt(total)}`;
   try {
     const { error: resendError } = await resend.emails.send({
       from:    FROM_PEDIDOS,
@@ -252,7 +252,7 @@ export async function sendNewOrderToAdmin({
       subject,
       html: `
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="margin:0;padding:0;background:#f9fafb;font-family:Arial,sans-serif;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#f9fafb;padding:40px 20px;">
@@ -270,7 +270,7 @@ export async function sendNewOrderToAdmin({
         <tr>
           <td style="padding:32px;">
             <p style="margin:0 0 6px;color:#D93A35;font-size:11px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;">
-              Nuevo pedido recibido
+              New order received
             </p>
             <p style="margin:0 0 24px;color:#111827;font-size:20px;font-weight:900;">
               ${company}
@@ -281,15 +281,15 @@ export async function sendNewOrderToAdmin({
                 <td style="padding:16px 20px;">
                   <table width="100%" cellpadding="0" cellspacing="0">
                     <tr>
-                      <td style="padding:4px 0;"><span style="color:#6b7280;font-size:12px;">Referencia</span></td>
+                      <td style="padding:4px 0;"><span style="color:#6b7280;font-size:12px;">Reference</span></td>
                       <td align="right" style="padding:4px 0;"><span style="font-family:monospace;font-size:12px;color:#111827;">#${shortId}</span></td>
                     </tr>
                     <tr>
-                      <td style="padding:4px 0;"><span style="color:#6b7280;font-size:12px;">Cliente</span></td>
+                      <td style="padding:4px 0;"><span style="color:#6b7280;font-size:12px;">Client</span></td>
                       <td align="right" style="padding:4px 0;"><span style="font-size:12px;color:#111827;">${customerName}</span></td>
                     </tr>
                     <tr>
-                      <td style="padding:4px 0;"><span style="color:#6b7280;font-size:12px;">Líneas</span></td>
+                      <td style="padding:4px 0;"><span style="color:#6b7280;font-size:12px;">Lines</span></td>
                       <td align="right" style="padding:4px 0;"><span style="font-size:12px;color:#111827;">${itemCount}</span></td>
                     </tr>
                     <tr>
@@ -303,7 +303,7 @@ export async function sendNewOrderToAdmin({
 
             <a href="${SITE_URL}/pedidos/${orderId}"
                style="display:inline-block;padding:12px 28px;background:#111827;color:#ffffff;text-decoration:none;font-size:14px;font-weight:700;border-radius:8px;">
-              Ver pedido en el dashboard →
+              View order in dashboard →
             </a>
           </td>
         </tr>
@@ -311,7 +311,7 @@ export async function sendNewOrderToAdmin({
         <tr>
           <td style="padding:20px 32px;border-top:1px solid #f3f4f6;">
             <p style="margin:0;color:#9ca3af;font-size:12px;">
-              ${new Date().toLocaleString('es-ES', { dateStyle: 'full', timeStyle: 'short' })}
+              ${new Date().toLocaleString('en-GB', { dateStyle: 'full', timeStyle: 'short' })}
             </p>
           </td>
         </tr>
@@ -330,7 +330,7 @@ export async function sendNewOrderToAdmin({
   }
 }
 
-// ─── 4. Pedido enviado (al cliente, con tracking) ─────────────────────────────
+// ─── 4. Order shipped (to customer, with tracking) ───────────────────────────
 
 export async function sendShippedEmail({
   to, nombre, company, orderId, total, itemCount, trackingUrl, customerId,
@@ -345,7 +345,7 @@ export async function sendShippedEmail({
   customerId?: string;
 }) {
   const shortId = orderId.slice(0, 8).toUpperCase();
-  const subject = `Tu pedido #${shortId} ha sido enviado · ${company}`;
+  const subject = `Your order #${shortId} has been shipped · ${company}`;
   try {
     const { error: resendError } = await resend.emails.send({
       from:    FROM_PEDIDOS,
@@ -353,7 +353,7 @@ export async function sendShippedEmail({
       subject,
       html: `
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="margin:0;padding:0;background:#f9fafb;font-family:Arial,sans-serif;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#f9fafb;padding:40px 20px;">
@@ -371,11 +371,11 @@ export async function sendShippedEmail({
         <tr>
           <td style="padding:32px;">
             <p style="margin:0 0 16px;color:#111827;font-size:16px;font-weight:700;">
-              ¡Tu pedido está en camino, ${nombre}!
+              Your order is on its way, ${nombre}!
             </p>
             <p style="margin:0 0 24px;color:#6b7280;font-size:14px;line-height:1.6;">
-              Hemos entregado tu pedido al transportista. En breve recibirás actualizaciones
-              del estado del envío directamente del transportista.
+              We've handed your order to the carrier. You'll receive shipping status updates
+              directly from the carrier.
             </p>
 
             <table width="100%" cellpadding="0" cellspacing="0" style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;margin-bottom:24px;">
@@ -384,7 +384,7 @@ export async function sendShippedEmail({
                   <table width="100%" cellpadding="0" cellspacing="0">
                     <tr>
                       <td style="padding:4px 0;">
-                        <span style="color:#6b7280;font-size:12px;">Referencia</span>
+                        <span style="color:#6b7280;font-size:12px;">Reference</span>
                       </td>
                       <td align="right" style="padding:4px 0;">
                         <span style="color:#111827;font-size:12px;font-family:monospace;font-weight:700;">#${shortId}</span>
@@ -392,7 +392,7 @@ export async function sendShippedEmail({
                     </tr>
                     <tr>
                       <td style="padding:4px 0;">
-                        <span style="color:#6b7280;font-size:12px;">Líneas de producto</span>
+                        <span style="color:#6b7280;font-size:12px;">Product lines</span>
                       </td>
                       <td align="right" style="padding:4px 0;">
                         <span style="color:#111827;font-size:12px;">${itemCount}</span>
@@ -400,7 +400,7 @@ export async function sendShippedEmail({
                     </tr>
                     <tr>
                       <td style="padding:8px 0 4px;border-top:1px solid #e5e7eb;">
-                        <span style="color:#111827;font-size:14px;font-weight:700;">Total productos</span>
+                        <span style="color:#111827;font-size:14px;font-weight:700;">Products total</span>
                       </td>
                       <td align="right" style="padding:8px 0 4px;border-top:1px solid #e5e7eb;">
                         <span style="color:#D93A35;font-size:16px;font-weight:900;">${fmt(total)}</span>
@@ -416,14 +416,14 @@ export async function sendShippedEmail({
                 <td style="padding-right:12px;">
                   <a href="${SITE_URL}/portal/pedidos/${orderId}"
                      style="display:inline-block;padding:12px 24px;background:#D93A35;color:#ffffff;text-decoration:none;font-size:14px;font-weight:700;border-radius:8px;">
-                    Ver pedido →
+                    View order →
                   </a>
                 </td>
                 ${trackingUrl ? `
                 <td>
                   <a href="${trackingUrl}"
                      style="display:inline-block;padding:12px 24px;background:#111827;color:#ffffff;text-decoration:none;font-size:14px;font-weight:700;border-radius:8px;">
-                    Seguir envío →
+                    Track shipment →
                   </a>
                 </td>` : ''}
               </tr>
@@ -434,7 +434,7 @@ export async function sendShippedEmail({
         <tr>
           <td style="padding:20px 32px;border-top:1px solid #f3f4f6;">
             <p style="margin:0;color:#9ca3af;font-size:12px;">
-              ¿Dudas sobre tu envío? Escríbenos a
+              Questions about your shipment? Email us at
               <a href="mailto:pedidos@firmarollers.com" style="color:#D93A35;text-decoration:none;">pedidos@firmarollers.com</a>
             </p>
           </td>
