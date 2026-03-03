@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/server';
+import { sendWelcomeEmail } from '@/lib/email';
 
 // GET — lista de clientes activos
 export async function GET() {
@@ -62,6 +63,24 @@ export async function POST(req: NextRequest) {
     // Borrar el usuario de Auth si falla el customer
     await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
     return NextResponse.json({ error: customerError?.message ?? 'Error al crear cliente' }, { status: 500 });
+  }
+
+  // 3. Send welcome email (non-blocking — failure doesn't affect the response)
+  try {
+    await sendWelcomeEmail({
+      id:              customer.id,
+      auth_user_id:    authData.user.id,
+      contacto_nombre,
+      company_name,
+      email,
+      telefono:        telefono || undefined,
+      nif_cif,
+      direccion_envio: { street, city, postal_code, country },
+      estado:          'active',
+      created_at:      new Date().toISOString(),
+    });
+  } catch (err: any) {
+    console.error('[customers POST] sendWelcomeEmail threw:', err?.message ?? err);
   }
 
   return NextResponse.json({ id: customer.id }, { status: 201 });

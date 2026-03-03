@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/server';
+import { sendOrderConfirmation, sendNewOrderToAdmin } from '@/lib/email';
 
 export async function POST(req: NextRequest) {
   const { customer_id, items, coste_envio_estimado } = await req.json();
@@ -53,6 +54,39 @@ export async function POST(req: NextRequest) {
     // Borrar el pedido si fallan los items
     await supabaseAdmin.from('orders').delete().eq('id', order.id);
     return NextResponse.json({ error: itemsError.message }, { status: 500 });
+  }
+
+  // 3. Send emails (non-blocking — failure doesn't affect the response)
+  try {
+    const { data: customerData } = await supabaseAdmin
+      .from('customers')
+      .select('*')
+      .eq('id', customer_id)
+      .single();
+
+    if (customerData) {
+      const fullOrder = {
+        ...order,
+        status:          'confirmado' as const,
+        customer_id,
+        total_productos: parseFloat(total_productos.toFixed(2)),
+        peso_total:      parseFloat(peso_total.toFixed(3)),
+        coste_envio_estimado: coste_envio_estimado ?? null,
+        created_at:      new Date().toISOString(),
+        order_items:     lineItems.map((li: any, idx: number) => ({
+          ...li,
+          id:               `tmp-${idx}`,
+          peso_total_linea: li.cantidad * li.peso_unitario,
+        })),
+      };
+
+      await Promise.allSettled([
+        sendOrderConfirmation(fullOrder, customerData),
+        sendNewOrderToAdmin(fullOrder, customerData),
+      ]);
+    }
+  } catch (err: any) {
+    console.error('[orders POST] email step threw:', err?.message ?? err);
   }
 
   return NextResponse.json({ id: order.id }, { status: 201 });

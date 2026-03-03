@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/server';
+import { sendShippedEmail } from '@/lib/email';
 
 const PACKLINK_API_URL = process.env.PACKLINK_API_URL!;
 const PACKLINK_API_KEY = process.env.PACKLINK_API_KEY!;
@@ -112,6 +113,18 @@ export async function POST(req: NextRequest, { params }: Props) {
     if (updateError) {
       console.error('[shipment] Supabase error:', updateError.message);
       return NextResponse.json({ error: updateError.message }, { status: 500 });
+    }
+
+    // Send shipped email (non-blocking)
+    if (order.customer) {
+      try {
+        await sendShippedEmail(
+          { ...order, status: 'enviado', tracking_url: shipment.tracking_url ?? shipment.carrier_tracking_url ?? null },
+          order.customer,
+        );
+      } catch (err: any) {
+        console.error('[shipment] sendShippedEmail threw:', err?.message ?? err);
+      }
     }
 
     return NextResponse.json({ ok: true, shipment_reference: shipment.shipment_reference });
