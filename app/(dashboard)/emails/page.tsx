@@ -135,10 +135,15 @@ export default async function EmailsPage() {
                         Enviado
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-red-500" title={log.error ?? undefined}>
-                        <span className="w-1.5 h-1.5 rounded-full bg-red-400 inline-block" />
-                        Error
-                      </span>
+                      <div>
+                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-red-500">
+                          <span className="w-1.5 h-1.5 rounded-full bg-red-400 inline-block" />
+                          Error
+                        </span>
+                        {log.error && (
+                          <p className="text-[10px] text-red-400 mt-0.5 max-w-[200px] break-words">{log.error}</p>
+                        )}
+                      </div>
                     )}
                   </td>
                   <td className="px-4 py-3 text-gray-400 text-[12px] whitespace-nowrap">{fmt(log.sent_at)}</td>
