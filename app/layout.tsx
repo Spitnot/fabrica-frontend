@@ -1,33 +1,33 @@
-import type { Metadata } from "next";
-import { Inter, Alexandria } from "next/font/google";
-import "./globals.css";
+import type { Metadata } from 'next'
+import { Inter, Alexandria } from 'next/font/google'
+import './globals.css'
 
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
-});
+const inter = Inter({ 
+  subsets: ['latin'],
+  variable: '--font-inter',
+})
 
-const alexandria = Alexandria({
-  variable: "--font-alexandria",
-  subsets: ["latin"],
-  weight: ["400", "600", "700", "900"],
-});
+const alexandria = Alexandria({ 
+  subsets: ['latin'],
+  weight: ['400', '700'],
+  variable: '--font-alexandria',
+})
 
 export const metadata: Metadata = {
-  title: "FIRMA B2B",
-  description: "B2B order management platform",
-};
+  title: 'Firma Rollers B2B',
+  description: 'Wholesale Portal',
+}
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: {
+  children: React.ReactNode
+}) {
   return (
-    <html lang="en">
-      <body className={`${inter.variable} ${alexandria.variable} antialiased`}>
+    <html lang="en" className={`${inter.variable} ${alexandria.variable}`}>
+      <body className="font-body bg-gray-100 text-black">
         {children}
       </body>
     </html>
-  );
+  )
 }
