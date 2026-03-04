@@ -68,11 +68,11 @@ export async function POST(req: NextRequest, { params }: Props) {
     .single();
 
   if (fetchError || !order) {
-    return NextResponse.json({ error: 'Pedido no encontrado' }, { status: 404 });
+    return NextResponse.json({ error: 'Order not found' }, { status: 404 });
   }
 
   if (order.status !== 'listo_envio') {
-    return NextResponse.json({ error: 'El pedido no está listo para envío' }, { status: 400 });
+    return NextResponse.json({ error: 'Order is not ready to ship' }, { status: 400 });
   }
 
   const address = order.customer?.direccion_envio as any;

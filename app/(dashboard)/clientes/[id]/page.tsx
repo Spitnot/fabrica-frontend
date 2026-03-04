@@ -23,7 +23,7 @@ const TARIFA_STYLES: Record<string, string> = {
 
 interface Tarifa { id: string; nombre: string; descripcion?: string; }
 
-const fmt = (n: number) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n);
+const fmt = (n: number) => new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'EUR' }).format(n);
 function initials(name: string) { return name.split(' ').map((w) => w[0]).slice(0, 2).join(''); }
 
 export default function ClientePerfilPage() {

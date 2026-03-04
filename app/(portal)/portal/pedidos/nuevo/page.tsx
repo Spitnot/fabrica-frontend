@@ -11,7 +11,7 @@ interface Customer { id: string; contacto_nombre: string; company_name: string; 
 interface LineItem { sku: string; nombre_producto: string; variante?: string; cantidad: number; precio_unitario: number; peso_unitario: number; }
 interface Quote { service_id: string; carrier: string; service_name: string; price: number; estimated_days: number; }
 
-const fmt = (n: number) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n);
+const fmt = (n: number) => new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'EUR' }).format(n);
 
 export default function NuevoPedidoPortalPage() {
   const router = useRouter();

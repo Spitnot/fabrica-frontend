@@ -4,7 +4,7 @@ import { supabaseAdmin } from '@/lib/supabase/server';
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 const FROM_NO_REPLY = 'Firma Rollers <noreply@firmarollers.com>';
-const FROM_PEDIDOS  = 'Firma Rollers <pedidos@firmarollers.com>';
+const FROM_PEDIDOS  = 'Firma Rollers <orders@firmarollers.com>';
 const SITE_URL      = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://b2b.firmarollers.com';
 
 function fmt(n: number) {
@@ -97,7 +97,7 @@ export async function sendWelcomeEmail({
           <td style="padding:20px 32px;border-top:1px solid #f3f4f6;">
             <p style="margin:0;color:#9ca3af;font-size:12px;">
               Questions? Contact your account manager at
-              <a href="mailto:pedidos@firmarollers.com" style="color:#D93A35;text-decoration:none;">pedidos@firmarollers.com</a>
+              <a href="mailto:orders@firmarollers.com" style="color:#D93A35;text-decoration:none;">orders@firmarollers.com</a>
             </p>
           </td>
         </tr>
@@ -206,7 +206,7 @@ export async function sendOrderConfirmationToCustomer({
           <td style="padding:20px 32px;border-top:1px solid #f3f4f6;">
             <p style="margin:0;color:#9ca3af;font-size:12px;">
               Questions about your order? Email us at
-              <a href="mailto:pedidos@firmarollers.com" style="color:#D93A35;text-decoration:none;">pedidos@firmarollers.com</a>
+              <a href="mailto:orders@firmarollers.com" style="color:#D93A35;text-decoration:none;">orders@firmarollers.com</a>
             </p>
           </td>
         </tr>
@@ -435,7 +435,7 @@ export async function sendShippedEmail({
           <td style="padding:20px 32px;border-top:1px solid #f3f4f6;">
             <p style="margin:0;color:#9ca3af;font-size:12px;">
               Questions about your shipment? Email us at
-              <a href="mailto:pedidos@firmarollers.com" style="color:#D93A35;text-decoration:none;">pedidos@firmarollers.com</a>
+              <a href="mailto:orders@firmarollers.com" style="color:#D93A35;text-decoration:none;">orders@firmarollers.com</a>
             </p>
           </td>
         </tr>
@@ -528,7 +528,7 @@ export async function sendAdminInviteEmail({
           <td style="padding:20px 32px;border-top:1px solid #f3f4f6;">
             <p style="margin:0;color:#9ca3af;font-size:12px;">
               Questions? Contact us at
-              <a href="mailto:pedidos@firmarollers.com" style="color:#D93A35;text-decoration:none;">pedidos@firmarollers.com</a>
+              <a href="mailto:orders@firmarollers.com" style="color:#D93A35;text-decoration:none;">orders@firmarollers.com</a>
             </p>
           </td>
         </tr>

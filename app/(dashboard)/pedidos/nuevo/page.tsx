@@ -19,7 +19,7 @@ function computePrice(sku: string, shopifyPrice: number, tarifa?: Tarifa, descue
   return base * (1 - (descuento_pct ?? 0) / 100);
 }
 
-const fmt = (n: number) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n);
+const fmt = (n: number) => new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'EUR' }).format(n);
 
 export default function NuevoPedidoPage() {
   const router = useRouter();

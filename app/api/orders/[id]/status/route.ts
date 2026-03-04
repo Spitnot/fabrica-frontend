@@ -25,7 +25,7 @@ export async function POST(req: NextRequest, { params }: Props) {
 
   // Validar status
   if (!VALID_STATUSES.includes(newStatus)) {
-    return NextResponse.json({ error: 'Estado no válido' }, { status: 400 });
+    return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
   }
 
   // Leer estado actual
@@ -36,14 +36,14 @@ export async function POST(req: NextRequest, { params }: Props) {
     .single();
 
   if (fetchError || !order) {
-    return NextResponse.json({ error: 'Pedido no encontrado' }, { status: 404 });
+    return NextResponse.json({ error: 'Order not found' }, { status: 404 });
   }
 
   // Validar transición
   const allowed = ALLOWED_TRANSITIONS[order.status as OrderStatus] ?? [];
   if (!allowed.includes(newStatus)) {
     return NextResponse.json(
-      { error: `No se puede pasar de ${order.status} a ${newStatus}` },
+      { error: `Cannot transition from ${order.status} to ${newStatus}` },
       { status: 400 }
     );
   }
