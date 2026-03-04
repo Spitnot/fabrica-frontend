@@ -5,12 +5,10 @@ import type { AdminRole } from '@/types';
 
 const ADMIN_ROLES: AdminRole[] = ['admin', 'manager', 'viewer'];
 
-// GET — list all admin team members
 export async function GET() {
   const { data, error } = await supabaseAdmin.auth.admin.listUsers();
 
   if (error) {
-    console.error('[admin/users GET]', error.message);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
@@ -29,19 +27,18 @@ export async function GET() {
   return NextResponse.json({ data: adminUsers });
 }
 
-// POST — invite a new admin team member
 export async function POST(req: NextRequest) {
   const { full_name, email, role } = await req.json();
 
   if (!full_name || !email || !role) {
-    return NextResponse.json({ error: 'Missing required fields: full_name, email, role' }, { status: 400 });
+    return NextResponse.json({ error: 'Missing required fields.' }, { status: 400 });
   }
 
   if (!ADMIN_ROLES.includes(role as AdminRole)) {
-    return NextResponse.json({ error: `Invalid role. Must be one of: ${ADMIN_ROLES.join(', ')}` }, { status: 400 });
+    return NextResponse.json({ error: `Invalid role.` }, { status: 400 });
   }
 
-  // Create auth user (no password — invite flow)
+  // 1. Create the user
   const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
     email,
     email_confirm: true,
@@ -49,43 +46,38 @@ export async function POST(req: NextRequest) {
   });
 
   if (authError || !authData.user) {
-    console.error('[admin/users POST] auth error:', authError?.message);
     return NextResponse.json({ error: authError?.message ?? 'Error creating user' }, { status: 500 });
   }
 
-  // Generate an invite link — the correct type for new users.
-  // 'recovery' fires PASSWORD_RECOVERY and its OTP expires immediately for users
-  // with no existing password. 'invite' signs the user in directly.
-  // redirectTo points to /auth/callback which exchanges the PKCE code for a session.
+  // 2. Generate Invite Link
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://b2b.firmarollers.com';
+  
   const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
     type: 'invite',
     email,
-    options: { redirectTo: `${siteUrl}/auth/callback?next=/auth/set-password` },
+    options: { 
+      redirectTo: `${siteUrl}/auth/callback` 
+    },
   });
 
   if (linkError || !linkData?.properties?.action_link) {
     console.error('[admin/users POST] link error:', linkError?.message);
-    return NextResponse.json({ id: authData.user.id }, { status: 201 });
+    // We still return success, but log the error. The admin can "Resend Invite" later.
+    return NextResponse.json({ id: authData.user.id, warning: 'User created but invite link failed.' }, { status: 201 });
   }
 
-  let setupLink = linkData.properties.action_link;
+  // 3. Send Email
   try {
-    const u = new URL(setupLink);
-    const redirectTo = u.searchParams.get('redirect_to');
-    if (redirectTo && !redirectTo.startsWith(siteUrl)) {
-      u.searchParams.set('redirect_to', `${siteUrl}/auth/callback?next=/auth/set-password`);
-      setupLink = u.toString();
-    }
-  } catch { /* keep original link */ }
-
-  // Send invite email (best-effort)
-  void sendAdminInviteEmail({
-    to:       email,
-    fullName: full_name,
-    role,
-    setupLink,
-  }).catch((e) => console.error('[admin/users POST] invite email:', e));
+    await sendAdminInviteEmail({
+      to: email,
+      fullName: full_name,
+      role: role,
+      setupLink: linkData.properties.action_link,
+    });
+  } catch (e) {
+    console.error('[admin/users POST] email error:', e);
+    // Don't fail the request, but log it.
+  }
 
   return NextResponse.json({ id: authData.user.id }, { status: 201 });
 }
