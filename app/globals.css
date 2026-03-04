@@ -1,25 +1,25 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-@theme {
-  /* Map Next.js font variables to Tailwind utilities */
-  --font-body: var(--font-inter);
-  --font-heading: var(--font-alexandria);
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Alexandria:wght@400;700&display=swap');
 
-  /* Brand Colors */
-  --color-brand-yellow:  #F6E451;
-  --color-brand-black:   #0A0A0A;
-  --color-brand-red:     #D93A35;
-  --color-brand-orange:  #E6883E;
-  --color-brand-blue:    #0087B8;
-  --color-brand-green:   #0DA265;
-  --color-brand-purple:  #876693;
+:root {
+  --font-body: 'Inter', sans-serif;
+  --font-heading: 'Alexandria', sans-serif;
 }
 
-@layer base {
-  body { 
-    @apply bg-gray-100 text-[#0A0A0A] font-body; 
-  }
-  h1, h2, h3, h4 { 
-    @apply font-heading font-bold uppercase; 
-  }
+body {
+  font-family: var(--font-body);
+  @apply bg-gray-100 text-[#0A0A0A];
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-heading);
+  @apply font-bold uppercase;
+}
+
+/* Force sharp corners globally */
+button, input, a, div, span, th, td {
+  border-radius: 0 !important;
 }

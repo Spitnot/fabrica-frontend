@@ -1,5 +1,5 @@
-import StatusBadge from '@/app/components/StatusBadge'
 'use client';
+import StatusBadge from '@/app/components/StatusBadge'
 
 import { useState, useEffect, useMemo, Suspense } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
