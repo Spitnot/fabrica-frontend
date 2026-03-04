@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/server';
+import { sendAdminInviteEmail } from '@/lib/email';
 import type { AdminRole } from '@/types';
 
 const ADMIN_ROLES: AdminRole[] = ['admin', 'manager', 'viewer'];
@@ -78,5 +79,13 @@ export async function POST(req: NextRequest) {
     }
   } catch { /* keep original link */ }
 
-  return NextResponse.json({ id: authData.user.id, setup_link: setupLink }, { status: 201 });
+  // Send invite email (best-effort)
+  void sendAdminInviteEmail({
+    to:       email,
+    fullName: full_name,
+    role,
+    setupLink,
+  }).catch((e) => console.error('[admin/users POST] invite email:', e));
+
+  return NextResponse.json({ id: authData.user.id }, { status: 201 });
 }
