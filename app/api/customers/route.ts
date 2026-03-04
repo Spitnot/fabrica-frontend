@@ -78,9 +78,9 @@ export async function POST(req: NextRequest) {
   });
 
   if (linkError || !linkData?.properties?.action_link) {
-    console.error('[customers POST] link error:', linkError?.message);
-    // Non-fatal: customer was created, just log and skip email
-    return NextResponse.json({ id: customer.id }, { status: 201 });
+    // Log but don't block — still return success, email will be skipped
+    console.error('[customers POST] generateLink failed:', linkError?.message);
+    return NextResponse.json({ id: customer.id, warning: 'invite_link_failed' }, { status: 201 });
   }
 
   let setupLink = linkData.properties.action_link;
