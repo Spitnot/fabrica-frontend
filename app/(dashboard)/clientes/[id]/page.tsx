@@ -35,6 +35,10 @@ export default function ClientePerfilPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState('');
 
+  // Resend invite
+  const [resending, setResending]         = useState(false);
+  const [resendSuccess, setResendSuccess] = useState('');
+
   // Delete
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting]           = useState(false);
@@ -88,6 +92,19 @@ export default function ClientePerfilPage() {
       setPricingSuccess('Saved');
       setEditingPricing(false);
       setTimeout(() => setPricingSuccess(''), 3000);
+    }
+  }
+
+  async function handleResendInvite() {
+    setResending(true); setResendSuccess(''); setError('');
+    const res = await fetch(`/api/customers/${id}/resend-invite`, { method: 'POST' });
+    setResending(false);
+    if (res.ok) {
+      setResendSuccess('Invite sent!');
+      setTimeout(() => setResendSuccess(''), 4000);
+    } else {
+      const d = await res.json().catch(() => ({}));
+      setError(d.error ?? 'Failed to resend invite');
     }
   }
 
@@ -145,6 +162,16 @@ export default function ClientePerfilPage() {
           <p className="text-sm text-gray-400 mt-0.5">{client.company_name}</p>
         </div>
         <div className="ml-auto flex items-center gap-2">
+          {resendSuccess && (
+            <span className="text-xs font-semibold text-[#0DA265]">{resendSuccess}</span>
+          )}
+          <button
+            onClick={handleResendInvite}
+            disabled={resending}
+            className="px-4 py-2 bg-white border border-gray-200 text-sm font-semibold text-gray-500 rounded-lg hover:border-blue-300 hover:text-blue-600 disabled:opacity-40 transition-colors"
+          >
+            {resending ? 'Sending…' : 'Resend Invite'}
+          </button>
           <Link href={`/pedidos/nuevo?cliente=${id}`}
             className="px-4 py-2 bg-[#D93A35] text-white text-sm font-semibold rounded-lg hover:bg-[#b52e2a] transition-colors">
             + New Order

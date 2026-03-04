@@ -66,38 +66,57 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: customerError?.message ?? 'Error creating customer' }, { status: 500 });
   }
 
-  // 3. Generate invite link — 'invite' signs the user in directly (unlike 'recovery'
-  //    which fires PASSWORD_RECOVERY and expires immediately for users with no password).
-  //    redirectTo points to /auth/callback which exchanges the PKCE code, then
-  //    forwards to /auth/set-password where the customer creates their password.
+  // 3. Generate invite link — try 'invite', fall back to 'recovery', then to site root.
+  //    IMPORTANT: redirectTo must be listed in Supabase → Auth → URL Configuration.
+  //    If generateLink fails we still send the welcome email with a fallback link so
+  //    the customer at least knows their account exists, and admin can resend later.
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://b2b.firmarollers.com';
+  const callbackUrl = `${siteUrl}/auth/callback?next=/auth/set-password`;
+
+  let setupLink = `${siteUrl}/login`; // absolute fallback
+
   const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
     type: 'invite',
     email,
-    options: { redirectTo: `${siteUrl}/auth/callback?next=/auth/set-password` },
+    options: { redirectTo: callbackUrl },
   });
 
   if (linkError || !linkData?.properties?.action_link) {
-    // Log but don't block — still return success, email will be skipped
-    console.error('[customers POST] generateLink failed:', linkError?.message);
-    return NextResponse.json({ id: customer.id, warning: 'invite_link_failed' }, { status: 201 });
+    console.error('[customers POST] generateLink (invite) failed:', linkError?.message);
+
+    // Try recovery type as fallback
+    const { data: recoveryData, error: recoveryError } = await supabaseAdmin.auth.admin.generateLink({
+      type: 'recovery',
+      email,
+      options: { redirectTo: callbackUrl },
+    });
+
+    if (!recoveryError && recoveryData?.properties?.action_link) {
+      setupLink = recoveryData.properties.action_link;
+      console.log('[customers POST] using recovery link as fallback');
+    } else {
+      console.error('[customers POST] generateLink (recovery) also failed:', recoveryError?.message);
+      // setupLink stays as site login page — admin can resend via Resend Invite button
+    }
+  } else {
+    setupLink = linkData.properties.action_link;
   }
 
-  let setupLink = linkData.properties.action_link;
+  // Fix redirect_to if Supabase rewrote it to their own domain
   try {
     const u = new URL(setupLink);
     const redirectTo = u.searchParams.get('redirect_to');
     if (redirectTo && !redirectTo.startsWith(siteUrl)) {
-      u.searchParams.set('redirect_to', `${siteUrl}/auth/callback?next=/auth/set-password`);
+      u.searchParams.set('redirect_to', callbackUrl);
       setupLink = u.toString();
     }
-  } catch { /* keep original link if URL parsing fails */ }
+  } catch { /* keep link as-is */ }
 
-  // 4. Send welcome email with the setup link (best-effort)
+  // 4. Send welcome email — always, regardless of link quality
   void sendWelcomeEmail({
-    to: email,
-    nombre: contacto_nombre,
-    company: company_name,
+    to:         email,
+    nombre:     contacto_nombre,
+    company:    company_name,
     setupLink,
     customerId: customer.id,
   }).catch((e) => console.error('[customers POST] welcome email:', e));
