@@ -1,6 +1,11 @@
 @import "tailwindcss";
 
 @theme {
+  /* Map Next.js font variables to Tailwind utilities */
+  --font-body: var(--font-inter);
+  --font-heading: var(--font-alexandria);
+
+  /* Brand Colors */
   --color-brand-yellow:  #F6E451;
   --color-brand-black:   #0A0A0A;
   --color-brand-red:     #D93A35;
@@ -11,12 +16,10 @@
 }
 
 @layer base {
-  body { @apply bg-gray-100 text-[#0A0A0A]; }
-}
-
-@layer components {
-  .badge {
-    @apply inline-block text-[9px] font-bold tracking-[0.12em] uppercase
-           px-2 py-[3px] border-2 rounded-none;
+  body { 
+    @apply bg-gray-100 text-[#0A0A0A] font-body; 
+  }
+  h1, h2, h3, h4 { 
+    @apply font-heading font-bold uppercase; 
   }
 }
