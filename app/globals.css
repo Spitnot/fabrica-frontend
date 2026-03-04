@@ -1,6 +1,22 @@
 @import "tailwindcss";
 
-body {
-  background: #ffffff;
-  font-family: Arial, Helvetica, sans-serif;
+@theme {
+  --color-brand-yellow:  #F6E451;
+  --color-brand-black:   #0A0A0A;
+  --color-brand-red:     #D93A35;
+  --color-brand-orange:  #E6883E;
+  --color-brand-blue:    #0087B8;
+  --color-brand-green:   #0DA265;
+  --color-brand-purple:  #876693;
+}
+
+@layer base {
+  body { @apply bg-gray-100 text-[#0A0A0A]; }
+}
+
+@layer components {
+  .badge {
+    @apply inline-block text-[9px] font-bold tracking-[0.12em] uppercase
+           px-2 py-[3px] border-2 rounded-none;
+  }
 }
