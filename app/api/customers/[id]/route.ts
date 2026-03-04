@@ -13,7 +13,7 @@ export async function GET(_req: NextRequest, { params }: Props) {
     .single();
 
   if (error || !customer) {
-    return NextResponse.json({ error: 'Cliente no encontrado' }, { status: 404 });
+    return NextResponse.json({ error: 'Client not found' }, { status: 404 });
   }
 
   const { data: orders } = await supabaseAdmin
@@ -74,7 +74,7 @@ export async function PUT(req: NextRequest, { params }: Props) {
   }
 
   if (Object.keys(updates).length === 0) {
-    return NextResponse.json({ error: 'Nada que actualizar' }, { status: 400 });
+    return NextResponse.json({ error: 'Nothing to update' }, { status: 400 });
   }
 
   const { data, error } = await supabaseAdmin
@@ -86,7 +86,7 @@ export async function PUT(req: NextRequest, { params }: Props) {
 
   if (error || !data) {
     console.error('[customers PUT]', error?.message);
-    return NextResponse.json({ error: error?.message ?? 'Error al actualizar' }, { status: 500 });
+    return NextResponse.json({ error: error?.message ?? 'Failed to update' }, { status: 500 });
   }
 
   return NextResponse.json({ ok: true });

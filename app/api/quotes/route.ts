@@ -10,11 +10,11 @@ export async function POST(req: NextRequest) {
   const { peso, ancho, alto, largo, destination } = await req.json();
 
   if (!peso || !ancho || !alto || !largo || !destination) {
-    return NextResponse.json({ error: 'Faltan datos para cotizar' }, { status: 400 });
+    return NextResponse.json({ error: 'Missing data for shipping quote' }, { status: 400 });
   }
 
   if (!destination.country || !destination.postal_code) {
-    return NextResponse.json({ error: 'El cliente no tiene país o código postal configurado en su dirección de envío' }, { status: 400 });
+    return NextResponse.json({ error: 'Client has no country or postal code in their shipping address' }, { status: 400 });
   }
 
   const params = new URLSearchParams({
@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
   });
 
   console.log('[quotes] URL:', PACKLINK_API_URL);
-console.log('[quotes] KEY:', PACKLINK_API_KEY ? 'presente' : 'FALTA');
+console.log('[quotes] KEY:', PACKLINK_API_KEY ? 'present' : 'MISSING');
 console.log('[quotes] FROM:', FROM_COUNTRY, FROM_POSTAL_CODE);
 
   try {
@@ -43,7 +43,7 @@ console.log('[quotes] FROM:', FROM_COUNTRY, FROM_POSTAL_CODE);
     if (!res.ok) {
       const err = await res.text();
       console.error('[quotes] Packlink error:', err);
-      return NextResponse.json({ error: 'Error al consultar Packlink' }, { status: 502 });
+      return NextResponse.json({ error: 'Error querying Packlink' }, { status: 502 });
     }
 
     const services = await res.json();

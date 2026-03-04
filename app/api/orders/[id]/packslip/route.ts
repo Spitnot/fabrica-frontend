@@ -11,7 +11,7 @@ const FROM_COUNTRY     = process.env.PACKLINK_FROM_COUNTRY     ?? 'ES';
 const FROM_EMAIL       = process.env.PACKLINK_FROM_EMAIL       ?? '';
 
 const fmt = (n: number) =>
-  new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n);
+  new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'EUR' }).format(n);
 
 const STATUS_LABELS: Record<string, string> = {
   draft: 'Draft', confirmado: 'Confirmed', produccion: 'In Production',

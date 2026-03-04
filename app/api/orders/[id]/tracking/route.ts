@@ -14,11 +14,11 @@ export async function POST(_req: NextRequest, { params }: Props) {
     .single();
 
   if (error || !order) {
-    return NextResponse.json({ error: 'Pedido no encontrado' }, { status: 404 });
+    return NextResponse.json({ error: 'Order not found' }, { status: 404 });
   }
 
   if (!order.packlink_shipment_id) {
-    return NextResponse.json({ error: 'Sin shipment ID de Packlink' }, { status: 400 });
+    return NextResponse.json({ error: 'No Packlink shipment ID' }, { status: 400 });
   }
 
   // Consultar Packlink
@@ -35,7 +35,7 @@ export async function POST(_req: NextRequest, { params }: Props) {
   if (!res.ok) {
     const text = await res.text();
     console.error('[tracking] Packlink error:', text);
-    return NextResponse.json({ error: 'Error consultando Packlink' }, { status: 500 });
+    return NextResponse.json({ error: 'Error querying Packlink' }, { status: 500 });
   }
 
   const shipment = await res.json();

@@ -18,7 +18,7 @@ const STATUS_STYLES: Record<string, string> = {
 };
 
 const fmt = (n: number) =>
-  new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n);
+  new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'EUR' }).format(n);
 
 interface Customer { id: string; contacto_nombre: string; company_name: string; }
 interface Order {

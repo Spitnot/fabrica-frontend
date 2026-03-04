@@ -36,7 +36,7 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 const fmt = (n: number) =>
-  new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n);
+  new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'EUR' }).format(n);
 
 interface Props { params: Promise<{ id: string }> }
 

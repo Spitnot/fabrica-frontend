@@ -57,7 +57,7 @@ export async function GET() {
     if (!res.ok) {
       const err = await res.text();
       console.error('[products] Shopify error:', res.status, err);
-      return NextResponse.json({ error: 'Error al consultar Shopify' }, { status: 502 });
+      return NextResponse.json({ error: 'Error querying Shopify' }, { status: 502 });
     }
 
     const json = await res.json();

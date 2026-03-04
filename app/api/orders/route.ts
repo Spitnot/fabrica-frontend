@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
   const { customer_id, items, coste_envio_estimado } = await req.json();
 
   if (!customer_id || !items?.length) {
-    return NextResponse.json({ error: 'Faltan datos obligatorios' }, { status: 400 });
+    return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
   }
 
   // Calcular totales
@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
 
   if (orderError || !order) {
     console.error('[orders POST]', orderError?.message);
-    return NextResponse.json({ error: orderError?.message ?? 'Error al crear pedido' }, { status: 500 });
+    return NextResponse.json({ error: orderError?.message ?? 'Failed to create order' }, { status: 500 });
   }
 
   // 2. Insertar line items

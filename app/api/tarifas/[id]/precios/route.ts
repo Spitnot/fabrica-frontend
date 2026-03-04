@@ -10,7 +10,7 @@ export async function PUT(req: NextRequest, { params }: Props) {
   const { precios } = await req.json() as { precios: { sku: string; precio: number }[] };
 
   if (!Array.isArray(precios)) {
-    return NextResponse.json({ error: 'precios debe ser un array' }, { status: 400 });
+    return NextResponse.json({ error: 'prices must be an array' }, { status: 400 });
   }
 
   // Verificar que la tarifa existe
@@ -21,7 +21,7 @@ export async function PUT(req: NextRequest, { params }: Props) {
     .single();
 
   if (!tarifa) {
-    return NextResponse.json({ error: 'Tarifa no encontrada' }, { status: 404 });
+    return NextResponse.json({ error: 'Pricing tier not found' }, { status: 404 });
   }
 
   // Borrar todos los precios existentes de esta tarifa

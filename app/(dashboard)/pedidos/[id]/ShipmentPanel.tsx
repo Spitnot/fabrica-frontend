@@ -17,7 +17,7 @@ interface Props {
 }
 
 const fmt = (n: number) =>
-  new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n);
+  new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'EUR' }).format(n);
 
 export function ShipmentPanel({ orderId, pesoTotal, destination }: Props) {
   const [ancho, setAncho] = useState('');

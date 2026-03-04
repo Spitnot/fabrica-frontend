@@ -28,22 +28,24 @@ async function getLogs(): Promise<EmailLog[]> {
   return (data ?? []) as EmailLog[];
 }
 
-const TYPE_LABELS: Record<EmailLog['type'], string> = {
-  welcome:            'Bienvenida',
-  order_confirmation: 'Confirmación',
-  order_shipped:      'Enviado',
+const TYPE_LABELS: Record<string, string> = {
+  welcome:            'Welcome',
+  order_confirmation: 'Order confirmed',
+  order_shipped:      'Shipped',
   admin_notification: 'Admin',
+  admin_invite:       'Team invite',
 };
 
-const TYPE_STYLES: Record<EmailLog['type'], string> = {
+const TYPE_STYLES: Record<string, string> = {
   welcome:            'text-blue-700 bg-blue-50 border-blue-200',
   order_confirmation: 'text-green-700 bg-green-50 border-green-200',
   order_shipped:      'text-purple-700 bg-purple-50 border-purple-200',
   admin_notification: 'text-gray-600 bg-gray-100 border-gray-200',
+  admin_invite:       'text-orange-700 bg-orange-50 border-orange-200',
 };
 
 function fmt(dateStr: string) {
-  return new Date(dateStr).toLocaleString('es-ES', {
+  return new Date(dateStr).toLocaleString('en-GB', {
     day: '2-digit', month: '2-digit', year: '2-digit',
     hour: '2-digit', minute: '2-digit',
   });
@@ -60,7 +62,7 @@ export default async function EmailsPage() {
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-[22px] font-black text-gray-900 tracking-tight">Email</h1>
-        <p className="text-sm text-gray-400 mt-0.5">Historial de los últimos 200 envíos</p>
+        <p className="text-sm text-gray-400 mt-0.5">Last 200 emails sent</p>
       </div>
 
       {/* Stats */}
@@ -70,12 +72,12 @@ export default async function EmailsPage() {
           <span className="text-[15px] font-black text-gray-900">{logs.length}</span>
         </div>
         <div className="flex items-center gap-2 px-3 py-2 bg-green-50 border border-green-200 rounded-lg">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-green-600">Enviados</span>
+          <span className="text-[11px] font-bold uppercase tracking-wider text-green-600">Sent</span>
           <span className="text-[15px] font-black text-green-700">{sentCount}</span>
         </div>
         {failedCount > 0 && (
           <div className="flex items-center gap-2 px-3 py-2 bg-red-50 border border-red-200 rounded-lg">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-red-500">Fallidos</span>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-red-500">Failed</span>
             <span className="text-[15px] font-black text-red-600">{failedCount}</span>
           </div>
         )}
@@ -87,20 +89,20 @@ export default async function EmailsPage() {
           <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="mb-3 opacity-40">
             <rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 7l10 7 10-7"/>
           </svg>
-          <p className="text-sm">No hay emails registrados todavía</p>
+          <p className="text-sm">No emails logged yet</p>
         </div>
       ) : (
         <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-100">
-                <th className="px-4 py-3 text-left text-[10.5px] font-bold uppercase tracking-wider text-gray-400">Tipo</th>
-                <th className="px-4 py-3 text-left text-[10.5px] font-bold uppercase tracking-wider text-gray-400">Destinatario</th>
-                <th className="px-4 py-3 text-left text-[10.5px] font-bold uppercase tracking-wider text-gray-400 hidden md:table-cell">Asunto</th>
-                <th className="px-4 py-3 text-left text-[10.5px] font-bold uppercase tracking-wider text-gray-400 hidden lg:table-cell">Cliente</th>
-                <th className="px-4 py-3 text-left text-[10.5px] font-bold uppercase tracking-wider text-gray-400 hidden lg:table-cell">Pedido</th>
-                <th className="px-4 py-3 text-left text-[10.5px] font-bold uppercase tracking-wider text-gray-400">Estado</th>
-                <th className="px-4 py-3 text-left text-[10.5px] font-bold uppercase tracking-wider text-gray-400">Fecha</th>
+                <th className="px-4 py-3 text-left text-[10.5px] font-bold uppercase tracking-wider text-gray-400">Type</th>
+                <th className="px-4 py-3 text-left text-[10.5px] font-bold uppercase tracking-wider text-gray-400">Recipient</th>
+                <th className="px-4 py-3 text-left text-[10.5px] font-bold uppercase tracking-wider text-gray-400 hidden md:table-cell">Subject</th>
+                <th className="px-4 py-3 text-left text-[10.5px] font-bold uppercase tracking-wider text-gray-400 hidden lg:table-cell">Client</th>
+                <th className="px-4 py-3 text-left text-[10.5px] font-bold uppercase tracking-wider text-gray-400 hidden lg:table-cell">Order</th>
+                <th className="px-4 py-3 text-left text-[10.5px] font-bold uppercase tracking-wider text-gray-400">Status</th>
+                <th className="px-4 py-3 text-left text-[10.5px] font-bold uppercase tracking-wider text-gray-400">Date</th>
               </tr>
             </thead>
             <tbody>
@@ -132,7 +134,7 @@ export default async function EmailsPage() {
                     {log.status === 'sent' ? (
                       <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-green-600">
                         <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />
-                        Enviado
+                        Sent
                       </span>
                     ) : (
                       <div>

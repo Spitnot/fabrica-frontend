@@ -12,7 +12,7 @@ interface Tarifa {
 }
 interface Product { sku: string; nombre_producto: string; variante?: string; precio_mayorista: number; shopify_product_id?: string; }
 
-const fmt = (n: number) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n);
+const fmt = (n: number) => new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'EUR' }).format(n);
 
 export default function TarifaDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -46,7 +46,7 @@ export default function TarifaDetailPage() {
       const tData = await tRes.json();
       const pData = await pRes.json();
 
-      if (!tRes.ok) { setError('Tarifa no encontrada'); setLoading(false); return; }
+      if (!tRes.ok) { setError('Pricing tier not found'); setLoading(false); return; }
 
       setTarifa(tData);
       setProducts(pData.data ?? []);
@@ -116,8 +116,8 @@ export default function TarifaDetailPage() {
       }),
     });
     setSavingMeta(false);
-    if (!res.ok) { setError('Error al guardar'); return; }
-    setSuccess('Tarifa actualizada');
+    if (!res.ok) { setError('Failed to save'); return; }
+    setSuccess('Tier updated');
     setTimeout(() => setSuccess(''), 3000);
   }
 
@@ -133,8 +133,8 @@ export default function TarifaDetailPage() {
       body: JSON.stringify({ precios }),
     });
     setSaving(false);
-    if (!res.ok) { setError('Error al guardar precios'); return; }
-    setSuccess(`${precios.length} precios guardados`);
+    if (!res.ok) { setError('Failed to save prices'); return; }
+    setSuccess(`${precios.length} price${precios.length !== 1 ? 's' : ''} saved`);
     setTimeout(() => setSuccess(''), 3000);
   }
 
@@ -147,7 +147,7 @@ export default function TarifaDetailPage() {
 
   if (!tarifa) return (
     <div className="p-7">
-      <div className="text-sm text-[#D93A35]">{error || 'Tarifa no encontrada'}</div>
+      <div className="text-sm text-[#D93A35]">{error || 'Pricing tier not found'}</div>
       <Link href="/tarifas" className="text-xs text-[#D93A35] mt-2 inline-block">← Back</Link>
     </div>
   );
@@ -172,7 +172,7 @@ export default function TarifaDetailPage() {
         <div>
           <h1 className="text-lg font-black tracking-wider uppercase text-gray-900"
               style={{ fontFamily: 'var(--font-alexandria)' }}>{tarifa.nombre}</h1>
-          <p className="text-xs text-gray-400 mt-0.5">{tarifa.descripcion ?? 'Sin descripción'}</p>
+          <p className="text-xs text-gray-400 mt-0.5">{tarifa.descripcion ?? 'No description'}</p>
         </div>
       </div>
 
