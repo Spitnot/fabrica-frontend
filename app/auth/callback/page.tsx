@@ -11,8 +11,8 @@ const Spinner = () => (
 );
 
 // Handles auth redirects from Supabase for both:
-//   - PKCE flow  → ?code=xxx  (OAuth, magic links with PKCE)
-//   - Implicit   → #access_token=xxx  (admin generateLink invite/recovery)
+//   - PKCE flow     → ?code=xxx  (OAuth, magic links)
+//   - Implicit flow → #access_token=xxx  (admin generateLink invite/recovery)
 function CallbackHandler() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -24,36 +24,30 @@ function CallbackHandler() {
     if (code) {
       // PKCE flow — exchange code for session
       supabaseClient.auth.exchangeCodeForSession(code).then(({ error }) => {
-        if (error) {
-          router.replace('/login?error=invalid_link');
-        } else {
-          router.replace(next);
-        }
+        router.replace(error ? '/login?error=invalid_link' : next);
       });
       return;
     }
 
-    // Implicit flow — tokens are in URL hash (#access_token=...).
-    // The Supabase browser client detects them automatically via onAuthStateChange.
-    const { data: { subscription } } = supabaseClient.auth.onAuthStateChange(
-      (event, session) => {
-        if (event === 'SIGNED_IN' && session) {
-          subscription.unsubscribe();
-          router.replace(next);
-        }
-      }
-    );
+    // Implicit flow — tokens land in URL hash: #access_token=xxx&refresh_token=xxx
+    // (happens with admin generateLink for invite/recovery types)
+    // We read from window.location.hash and call setSession directly —
+    // this is more reliable than waiting for onAuthStateChange which may
+    // fire before the listener is attached when using createBrowserClient.
+    const hash = window.location.hash.slice(1); // strip the leading '#'
+    const hashParams = new URLSearchParams(hash);
+    const access_token = hashParams.get('access_token');
+    const refresh_token = hashParams.get('refresh_token');
 
-    // Safety timeout — if no SIGNED_IN fires within 4s the token is truly invalid
-    const timeout = setTimeout(() => {
-      subscription.unsubscribe();
-      router.replace('/login?error=invalid_link');
-    }, 4000);
+    if (access_token && refresh_token) {
+      supabaseClient.auth.setSession({ access_token, refresh_token }).then(({ error }) => {
+        router.replace(error ? '/login?error=invalid_link' : next);
+      });
+      return;
+    }
 
-    return () => {
-      clearTimeout(timeout);
-      subscription.unsubscribe();
-    };
+    // No tokens anywhere — link is genuinely invalid or already consumed
+    router.replace('/login?error=invalid_link');
   }, [router, searchParams]);
 
   return <Spinner />;
