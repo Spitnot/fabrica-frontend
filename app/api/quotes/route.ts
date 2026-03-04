@@ -6,8 +6,29 @@ const PACKLINK_API_KEY = process.env.PACKLINK_API_KEY!;
 const FROM_COUNTRY     = process.env.PACKLINK_FROM_COUNTRY!;
 const FROM_POSTAL_CODE = process.env.PACKLINK_FROM_POSTAL_CODE!;
 
+// Helper to convert "España" -> "ES"
+function normalizeCountry(country: string): string {
+  if (!country) return '';
+  // If already a 2-letter code, return it uppercase
+  if (country.length === 2) return country.toUpperCase();
+
+  const map: Record<string, string> = {
+    'españa': 'ES', 'spain': 'ES',
+    'francia': 'FR', 'france': 'FR',
+    'portugal': 'PT',
+    'alemania': 'DE', 'germany': 'DE',
+    'italia': 'IT', 'italy': 'IT',
+    'estados unidos': 'US', 'usa': 'US', 'united states': 'US',
+    'méxico': 'MX', 'mexico': 'MX',
+  };
+
+  return map[country.toLowerCase()] || country;
+}
+
 export async function POST(req: NextRequest) {
   const { peso, ancho, alto, largo, destination } = await req.json();
+
+  console.log('[quotes] Request Data:', { peso, ancho, alto, largo, destination });
 
   if (!peso || !ancho || !alto || !largo || !destination) {
     return NextResponse.json({ error: 'Missing data for shipping quote' }, { status: 400 });
@@ -17,10 +38,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Client has no country or postal code in their shipping address' }, { status: 400 });
   }
 
+  // Normalize the country code
+  const countryCode = normalizeCountry(destination.country);
+  console.log(`[quotes] Normalizing country: "${destination.country}" -> "${countryCode}"`);
+
   const params = new URLSearchParams({
     'from[country]':       FROM_COUNTRY,
     'from[zip]':           FROM_POSTAL_CODE,
-    'to[country]':         destination.country,
+    'to[country]':         countryCode,
     'to[zip]':             destination.postal_code,
     'packages[0][weight]': String(peso),
     'packages[0][width]':  String(ancho),
@@ -28,12 +53,11 @@ export async function POST(req: NextRequest) {
     'packages[0][length]': String(largo),
   });
 
-  console.log('[quotes] URL:', PACKLINK_API_URL);
-console.log('[quotes] KEY:', PACKLINK_API_KEY ? 'present' : 'MISSING');
-console.log('[quotes] FROM:', FROM_COUNTRY, FROM_POSTAL_CODE);
+  const fullUrl = `${PACKLINK_API_URL}/services?${params}`;
+  console.log('[quotes] Fetching:', fullUrl);
 
   try {
-    const res = await fetch(`${PACKLINK_API_URL}/services?${params}`, {
+    const res = await fetch(fullUrl, {
       headers: {
         'Authorization': PACKLINK_API_KEY,
         'Content-Type': 'application/json',
@@ -48,7 +72,6 @@ console.log('[quotes] FROM:', FROM_COUNTRY, FROM_POSTAL_CODE);
 
     const services = await res.json();
 
-    // Mapear respuesta de Packlink al formato que usa el frontend
     const quotes = services.map((s: any) => ({
       service_id:     s.id,
       carrier:        s.carrier_name,
