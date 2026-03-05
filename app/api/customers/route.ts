@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
 
     const userId = authData.user?.id;
 
-    // 2. Prepare the insert object matching the ACTUAL DB schema
+    // 2. Prepare the insert object using JSONB for addresses
     const insertData: Record<string, any> = {
       id: userId,
       contacto_nombre: body.contacto_nombre,
@@ -35,33 +35,37 @@ export async function POST(req: NextRequest) {
       telefono: body.telefono,
       nif_cif: body.nif_cif,
       tipo_fiscal: body.tipo_fiscal,
-      // Fiscal Address (Columns exist)
-      fiscal_street: body.fiscal_street,
-      fiscal_city: body.fiscal_city,
-      fiscal_state: body.fiscal_state,
-      fiscal_postal_code: body.fiscal_postal_code,
-      fiscal_country: body.fiscal_country,
-      // Commercial
+      
+      // Commercial & Legal
       tarifa_id: body.tarifa_id,
       descuento_pct: body.descuento_pct,
       tipo_cliente: body.tipo_cliente,
       condiciones_legales: body.condiciones_legales,
       condiciones_comerciales: body.condiciones_comerciales,
       estado: 'active',
-    };
-
-    // 3. Handle Shipping Address (JSONB column 'direccion_envio')
-    // If street/city are present in body, we put them in the JSONB object
-    if (body.street || body.city) {
-      insertData.direccion_envio = {
+      
+      // SHIPPING ADDRESS -> Map to 'direccion_envio' (JSONB)
+      direccion_envio: {
         street: body.street,
         city: body.city,
+        state: '', // Add if available
         postal_code: body.postal_code,
         country: body.country,
-      };
-    }
+      },
 
-    // 4. Insert into customers table
+      // FISCAL ADDRESS -> Map to 'direccion_fiscal' (JSONB) (Assuming this is the name)
+      // If the DB column doesn't exist at all, we remove it. 
+      // But usually if one is JSONB, the other is too.
+      direccion_fiscal: {
+        street: body.fiscal_street,
+        city: body.fiscal_city,
+        state: body.fiscal_state,
+        postal_code: body.fiscal_postal_code,
+        country: body.fiscal_country,
+      }
+    };
+
+    // 3. Insert into customers table
     const { data, error: dbError } = await supabaseAdmin
       .from('customers')
       .insert(insertData)
@@ -70,6 +74,8 @@ export async function POST(req: NextRequest) {
 
     if (dbError) {
       console.error('[API] DB Insert Error:', dbError);
+      // If 'direccion_fiscal' column doesn't exist, this will error.
+      // If so, we will just remove it in the next iteration.
       return NextResponse.json({ error: `DB Error: ${dbError.message}` }, { status: 500 });
     }
 
