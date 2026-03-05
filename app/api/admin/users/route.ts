@@ -5,7 +5,7 @@ import type { AdminRole } from '@/types';
 
 const ADMIN_ROLES: AdminRole[] = ['admin', 'manager', 'viewer'];
 
-// GET — list all admin team members (remains the same)
+// GET — list all admin team members
 export async function GET() {
   const { data, error } = await supabaseAdmin.auth.admin.listUsers();
 
@@ -56,14 +56,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: authError?.message ?? 'Error creating user' }, { status: 500 });
   }
 
-  // 2. Generate an invite link (same as Customer Welcome)
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://b2b.firmarollers.com';
+  // 2. Generate an invite link
+  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://b2b.firmarollers.com').replace(/\/$/, '');
   
+  // FIX: Redirect to /auth/reset-password to set password
+  const callbackUrl = `${siteUrl}/auth/callback?next=/auth/reset-password`;
+
   const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
     type: 'invite',
     email,
     options: { 
-      redirectTo: `${siteUrl}/auth/callback` 
+      redirectTo: callbackUrl 
     },
   });
 
