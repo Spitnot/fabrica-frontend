@@ -5,10 +5,12 @@ import type { AdminRole } from '@/types';
 
 const ADMIN_ROLES: AdminRole[] = ['admin', 'manager', 'viewer'];
 
+// GET — list all admin team members (remains the same)
 export async function GET() {
   const { data, error } = await supabaseAdmin.auth.admin.listUsers();
 
   if (error) {
+    console.error('[admin/users GET]', error.message);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
@@ -27,29 +29,34 @@ export async function GET() {
   return NextResponse.json({ data: adminUsers });
 }
 
+// POST — invite a new admin team member
 export async function POST(req: NextRequest) {
   const { full_name, email, role } = await req.json();
 
   if (!full_name || !email || !role) {
-    return NextResponse.json({ error: 'Missing required fields.' }, { status: 400 });
+    return NextResponse.json({ error: 'Missing required fields: full_name, email, role' }, { status: 400 });
   }
 
   if (!ADMIN_ROLES.includes(role as AdminRole)) {
-    return NextResponse.json({ error: `Invalid role.` }, { status: 400 });
+    return NextResponse.json({ error: `Invalid role. Must be one of: ${ADMIN_ROLES.join(', ')}` }, { status: 400 });
   }
 
-  // 1. Create the user
+  // 1. Create the user (Unconfirmed - so the invite link works)
   const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
     email,
-    email_confirm: true,
+    email_confirm: false, // IMPORTANT: Do not auto-confirm. Let the invite link confirm them.
     user_metadata: { role, full_name },
   });
 
   if (authError || !authData.user) {
+    console.error('[admin/users POST] auth error:', authError?.message);
+    if (authError?.message.includes('already been registered')) {
+       return NextResponse.json({ error: 'User with this email already exists.' }, { status: 400 });
+    }
     return NextResponse.json({ error: authError?.message ?? 'Error creating user' }, { status: 500 });
   }
 
-  // 2. Generate Invite Link
+  // 2. Generate an invite link (same as Customer Welcome)
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://b2b.firmarollers.com';
   
   const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
@@ -62,20 +69,21 @@ export async function POST(req: NextRequest) {
 
   if (linkError || !linkData?.properties?.action_link) {
     console.error('[admin/users POST] link error:', linkError?.message);
-    // We still return success, but log the error. The admin can "Resend Invite" later.
     return NextResponse.json({ id: authData.user.id, warning: 'User created but invite link failed.' }, { status: 201 });
   }
 
-  // 3. Send Email
+  const setupLink = linkData.properties.action_link;
+
+  // 3. Send the email with the button
   try {
     await sendAdminInviteEmail({
       to: email,
       fullName: full_name,
       role: role,
-      setupLink: linkData.properties.action_link,
+      setupLink: setupLink,
     });
-  } catch (e) {
-    console.error('[admin/users POST] email error:', e);
+  } catch (e: any) {
+    console.error('[admin/users POST] email send error:', e);
     // Don't fail the request, but log it.
   }
 
