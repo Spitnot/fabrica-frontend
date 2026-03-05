@@ -13,21 +13,29 @@ export default function ResetPasswordPage() {
   const router = useRouter();
 
   useEffect(() => {
-    const { data: { subscription } } = supabaseClient.auth.onAuthStateChange((event) => {
-      if (event === 'PASSWORD_RECOVERY') setReady(true);
-    });
-    return () => subscription.unsubscribe();
+    const code = new URLSearchParams(window.location.search).get('code');
+
+    if (code) {
+      // PKCE flow — exchange the code for a session
+      supabaseClient.auth.exchangeCodeForSession(code).then(({ error: exchError }) => {
+        if (exchError) {
+          setError('This reset link is invalid or has expired. Please request a new one.');
+        } else {
+          setReady(true);
+        }
+      });
+    } else {
+      // Fallback: legacy hash-based flow
+      const { data: { subscription } } = supabaseClient.auth.onAuthStateChange((event) => {
+        if (event === 'PASSWORD_RECOVERY') setReady(true);
+      });
+      return () => subscription.unsubscribe();
+    }
   }, []);
 
   async function handleReset() {
-    if (password !== confirm) {
-      setError('Passwords do not match.');
-      return;
-    }
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters.');
-      return;
-    }
+    if (password !== confirm) { setError('Passwords do not match.'); return; }
+    if (password.length < 8) { setError('Password must be at least 8 characters.'); return; }
     setError(''); setLoading(true);
     const { error: updateError } = await supabaseClient.auth.updateUser({ password });
     setLoading(false);
@@ -67,12 +75,15 @@ export default function ResetPasswordPage() {
           {error && (
             <div className="mb-5 px-3 py-2.5 bg-red-50 border border-red-200 rounded-lg text-sm text-[#D93A35]">
               {error}
+              {error.includes('expired') && (
+                <Link href="/auth/forgot-password" className="block mt-1 underline">Request a new link</Link>
+              )}
             </div>
           )}
 
-          {!ready ? (
+          {!ready && !error ? (
             <div className="text-sm text-gray-400 text-center py-8">Verifying link…</div>
-          ) : (
+          ) : ready && (
             <div className="space-y-4">
               <div className="space-y-1.5">
                 <label className="text-[11px] font-bold tracking-[0.1em] uppercase text-gray-400">New Password</label>
