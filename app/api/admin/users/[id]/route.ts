@@ -1,10 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/server';
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+interface Props { 
+  params: Promise<{ id: string }> 
+}
+
+export async function PATCH(req: NextRequest, { params }: Props) {
   try {
+    // 1. Await params
+    const { id } = await params;
+    
     const { role } = await req.json();
-    const { id } = params;
 
     const { error } = await supabaseAdmin.auth.admin.updateUserById(id, {
       user_metadata: { role },
@@ -17,9 +23,11 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   }
 }
 
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, { params }: Props) {
   try {
-    const { id } = params;
+    // 1. Await params
+    const { id } = await params;
+    
     const { error } = await supabaseAdmin.auth.admin.deleteUser(id);
     if (error) throw error;
     return NextResponse.json({ success: true });
