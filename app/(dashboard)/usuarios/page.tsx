@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabaseClient } from '@/lib/supabase/client';
+import { sendEmail } from '@/lib/emailService'; // NEW IMPORT
 import type { AdminRole } from '@/types';
 
 interface AdminUser {
@@ -76,7 +77,9 @@ export default function UsuariosPage() {
   async function handleInvite(e: React.FormEvent) {
     e.preventDefault();
     setInviteError(''); setInviting(true); setSetupLink('');
+    
     try {
+      // 1. Create user via API
       const res = await fetch('/api/admin/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -84,7 +87,29 @@ export default function UsuariosPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? 'Error creating user');
-      setSetupLink(data.setup_link ?? '');
+      
+      const link = data.setup_link ?? '';
+      setSetupLink(link);
+
+      // 2. Send Welcome Email via Resend
+      if (link) {
+        const htmlContent = `
+          <div style="font-family: sans-serif; color: #333; max-width: 600px; margin: auto;">
+            <h2 style="color: #D93A35;">Welcome to Fabrica!</h2>
+            <p>Hello ${inviteName},</p>
+            <p>You have been invited to join the Fabrica Dashboard as a <strong>${ROLE_LABELS[inviteRole]}</strong>.</p>
+            <p>Please click the button below to set up your password and access your account:</p>
+            <a href="${link}" style="display: inline-block; padding: 12px 24px; background-color: #D93A35; color: white; text-decoration: none; border-radius: 8px; font-weight: bold; margin: 16px 0;">
+              Set Password & Access Dashboard
+            </a>
+            <p style="font-size: 12px; color: #999;">This link expires in 24 hours.</p>
+          </div>
+        `;
+        
+        await sendEmail(inviteEmail, 'Welcome to Fabrica - Set Your Password', htmlContent);
+        // Optionally alert if email fails, but we show the link anyway as backup
+      }
+
       setInviteName(''); setInviteEmail(''); setInviteRole('manager');
       loadUsers();
     } catch (err: any) { setInviteError(err.message); }
@@ -160,7 +185,7 @@ export default function UsuariosPage() {
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                   <path d="M20 6L9 17l-5-5"/>
                 </svg>
-                Team member created. Share this setup link with them:
+                Team member created. An email has been sent.
               </div>
               <div className="flex gap-2">
                 <input readOnly value={setupLink}
@@ -171,7 +196,7 @@ export default function UsuariosPage() {
                 </button>
               </div>
               <p className="text-[11px] text-gray-400">
-                This link expires in 24 hours. The user will be prompted to set their password on first login.
+                Backup link (also sent via email). Expires in 24 hours.
               </p>
               <button onClick={() => { setShowInvite(false); setSetupLink(''); }}
                       className="text-sm font-semibold text-[#D93A35] hover:underline">
@@ -220,7 +245,7 @@ export default function UsuariosPage() {
               <div className="flex gap-3 pt-1">
                 <button type="submit" disabled={inviting}
                         className="px-5 py-2 bg-[#D93A35] text-white text-sm font-bold rounded-lg hover:bg-[#b52e2a] disabled:opacity-40 transition-colors">
-                  {inviting ? 'Creating…' : 'Create & get link'}
+                  {inviting ? 'Creating…' : 'Create & Send Invite'}
                 </button>
                 <button type="button" onClick={() => { setShowInvite(false); setInviteError(''); }}
                         className="px-5 py-2 border border-gray-200 text-sm font-semibold text-gray-600 rounded-lg hover:border-gray-300 transition-colors">
