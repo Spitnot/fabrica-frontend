@@ -9,6 +9,8 @@ export async function GET(request: Request) {
 
   if (code) {
     const cookieStore = cookies()
+    
+    // Create a server client with manual cookie handling
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -27,8 +29,10 @@ export async function GET(request: Request) {
       }
     )
     
+    // Exchange the code for a session
     await supabase.auth.exchangeCodeForSession(code)
   }
 
+  // Redirect to the 'next' path or portal
   return NextResponse.redirect(new URL(next, requestUrl.origin))
 }
