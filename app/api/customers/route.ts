@@ -4,14 +4,13 @@ import { supabaseAdmin } from '@/lib/supabase/server';
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    
+    console.log('[API] Received body:', body);
+
     // 1. Create user in Supabase Auth
-    // We use admin.createUser to auto-confirm the email so they can log in immediately
-    // or use the password provided.
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email: body.email,
       password: body.password,
-      email_confirm: true, // Auto-confirm email
+      email_confirm: true,
       user_metadata: {
         role: 'customer',
         full_name: body.contacto_nombre,
@@ -19,14 +18,13 @@ export async function POST(req: NextRequest) {
     });
 
     if (authError) {
-      // Check if user already exists
-      if (authError.message.includes('already been registered')) {
-        return NextResponse.json({ error: 'This email is already registered.' }, { status: 400 });
-      }
-      throw authError;
+      console.error('[API] Auth Error:', authError);
+      // Return the REAL error to the frontend
+      return NextResponse.json({ error: `Auth Error: ${authError.message}` }, { status: 400 });
     }
 
     const userId = authData.user?.id;
+    console.log('[API] User created:', userId);
 
     // 2. Insert into customers table
     const { data, error: dbError } = await supabaseAdmin
@@ -58,15 +56,15 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (dbError) {
-      // If DB insert fails, we should ideally clean up the auth user, but for now we just error
-      console.error('DB Insert Error:', dbError);
-      return NextResponse.json({ error: 'Failed to create customer profile.' }, { status: 500 });
+      console.error('[API] DB Insert Error:', dbError);
+      // Return the REAL error to the frontend
+      return NextResponse.json({ error: `DB Error: ${dbError.message}` }, { status: 500 });
     }
 
     return NextResponse.json({ id: data.id, message: 'Customer created' }, { status: 201 });
 
   } catch (err: any) {
-    console.error('Server Error:', err);
-    return NextResponse.json({ error: err.message || 'Internal Server Error' }, { status: 500 });
+    console.error('[API] Server Error:', err);
+    return NextResponse.json({ error: `Server Error: ${err.message}` }, { status: 500 });
   }
 }
