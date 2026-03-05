@@ -1,25 +1,42 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { supabaseClient } from '@/lib/supabase/client';
 
-export default function ForgotPasswordPage() {
-  const [email, setEmail] = useState('');
+export default function ResetPasswordPage() {
+  const [password, setPassword] = useState('');
+  const [confirm, setConfirm] = useState('');
   const [loading, setLoading] = useState(false);
-  const [sent, setSent] = useState(false);
   const [error, setError] = useState('');
+  const [ready, setReady] = useState(false);
+  const router = useRouter();
 
-  async function handleSubmit() {
-    setError(''); setLoading(true);
-    const { error: authError } = await supabaseClient.auth.resetPasswordForEmail(email, {
-      redirectTo: 'https://b2b.firmarollers.com/auth/reset-password',
+  useEffect(() => {
+    const { data: { subscription } } = supabaseClient.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') setReady(true);
     });
-    setLoading(false);
-    if (authError) {
-      setError('Could not send the reset email. Please try again.');
+    return () => subscription.unsubscribe();
+  }, []);
+
+  async function handleReset() {
+    if (password !== confirm) {
+      setError('Passwords do not match.');
       return;
     }
-    setSent(true);
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters.');
+      return;
+    }
+    setError(''); setLoading(true);
+    const { error: updateError } = await supabaseClient.auth.updateUser({ password });
+    setLoading(false);
+    if (updateError) {
+      setError('Could not update your password. The link may have expired.');
+      return;
+    }
+    await supabaseClient.auth.signOut();
+    router.push('/auth/login');
   }
 
   return (
@@ -34,6 +51,7 @@ export default function ForgotPasswordPage() {
           <div className="text-white/60 text-xs mt-4 tracking-widest uppercase font-medium">Management Platform</div>
         </div>
       </div>
+
       <div className="flex-1 flex items-center justify-center bg-white p-8">
         <div className="w-full max-w-[360px]">
           <div className="md:hidden text-center mb-8">
@@ -41,40 +59,52 @@ export default function ForgotPasswordPage() {
             <div className="text-2xl font-black tracking-widest text-gray-900"
               style={{ fontFamily: 'var(--font-alexandria)' }}>B2B</div>
           </div>
+
           <h2 className="text-2xl font-black tracking-wide text-gray-900 mb-1"
-            style={{ fontFamily: 'var(--font-alexandria)' }}>Reset Password</h2>
-          <p className="text-sm text-gray-400 mb-8">Enter your email and we'll send you a reset link.</p>
+            style={{ fontFamily: 'var(--font-alexandria)' }}>New Password</h2>
+          <p className="text-sm text-gray-400 mb-8">Choose a strong password for your account.</p>
+
           {error && (
             <div className="mb-5 px-3 py-2.5 bg-red-50 border border-red-200 rounded-lg text-sm text-[#D93A35]">
               {error}
             </div>
           )}
-          {sent ? (
-            <div className="px-3 py-4 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700 text-center">
-              Check your inbox — a reset link has been sent to <strong>{email}</strong>.
-            </div>
+
+          {!ready ? (
+            <div className="text-sm text-gray-400 text-center py-8">Verifying link…</div>
           ) : (
             <div className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-[11px] font-bold tracking-[0.1em] uppercase text-gray-400">Email</label>
+                <label className="text-[11px] font-bold tracking-[0.1em] uppercase text-gray-400">New Password</label>
                 <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && email && handleSubmit()}
-                  placeholder="admin@firmarollers.com"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-[#D93A35] outline-none transition-colors"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-bold tracking-[0.1em] uppercase text-gray-400">Confirm Password</label>
+                <input
+                  type="password"
+                  value={confirm}
+                  onChange={(e) => setConfirm(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && password && confirm && handleReset()}
+                  placeholder="••••••••"
                   className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-[#D93A35] outline-none transition-colors"
                 />
               </div>
               <button
-                onClick={handleSubmit}
-                disabled={loading || !email}
+                onClick={handleReset}
+                disabled={loading || !password || !confirm}
                 className="w-full py-3 bg-[#D93A35] text-white text-sm font-bold rounded-lg hover:bg-[#b52e2a] disabled:opacity-40 disabled:cursor-not-allowed transition-colors mt-2"
               >
-                {loading ? 'Sending…' : 'Send Reset Link'}
+                {loading ? 'Updating…' : 'Update Password'}
               </button>
             </div>
           )}
+
           <Link href="/auth/login" className="block text-center text-xs text-gray-400 hover:text-gray-600 mt-6 transition-colors">
             Back to Sign In
           </Link>
