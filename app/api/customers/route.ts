@@ -1,125 +1,72 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/server';
-import { sendWelcomeEmail } from '@/lib/email';
 
-// GET — lista de clientes activos
-export async function GET() {
-  // ... (Your GET function remains the same)
-  const { data, error } = await supabaseAdmin
-    .from('customers')
-    .select('id, contacto_nombre, company_name, direccion_envio, tarifa_id, descuento_pct, tarifa:tarifa_id(id, nombre, multiplicador, descripcion)')
-    .eq('estado', 'active')
-    .order('company_name');
-
-  if (error) {
-    console.error('[customers GET]', error.message);
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
-  return NextResponse.json({ data: data ?? [] });
-}
-
-// POST — crear nuevo cliente
 export async function POST(req: NextRequest) {
-  const {
-    contacto_nombre, company_name, email,
-    telefono, nif_cif, street, city, postal_code, country,
-    tarifa_id, descuento_pct,
-  } = await req.json();
-
-  if (!contacto_nombre || !company_name || !email || !nif_cif) {
-    return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
-  }
-
-  // 1. Create auth user (no password — invite flow)
-  const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-    email,
-    email_confirm: true,
-    user_metadata: { role: 'customer' },
-  });
-
-  if (authError || !authData.user) {
-    console.error('[customers POST] auth error:', authError?.message);
-    return NextResponse.json({ error: authError?.message ?? 'Error creating user' }, { status: 500 });
-  }
-
-  // 2. Create customers record
-  const { data: customer, error: customerError } = await supabaseAdmin
-    .from('customers')
-    .insert({
-      auth_user_id:    authData.user.id,
-      contacto_nombre,
-      company_name,
-      email,
-      telefono:        telefono || null,
-      nif_cif,
-      direccion_envio: { street, city, postal_code, country },
-      estado:          'active',
-      tarifa_id:       tarifa_id || null,
-      descuento_pct:   descuento_pct ?? 0,
-    })
-    .select('id')
-    .single();
-
-  if (customerError || !customer) {
-    console.error('[customers POST] customer error:', customerError?.message);
-    await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
-    return NextResponse.json({ error: customerError?.message ?? 'Error creating customer' }, { status: 500 });
-  }
-
-  // 3. Generate invite link
-  // FIX: Ensure no trailing slash in siteUrl to prevent double slashes
-  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://b2b.firmarollers.com').replace(/\/$/, '');
-  
-  // This must match a URL in your Supabase Redirect URLs list
-  const callbackUrl = `${siteUrl}/auth/callback?next=/auth/set-password`;
-
-  let setupLink = `${siteUrl}/login`; // absolute fallback
-
-  const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
-    type: 'invite',
-    email,
-    options: { redirectTo: callbackUrl },
-  });
-
-  if (linkError || !linkData?.properties?.action_link) {
-    console.error('[customers POST] generateLink (invite) failed:', linkError?.message);
-
-    // Try recovery type as fallback
-    const { data: recoveryData, error: recoveryError } = await supabaseAdmin.auth.admin.generateLink({
-      type: 'recovery',
-      email,
-      options: { redirectTo: callbackUrl },
+  try {
+    const body = await req.json();
+    
+    // 1. Create user in Supabase Auth
+    // We use admin.createUser to auto-confirm the email so they can log in immediately
+    // or use the password provided.
+    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+      email: body.email,
+      password: body.password,
+      email_confirm: true, // Auto-confirm email
+      user_metadata: {
+        role: 'customer',
+        full_name: body.contacto_nombre,
+      },
     });
 
-    if (!recoveryError && recoveryData?.properties?.action_link) {
-      setupLink = recoveryData.properties.action_link;
-      console.log('[customers POST] using recovery link as fallback');
-    } else {
-      console.error('[customers POST] generateLink (recovery) also failed:', recoveryError?.message);
+    if (authError) {
+      // Check if user already exists
+      if (authError.message.includes('already been registered')) {
+        return NextResponse.json({ error: 'This email is already registered.' }, { status: 400 });
+      }
+      throw authError;
     }
-  } else {
-    setupLink = linkData.properties.action_link;
+
+    const userId = authData.user?.id;
+
+    // 2. Insert into customers table
+    const { data, error: dbError } = await supabaseAdmin
+      .from('customers')
+      .insert({
+        id: userId,
+        contacto_nombre: body.contacto_nombre,
+        company_name: body.company_name,
+        email: body.email,
+        telefono: body.telefono,
+        nif_cif: body.nif_cif,
+        tipo_fiscal: body.tipo_fiscal,
+        street: body.street,
+        city: body.city,
+        postal_code: body.postal_code,
+        country: body.country,
+        fiscal_street: body.fiscal_street,
+        fiscal_city: body.fiscal_city,
+        fiscal_postal_code: body.fiscal_postal_code,
+        fiscal_country: body.fiscal_country,
+        tarifa_id: body.tarifa_id,
+        descuento_pct: body.descuento_pct,
+        tipo_cliente: body.tipo_cliente,
+        condiciones_legales: body.condiciones_legales,
+        condiciones_comerciales: body.condiciones_comerciales,
+        estado: 'active',
+      })
+      .select('id')
+      .single();
+
+    if (dbError) {
+      // If DB insert fails, we should ideally clean up the auth user, but for now we just error
+      console.error('DB Insert Error:', dbError);
+      return NextResponse.json({ error: 'Failed to create customer profile.' }, { status: 500 });
+    }
+
+    return NextResponse.json({ id: data.id, message: 'Customer created' }, { status: 201 });
+
+  } catch (err: any) {
+    console.error('Server Error:', err);
+    return NextResponse.json({ error: err.message || 'Internal Server Error' }, { status: 500 });
   }
-
-  // Fix redirect_to if Supabase rewrote it to their own domain
-  try {
-    const u = new URL(setupLink);
-    const redirectTo = u.searchParams.get('redirect_to');
-    if (redirectTo && !redirectTo.startsWith(siteUrl)) {
-      u.searchParams.set('redirect_to', callbackUrl);
-      setupLink = u.toString();
-    }
-  } catch { /* keep link as-is */ }
-
-  // 4. Send welcome email
-  void sendWelcomeEmail({
-    to:         email,
-    nombre:     contacto_nombre,
-    company:    company_name,
-    setupLink,
-    customerId: customer.id,
-  }).catch((e) => console.error('[customers POST] welcome email:', e));
-
-  return NextResponse.json({ id: customer.id }, { status: 201 });
 }

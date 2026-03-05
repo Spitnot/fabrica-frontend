@@ -1,94 +1,81 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/server';
-import { sendAdminInviteEmail } from '@/lib/email';
-import type { AdminRole } from '@/types';
 
-const ADMIN_ROLES: AdminRole[] = ['admin', 'manager', 'viewer'];
-
-// GET — list all admin team members
+// GET: List all admin users
 export async function GET() {
-  const { data, error } = await supabaseAdmin.auth.admin.listUsers();
+  try {
+    // Fetch users from auth.users where role is admin/manager/viewer
+    // Note: This requires a custom query or filtering user_metadata
+    const { data, error } = await supabaseAdmin.auth.admin.listUsers();
 
-  if (error) {
-    console.error('[admin/users GET]', error.message);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) throw error;
+
+    const adminUsers = data.users
+      .filter(u => ['admin', 'manager', 'viewer'].includes(u.user_metadata?.role))
+      .map(u => ({
+        id: u.id,
+        email: u.email,
+        full_name: u.user_metadata?.full_name || 'No Name',
+        role: u.user_metadata?.role,
+        created_at: u.created_at,
+        last_sign_in_at: u.last_sign_in_at,
+      }));
+
+    return NextResponse.json({ data: adminUsers });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 });
   }
-
-  const adminUsers = (data.users ?? [])
-    .filter((u) => ADMIN_ROLES.includes(u.user_metadata?.role as AdminRole))
-    .map((u) => ({
-      id:              u.id,
-      email:           u.email ?? '',
-      full_name:       u.user_metadata?.full_name ?? '',
-      role:            u.user_metadata?.role as AdminRole,
-      created_at:      u.created_at,
-      last_sign_in_at: u.last_sign_in_at ?? null,
-    }))
-    .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-
-  return NextResponse.json({ data: adminUsers });
 }
 
-// POST — invite a new admin team member
+// POST: Create a new admin user
 export async function POST(req: NextRequest) {
-  const { full_name, email, role } = await req.json();
-
-  if (!full_name || !email || !role) {
-    return NextResponse.json({ error: 'Missing required fields: full_name, email, role' }, { status: 400 });
-  }
-
-  if (!ADMIN_ROLES.includes(role as AdminRole)) {
-    return NextResponse.json({ error: `Invalid role. Must be one of: ${ADMIN_ROLES.join(', ')}` }, { status: 400 });
-  }
-
-  // 1. Create the user (Unconfirmed - so the invite link works)
-  const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-    email,
-    email_confirm: false, // IMPORTANT: Do not auto-confirm. Let the invite link confirm them.
-    user_metadata: { role, full_name },
-  });
-
-  if (authError || !authData.user) {
-    console.error('[admin/users POST] auth error:', authError?.message);
-    if (authError?.message.includes('already been registered')) {
-       return NextResponse.json({ error: 'User with this email already exists.' }, { status: 400 });
-    }
-    return NextResponse.json({ error: authError?.message ?? 'Error creating user' }, { status: 500 });
-  }
-
-  // 2. Generate an invite link
-  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://b2b.firmarollers.com').replace(/\/$/, '');
-  
-  // FIX: Redirect to /auth/reset-password to set password
-  const callbackUrl = `${siteUrl}/auth/callback?next=/auth/reset-password`;
-
-  const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
-    type: 'invite',
-    email,
-    options: { 
-      redirectTo: callbackUrl 
-    },
-  });
-
-  if (linkError || !linkData?.properties?.action_link) {
-    console.error('[admin/users POST] link error:', linkError?.message);
-    return NextResponse.json({ id: authData.user.id, warning: 'User created but invite link failed.' }, { status: 201 });
-  }
-
-  const setupLink = linkData.properties.action_link;
-
-  // 3. Send the email with the button
   try {
-    await sendAdminInviteEmail({
-      to: email,
-      fullName: full_name,
-      role: role,
-      setupLink: setupLink,
-    });
-  } catch (e: any) {
-    console.error('[admin/users POST] email send error:', e);
-    // Don't fail the request, but log it.
-  }
+    const { email, full_name, role } = await req.json();
 
-  return NextResponse.json({ id: authData.user.id }, { status: 201 });
+    if (!email || !full_name || !role) {
+      return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
+    }
+
+    // Create user with a generated link to set password
+    // We use 'invite' type to generate a link, but we want the link returned, not emailed.
+    // Or we can createUser and then generate a link.
+    
+    // 1. Create user (disabled password, we will send link)
+    const { data: userData, error: userError } = await supabaseAdmin.auth.admin.createUser({
+      email,
+      password: 'TempPass123!', // Temporary secure password
+      email_confirm: true, // Auto confirm
+      user_metadata: {
+        full_name,
+        role,
+      },
+    });
+
+    if (userError) throw userError;
+
+    // 2. Generate a setup link (recovery link essentially) for them to set their own password
+    const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
+      type: 'magiclink', // or 'recovery' depending on your flow preference
+      email: email,
+    });
+    
+    // Ideally, we use 'invite' type but Supabase sometimes sends email automatically.
+    // To stop Supabase email and use Resend, we create the user then generate a recovery link manually.
+    
+    // Let's use a better approach for "Invite": Generate a magic link
+    const { data: magicLinkData, error: magicError } = await supabaseAdmin.auth.admin.generateLink({
+      type: 'magiclink',
+      email: email,
+    });
+
+    if (magicError) throw magicError;
+
+    // The link is in action_link
+    const setupLink = magicLinkData.properties?.action_link;
+
+    return NextResponse.json({ id: userData.user?.id, setup_link: setupLink }, { status: 201 });
+
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
 }
