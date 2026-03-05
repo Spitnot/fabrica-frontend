@@ -1,26 +1,35 @@
 import { supabaseClient } from '@/lib/supabase/client';
 
-/**
- * Sends an email using the Supabase Edge Function
- * @param to - Recipient email address
- * @param subject - Email subject line
- * @param html - HTML content of the email (your design)
- */
 export const sendEmail = async (to: string, subject: string, html: string) => {
+  console.log('--- [DEBUG] Email Service Started ---');
+  console.log('[DEBUG] To:', to);
+  console.log('[DEBUG] Subject:', subject);
+
   try {
-    // Invoke the function we created in Supabase
+    // 1. Check if client exists
+    if (!supabaseClient) {
+      console.error('[DEBUG] ERROR: Supabase client is undefined!');
+      return { success: false, error: 'Supabase client missing' };
+    }
+    console.log('[DEBUG] Supabase client found.');
+
+    // 2. Invoke function
+    console.log('[DEBUG] Invoking function "send-email"...');
     const { data, error } = await supabaseClient.functions.invoke('send-email', {
       body: { to, subject, html },
     });
 
+    // 3. Check for immediate errors
     if (error) {
-      console.error('Email Service Error:', error);
+      console.error('[DEBUG] Function returned error:', error);
       return { success: false, error };
     }
 
+    console.log('[DEBUG] Function success! Response data:', data);
     return { success: true, data };
+
   } catch (err) {
-    console.error('Network Error:', err);
+    console.error('[DEBUG] CRITICAL CATCH ERROR:', err);
     return { success: false, err };
   }
 };
