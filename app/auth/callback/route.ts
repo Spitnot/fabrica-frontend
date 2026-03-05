@@ -5,13 +5,15 @@ import { NextResponse } from 'next/server'
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url)
   const code = requestUrl.searchParams.get('code')
+  
+  // Default to /portal if 'next' isn't provided
   const next = requestUrl.searchParams.get('next') ?? '/portal'
 
   if (code) {
-    // 1. Await cookies() for Next.js 16+
+    // 1. Prepare cookie handlers (Required for Next.js 16+)
     const cookieStore = await cookies()
 
-    // 2. Use createServerClient (suggested by your build error)
+    // 2. Create the Supabase server client
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -29,11 +31,11 @@ export async function GET(request: Request) {
         },
       }
     )
-    
-    // 3. Exchange code for session
+
+    // 3. Exchange the code for a session (sets the auth cookie)
     await supabase.auth.exchangeCodeForSession(code)
   }
 
-  // 4. Redirect
+  // 4. Redirect to the final destination
   return NextResponse.redirect(new URL(next, requestUrl.origin))
 }
