@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { supabaseClient } from '@/lib/supabase/client'
+import { supabaseClient } from '@/lib/supabase/client' // Updated import to match your project
 import { useRouter } from 'next/navigation'
 
 export default function ForgotPasswordPage() {
@@ -32,40 +32,24 @@ export default function ForgotPasswordPage() {
 
   return (
     <div className="min-h-screen flex bg-[#D93A35]">
-
       {/* LEFT — brand panel (Desktop) */}
       <div className="hidden md:flex w-1/2 flex-col items-center justify-center p-12 relative overflow-hidden">
         <div className="relative z-10 flex flex-col items-center justify-center">
-          <img 
-            src="/FR_ICON_W.svg" 
-            alt="Firma Rollers Logo" 
-            className="w-24 h-auto mb-6" 
-          />
-          <div className="text-white text-[11px] font-black tracking-[0.4em] uppercase mb-1 opacity-80"
-               style={{ fontFamily: 'var(--font-alexandria)' }}>FIRMA ROLLERS</div>
-          <div className="text-white text-5xl font-black tracking-widest"
-               style={{ fontFamily: 'var(--font-alexandria)' }}>B2B</div>
-          <div className="text-white/60 text-xs mt-4 tracking-widest uppercase font-medium">Management Platform</div>
+          <img src="/FR_ICON_W.svg" alt="Firma Rollers Logo" className="w-24 h-auto mb-6" />
+          <div className="text-white text-[11px] font-black tracking-[0.4em] uppercase mb-1 opacity-80" style={{ fontFamily: 'var(--font-alexandria)' }}>FIRMA ROLLERS</div>
+          <div className="text-white text-5xl font-black tracking-widest" style={{ fontFamily: 'var(--font-alexandria)' }}>B2B</div>
         </div>
       </div>
 
       {/* RIGHT — form panel */}
       <div className="flex-1 flex items-center justify-center bg-white p-8">
         <div className="w-full max-w-[360px]">
-
-          {/* Mobile brand */}
           <div className="md:hidden text-center mb-8">
-            <img 
-              src="/FR_ICON_B.svg" 
-              alt="Firma Rollers Logo" 
-              className="w-16 h-auto mx-auto mb-3" 
-            />
-            <div className="text-2xl font-black tracking-widest text-gray-900"
-                 style={{ fontFamily: 'var(--font-alexandria)' }}>B2B</div>
+            <img src="/FR_ICON_B.svg" alt="Firma Rollers Logo" className="w-16 h-auto mx-auto mb-3" />
+            <div className="text-2xl font-black tracking-widest text-gray-900" style={{ fontFamily: 'var(--font-alexandria)' }}>B2B</div>
           </div>
 
-          <h2 className="text-2xl font-black tracking-wide text-gray-900 mb-1"
-              style={{ fontFamily: 'var(--font-alexandria)' }}>Reset Password</h2>
+          <h2 className="text-2xl font-black tracking-wide text-gray-900 mb-1" style={{ fontFamily: 'var(--font-alexandria)' }}>Reset Password</h2>
           <p className="text-sm text-gray-400 mb-8">Enter your email to receive a reset link.</p>
 
           {sent ? (
@@ -75,7 +59,7 @@ export default function ForgotPasswordPage() {
           ) : (
             <div className="space-y-4">
               {error && (
-                <div className="mb-5 px-3 py-2.5 bg-red-50 border border-red-200 rounded-lg text-sm text-[#D93A35]">
+                <div className="px-3 py-2.5 bg-red-50 border border-red-200 rounded-lg text-sm text-[#D93A35]">
                   {error}
                 </div>
               )}
