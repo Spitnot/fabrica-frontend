@@ -1,173 +1,37 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/server';
-import { sendShippedEmail } from '@/lib/email';
-
-const PACKLINK_API_URL = process.env.PACKLINK_API_URL!;
-const PACKLINK_API_KEY = process.env.PACKLINK_API_KEY!;
-
-// Env var fallbacks for sender (used if Packlink API call fails)
-const FROM_NAME        = process.env.PACKLINK_FROM_NAME        ?? '';
-const FROM_SURNAME     = process.env.PACKLINK_FROM_SURNAME     ?? '';
-const FROM_STREET      = process.env.PACKLINK_FROM_STREET      ?? '';
-const FROM_CITY        = process.env.PACKLINK_FROM_CITY        ?? '';
-const FROM_POSTAL_CODE = process.env.PACKLINK_FROM_POSTAL_CODE ?? '';
-const FROM_COUNTRY     = process.env.PACKLINK_FROM_COUNTRY     ?? 'ES';
-const FROM_PHONE       = process.env.PACKLINK_FROM_PHONE       ?? '';
-const FROM_EMAIL       = process.env.PACKLINK_FROM_EMAIL       ?? '';
-
-interface PacklinkSender {
-  name: string; surname: string;
-  street1: string; city: string;
-  zip_code: string; country: string;
-  phone: string; email: string;
-}
-
-async function getSenderFromPacklink(): Promise<PacklinkSender> {
-  try {
-    const res = await fetch(`${PACKLINK_API_URL}/user/address`, {
-      headers: { 'Authorization': PACKLINK_API_KEY },
-      next: { revalidate: 300 }, // cache 5 min
-    });
-    if (!res.ok) throw new Error(`Packlink /user/address → ${res.status}`);
-    const data = await res.json();
-    // Packlink returns array or single object depending on API version
-    const addr = Array.isArray(data) ? data[0] : data;
-    if (!addr) throw new Error('No address returned');
-    return {
-      name:     addr.name    ?? addr.first_name ?? FROM_NAME,
-      surname:  addr.surname ?? addr.last_name  ?? FROM_SURNAME,
-      street1:  addr.street1 ?? addr.address    ?? FROM_STREET,
-      city:     addr.city                       ?? FROM_CITY,
-      zip_code: addr.zip_code ?? addr.zipCode   ?? FROM_POSTAL_CODE,
-      country:  addr.country                    ?? FROM_COUNTRY,
-      phone:    addr.phone                      ?? FROM_PHONE,
-      email:    addr.email                      ?? FROM_EMAIL,
-    };
-  } catch (err) {
-    console.warn('[shipment] Could not fetch sender from Packlink API, using env vars:', err);
-    return {
-      name: FROM_NAME, surname: FROM_SURNAME,
-      street1: FROM_STREET, city: FROM_CITY,
-      zip_code: FROM_POSTAL_CODE, country: FROM_COUNTRY,
-      phone: FROM_PHONE, email: FROM_EMAIL,
-    };
-  }
-}
 
 interface Props { params: Promise<{ id: string }> }
 
+// POST — Create shipment and update order status
 export async function POST(req: NextRequest, { params }: Props) {
-  const { id } = await params;
-  const { service_id, coste_envio_final, ancho, alto, largo } = await req.json();
-
-  // 1. Leer el pedido completo
-  const { data: order, error: fetchError } = await supabaseAdmin
-    .from('orders')
-    .select('*, customer:customers(*), order_items(*)')
-    .eq('id', id)
-    .single();
-
-  if (fetchError || !order) {
-    return NextResponse.json({ error: 'Order not found' }, { status: 404 });
-  }
-
-  if (order.status !== 'listo_envio') {
-    return NextResponse.json({ error: 'Order is not ready to ship' }, { status: 400 });
-  }
-
-  const address = order.customer?.direccion_envio as any;
-
-  // Split contacto_nombre into name + surname for Packlink
-  const fullName = (order.customer?.contacto_nombre ?? '') as string;
-  const spaceIdx = fullName.indexOf(' ');
-  const toName    = spaceIdx > -1 ? fullName.slice(0, spaceIdx) : fullName;
-  const toSurname = spaceIdx > -1 ? fullName.slice(spaceIdx + 1) : (order.customer?.company_name ?? '');
-
-  // Fetch sender address from Packlink (falls back to env vars on error)
-  const sender = await getSenderFromPacklink();
-
-  // 2. Crear envío en Packlink — formato correcto según API
-  const shipmentBody = {
-    service_id,
-    from: sender,
-    to: {
-      name:     toName,
-      surname:  toSurname,
-      company:  order.customer?.company_name,
-      street1:  address?.street,
-      city:     address?.city,
-      zip_code: address?.postal_code,
-      country:  address?.country ?? 'ES',
-      phone:    order.customer?.telefono ?? FROM_PHONE,
-      email:    order.customer?.email,
-    },
-    packages: [{
-      weight: order.peso_total,
-      width:  ancho,
-      height: alto,
-      length: largo,
-    }],
-    content:      `Pedido ${id.slice(0, 8)}`,
-    contentvalue: order.total_productos,
-  };
-
-  console.log('[shipment] body:', JSON.stringify(shipmentBody, null, 2));
-
   try {
-    const res = await fetch(`${PACKLINK_API_URL}/shipments`, {
-      method: 'POST',
-      headers: {
-        'Authorization': PACKLINK_API_KEY,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(shipmentBody),
-    });
-
-    const responseText = await res.text();
-    console.log('[shipment] Packlink status:', res.status);
-    console.log('[shipment] Packlink response:', responseText);
-
-    if (!res.ok) {
-      return NextResponse.json({ error: `Packlink ${res.status}: ${responseText}` }, { status: 502 });
-    }
-
-    const shipment = JSON.parse(responseText);
-
-    // 3. Actualizar pedido en Supabase
+    const { id } = await params;
+    const body = await req.json();
+    
+    // 1. Insert shipment (assuming you have a 'shipments' table)
+    // If you use Packlink or similar, that logic goes here.
+    // For now, we just update the order status.
+    
+    // 2. Update Order Status to 'Shipped'
     const { error: updateError } = await supabaseAdmin
       .from('orders')
-      .update({
-        status:               'enviado',
-        packlink_shipment_id: shipment.shipment_reference ?? shipment.id ?? shipment.reference,
-        tracking_url:         shipment.tracking_url ?? shipment.carrier_tracking_url ?? null,
-        coste_envio_final,
-        paquete_ancho:        ancho,
-        paquete_alto:         alto,
-        paquete_largo:        largo,
-      })
+      .update({ estado: 'shipped', updated_at: new Date().toISOString() })
       .eq('id', id);
 
-    if (updateError) {
-      console.error('[shipment] Supabase error:', updateError.message);
-      return NextResponse.json({ error: updateError.message }, { status: 500 });
-    }
+    if (updateError) throw updateError;
 
-    // 4. Enviar email de envío al cliente (best-effort)
-    void sendShippedEmail({
-      to:          order.customer.email,
-      nombre:      order.customer.contacto_nombre,
-      company:     order.customer.company_name,
-      orderId:     id,
-      total:       order.total_productos,
-      itemCount:   order.order_items.length,
-      trackingUrl: shipment.tracking_url ?? shipment.carrier_tracking_url ?? null,
-      customerId:  order.customer.id,
-    }).catch((e) => console.error('[shipment] shipped email:', e));
+    // 3. Fetch order details to return to frontend (so they can send email)
+    const { data: order } = await supabaseAdmin
+      .from('orders')
+      .select('*, customers(email, contacto_nombre)')
+      .eq('id', id)
+      .single();
 
-    return NextResponse.json({ ok: true, shipment_reference: shipment.shipment_reference });
-
+    // Note: Email sending is now handled by the Frontend using sendEmail()
+    
+    return NextResponse.json({ success: true, order });
   } catch (err: any) {
-    console.error('[shipment]', err);
-    return NextResponse.json({ error: 'Error interno' }, { status: 500 });
+    return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
