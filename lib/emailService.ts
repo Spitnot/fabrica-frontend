@@ -1,5 +1,4 @@
-// src/lib/emailService.ts
-import { supabase } from './supabase';
+import { supabaseClient } from '@/lib/supabase/client';
 
 /**
  * Sends an email using the Supabase Edge Function
@@ -9,8 +8,8 @@ import { supabase } from './supabase';
  */
 export const sendEmail = async (to: string, subject: string, html: string) => {
   try {
-    // Invoke the function we created in Step 1
-    const { data, error } = await supabase.functions.invoke('send-email', {
+    // Invoke the function we created in Supabase
+    const { data, error } = await supabaseClient.functions.invoke('send-email', {
       body: { to, subject, html },
     });
 
