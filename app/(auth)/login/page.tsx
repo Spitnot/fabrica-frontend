@@ -17,10 +17,9 @@ export default function LoginPage() {
       setError('This setup link has expired. Ask an admin to generate a new one.');
     }
     if (params.get('reset') === 'success') {
-  setError(''); // clear any errors
-  // optionally show a success banner — add a separate `success` state
-}
-
+      setError(''); // clear any errors
+      // optionally show a success banner — add a separate `success` state
+    }
   }, []);
 
   async function handleLogin() {
@@ -117,9 +116,10 @@ export default function LoginPage() {
                 placeholder="••••••••"
                 className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-[#D93A35] outline-none transition-colors" />
             </div>
-<div className="flex justify-end -mt-1">
-  <a href="/auth/forgot-password" className="text-xs text-gray-400 hover:text-[#D93A35] transition-colors">Forgot password?</a>
-</div>
+            <div className="flex justify-end -mt-1">
+              {/* UPDATED LINK */}
+              <a href="/auth/forgot-password" className="text-xs text-gray-400 hover:text-[#D93A35] transition-colors">Forgot password?</a>
+            </div>
             <button onClick={handleLogin} disabled={loading || !email || !password}
               className="w-full py-3 bg-[#D93A35] text-white text-sm font-bold rounded-lg hover:bg-[#b52e2a] disabled:opacity-40 disabled:cursor-not-allowed transition-colors mt-2">
               {loading ? 'Signing in…' : 'Sign In'}

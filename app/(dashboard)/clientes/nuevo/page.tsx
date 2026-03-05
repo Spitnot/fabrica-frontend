@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { sendEmail } from '@/lib/emailService'; // NEW IMPORT
 
 interface Tarifa { id: string; nombre: string; descripcion?: string; }
 
@@ -161,6 +162,25 @@ export default function NuevoClientePage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? 'Error al crear cliente');
+
+      // SEND WELCOME EMAIL
+      const welcomeHtml = `
+        <div style="font-family: sans-serif; color: #333; max-width: 600px; margin: auto;">
+          <h2 style="color: #D93A35;">Welcome to Fabrica B2B</h2>
+          <p>Hello ${form.contacto_nombre},</p>
+          <p>Your account for <strong>${form.company_name}</strong> has been created.</p>
+          <p>You can now access the client portal to view orders, invoices, and pricing.</p>
+          <p><strong>Your login credentials:</strong><br/>
+          Email: ${form.email}<br/>
+          Password: (the one set during creation)</p>
+          <a href="https://your-domain.com/portal" style="display: inline-block; padding: 12px 24px; background-color: #D93A35; color: white; text-decoration: none; border-radius: 8px; font-weight: bold; margin: 16px 0;">
+            Access Portal
+          </a>
+        </div>
+      `;
+      
+      await sendEmail(form.email, 'Welcome to Fabrica B2B', welcomeHtml);
+
       router.push(`/clientes/${data.id}`);
     } catch (err: any) {
       setError(err.message);
