@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/server'
-import { sendResetPasswordEmail } from '@/lib/emailService'
 
 export async function POST(req: NextRequest) {
   try {
@@ -10,24 +9,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Email is required' }, { status: 400 })
     }
 
-    const { data, error } = await supabaseAdmin.auth.admin.generateLink({
-      type: 'recovery',
-      email,
+    await supabaseAdmin.auth.resetPasswordForEmail(email, {
+      redirectTo: 'https://b2b.firmarollers.com/auth/callback?next=/reset-password',
     })
 
-    if (error) {
-      console.error('Generate Link Error:', error)
-      // Genérico para evitar email enumeration
-      return NextResponse.json({ success: true })
-    }
-
-    const link = data.properties?.action_link
-
-    if (link) {
-      await sendResetPasswordEmail(email, link)
-    }
-
-    // Siempre responder success — nunca confirmar si el email existe
     return NextResponse.json({ success: true })
 
   } catch (err: any) {
