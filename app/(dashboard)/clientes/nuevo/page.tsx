@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { sendEmail } from '@/lib/emailService'; // NEW IMPORT
 
 interface Tarifa { id: string; nombre: string; descripcion?: string; }
 
@@ -61,22 +60,15 @@ export default function NuevoClientePage() {
   const [sameAddress, setSameAddress] = useState(true);
 
   const [form, setForm] = useState({
-    // Legal identity
     company_name: '', nombre_comercial: '', tipo_empresa: '',
     tipo_fiscal: 'NIF/CIF', nif_cif: '', numero_eori: '', fecha_constitucion: '',
-    // Contact
     contacto_nombre: '', email: '', password: '',
     telefono_prefijo: '+34', telefono_numero: '',
-    // Fiscal address
     fiscal_street: '', fiscal_city: '', fiscal_state: '', fiscal_postal_code: '', fiscal_country: 'ES',
-    // Shipping address
     street: '', city: '', postal_code: '', country: 'ES',
-    // Commercial profile
     tipo_cliente: '', zona_distribucion: '', marcas_comercializadas: '', volumen_estimado: '', num_puntos_venta: '',
-    // Legal
     acepta_condiciones: false, acepta_privacidad: false,
     consentimiento_comunicaciones: false, declaracion_cumplimiento: false,
-    // Internal
     tarifa_id: '', descuento_pct: '0', forma_pago: '', condiciones_pago: '', notas_especiales: '',
   });
 
@@ -107,44 +99,37 @@ export default function NuevoClientePage() {
       : { street: form.fiscal_street, city: form.fiscal_city, state: form.fiscal_state, postal_code: form.fiscal_postal_code, country: form.fiscal_country };
 
     const payload = {
-      // Contact & auth
       contacto_nombre: form.contacto_nombre,
       company_name:    form.company_name,
       email:           form.email,
       password:        form.password,
       telefono:        `${form.telefono_prefijo} ${form.telefono_numero}`.trim(),
-      // Legal identity
       nombre_comercial:   form.nombre_comercial   || null,
       tipo_empresa:       form.tipo_empresa        || null,
       nif_cif:            form.nif_cif,
       tipo_fiscal:        form.tipo_fiscal,
       numero_eori:        form.numero_eori         || null,
       fecha_constitucion: form.fecha_constitucion  || null,
-      // Fiscal address
       fiscal_street:      fiscalAddress.street,
       fiscal_city:        fiscalAddress.city,
       fiscal_state:       fiscalAddress.state      || null,
       fiscal_postal_code: fiscalAddress.postal_code,
       fiscal_country:     fiscalAddress.country,
-      // Shipping address (copy from fiscal when sameAddress)
       street:       sameAddress ? form.fiscal_street      : form.street,
       city:         sameAddress ? form.fiscal_city        : form.city,
       postal_code:  sameAddress ? form.fiscal_postal_code : form.postal_code,
       country:      sameAddress ? form.fiscal_country     : form.country,
-      // Commercial profile
       tipo_cliente:           form.tipo_cliente            || null,
       zona_distribucion:      form.zona_distribucion       || null,
       marcas_comercializadas: form.marcas_comercializadas  || null,
       volumen_estimado:       form.volumen_estimado        || null,
       num_puntos_venta:       form.num_puntos_venta ? parseInt(form.num_puntos_venta) : null,
-      // Legal
       condiciones_legales: {
         acepta_condiciones:             form.acepta_condiciones,
         acepta_privacidad:              form.acepta_privacidad,
         consentimiento_comunicaciones:  form.consentimiento_comunicaciones,
         declaracion_cumplimiento:       form.declaracion_cumplimiento,
       },
-      // Internal
       tarifa_id:     form.tarifa_id     || null,
       descuento_pct: parseFloat(form.descuento_pct) || 0,
       condiciones_comerciales: {
@@ -163,24 +148,7 @@ export default function NuevoClientePage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? 'Error al crear cliente');
 
-      // SEND WELCOME EMAIL
-      const welcomeHtml = `
-        <div style="font-family: sans-serif; color: #333; max-width: 600px; margin: auto;">
-          <h2 style="color: #D93A35;">Welcome to Fabrica B2B</h2>
-          <p>Hello ${form.contacto_nombre},</p>
-          <p>Your account for <strong>${form.company_name}</strong> has been created.</p>
-          <p>You can now access the client portal to view orders, invoices, and pricing.</p>
-          <p><strong>Your login credentials:</strong><br/>
-          Email: ${form.email}<br/>
-          Password: (the one set during creation)</p>
-          <a href="https://your-domain.com/portal" style="display: inline-block; padding: 12px 24px; background-color: #D93A35; color: white; text-decoration: none; border-radius: 8px; font-weight: bold; margin: 16px 0;">
-            Access Portal
-          </a>
-        </div>
-      `;
-      
-      await sendEmail(form.email, 'Welcome to Fabrica B2B', welcomeHtml);
-
+      // El email de bienvenida lo envía el servidor en /api/customers
       router.push(`/clientes/${data.id}`);
     } catch (err: any) {
       setError(err.message);
@@ -402,9 +370,9 @@ export default function NuevoClientePage() {
           <Section n={6} title="Legal / GDPR" />
           <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-3">
             {[
-              { key: 'acepta_condiciones',            label: 'Aceptación de condiciones generales de venta',                  required: true  },
-              { key: 'acepta_privacidad',              label: 'Aceptación de la política de privacidad (RGPD / GDPR)',          required: true  },
-              { key: 'consentimiento_comunicaciones',  label: 'Consentimiento para comunicaciones comerciales',                 required: false },
+              { key: 'acepta_condiciones',            label: 'Aceptación de condiciones generales de venta',                   required: true  },
+              { key: 'acepta_privacidad',              label: 'Aceptación de la política de privacidad (RGPD / GDPR)',           required: true  },
+              { key: 'consentimiento_comunicaciones',  label: 'Consentimiento para comunicaciones comerciales',                  required: false },
               { key: 'declaracion_cumplimiento',       label: 'Declaración de cumplimiento normativo (import/export si aplica)', required: false },
             ].map(({ key, label, required }) => (
               <label key={key} className="flex items-start gap-3 cursor-pointer select-none">
@@ -441,7 +409,6 @@ export default function NuevoClientePage() {
                 onChange={e => set('descuento_pct', e.target.value)} placeholder="0" className={inputCls} />
               <p className="text-[10px] text-gray-400">Aplicado sobre la tarifa. 0 = sin descuento adicional.</p>
             </div>
-
             <div className="space-y-2">
               <label className={labelCls}>Forma de pago</label>
               <div className="grid grid-cols-1 gap-2">
@@ -456,7 +423,6 @@ export default function NuevoClientePage() {
                 ))}
               </div>
             </div>
-
             <div className="space-y-2">
               <label className={labelCls}>Condiciones de pago</label>
               <div className="grid grid-cols-1 gap-2">
@@ -471,7 +437,6 @@ export default function NuevoClientePage() {
                 ))}
               </div>
             </div>
-
             <div className="sm:col-span-2 space-y-1.5">
               <label className={labelCls}>Condiciones comerciales especiales</label>
               <textarea value={form.notas_especiales} onChange={e => set('notas_especiales', e.target.value)}
