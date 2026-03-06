@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabaseClient } from '@/lib/supabase/client';
-import { sendEmail } from '@/lib/emailService'; // NEW IMPORT
 import type { AdminRole } from '@/types';
 
 interface AdminUser {
@@ -38,17 +37,14 @@ export default function UsuariosPage() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [currentRole, setCurrentRole]     = useState<AdminRole | null>(null);
 
-  // Invite form
   const [showInvite, setShowInvite] = useState(false);
   const [inviteName, setInviteName] = useState('');
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState<AdminRole>('manager');
   const [inviting, setInviting]     = useState(false);
   const [inviteError, setInviteError] = useState('');
-  const [setupLink, setSetupLink]   = useState('');
-  const [copied, setCopied]         = useState(false);
+  const [inviteSent, setInviteSent] = useState(false);
 
-  // Edit role modal
   const [editUser, setEditUser]     = useState<AdminUser | null>(null);
   const [editRole, setEditRole]     = useState<AdminRole>('manager');
   const [editSaving, setEditSaving] = useState(false);
@@ -64,10 +60,10 @@ export default function UsuariosPage() {
 
   useEffect(() => {
     async function init() {
-      const { data: { session } } = await supabaseClient.auth.getSession();
-      if (session?.user) {
-        setCurrentUserId(session.user.id);
-        setCurrentRole(session.user.user_metadata?.role as AdminRole);
+      const { data: { user } } = await supabaseClient.auth.getUser();
+      if (user) {
+        setCurrentUserId(user.id);
+        setCurrentRole(user.user_metadata?.role as AdminRole);
       }
       loadUsers();
     }
@@ -76,10 +72,10 @@ export default function UsuariosPage() {
 
   async function handleInvite(e: React.FormEvent) {
     e.preventDefault();
-    setInviteError(''); setInviting(true); setSetupLink('');
-    
+    setInviteError(''); setInviting(true); setInviteSent(false);
+
     try {
-      // 1. Create user via API
+      // Crear usuario + enviar email — todo en el servidor
       const res = await fetch('/api/admin/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -87,33 +83,15 @@ export default function UsuariosPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? 'Error creating user');
-      
-      const link = data.setup_link ?? '';
-      setSetupLink(link);
 
-      // 2. Send Welcome Email via Resend
-      if (link) {
-        const htmlContent = `
-          <div style="font-family: sans-serif; color: #333; max-width: 600px; margin: auto;">
-            <h2 style="color: #D93A35;">Welcome to Fabrica!</h2>
-            <p>Hello ${inviteName},</p>
-            <p>You have been invited to join the Fabrica Dashboard as a <strong>${ROLE_LABELS[inviteRole]}</strong>.</p>
-            <p>Please click the button below to set up your password and access your account:</p>
-            <a href="${link}" style="display: inline-block; padding: 12px 24px; background-color: #D93A35; color: white; text-decoration: none; border-radius: 8px; font-weight: bold; margin: 16px 0;">
-              Set Password & Access Dashboard
-            </a>
-            <p style="font-size: 12px; color: #999;">This link expires in 24 hours.</p>
-          </div>
-        `;
-        
-        await sendEmail(inviteEmail, 'Welcome to Fabrica - Set Your Password', htmlContent);
-        // Optionally alert if email fails, but we show the link anyway as backup
-      }
-
+      setInviteSent(true);
       setInviteName(''); setInviteEmail(''); setInviteRole('manager');
       loadUsers();
-    } catch (err: any) { setInviteError(err.message); }
-    finally { setInviting(false); }
+    } catch (err: any) {
+      setInviteError(err.message);
+    } finally {
+      setInviting(false);
+    }
   }
 
   async function handleEditRole(e: React.FormEvent) {
@@ -130,20 +108,17 @@ export default function UsuariosPage() {
       if (!res.ok) throw new Error(data.error ?? 'Error updating role');
       setEditUser(null);
       loadUsers();
-    } catch (err: any) { setEditError(err.message); }
-    finally { setEditSaving(false); }
+    } catch (err: any) {
+      setEditError(err.message);
+    } finally {
+      setEditSaving(false);
+    }
   }
 
   async function handleDelete(user: AdminUser) {
     if (!confirm(`Remove ${user.full_name || user.email} from the team? This cannot be undone.`)) return;
     const res = await fetch(`/api/admin/users/${user.id}`, { method: 'DELETE' });
     if (res.ok) loadUsers();
-  }
-
-  function copyLink() {
-    navigator.clipboard.writeText(setupLink);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
   }
 
   const isAdmin = currentRole === 'admin';
@@ -161,7 +136,7 @@ export default function UsuariosPage() {
         </div>
         {isAdmin && !showInvite && (
           <button
-            onClick={() => { setShowInvite(true); setSetupLink(''); setInviteError(''); }}
+            onClick={() => { setShowInvite(true); setInviteSent(false); setInviteError(''); }}
             className="px-4 py-2 bg-[#D93A35] text-white text-sm font-semibold rounded-lg hover:bg-[#b52e2a] transition-colors"
           >
             + Invite member
@@ -175,30 +150,19 @@ export default function UsuariosPage() {
           <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
             <span className="text-[10px] font-black tracking-[0.12em] uppercase text-gray-400"
                   style={{ fontFamily: 'var(--font-alexandria)' }}>Invite member</span>
-            <button onClick={() => { setShowInvite(false); setSetupLink(''); setInviteError(''); }}
+            <button onClick={() => { setShowInvite(false); setInviteSent(false); setInviteError(''); }}
                     className="text-gray-400 hover:text-gray-600 text-sm">✕</button>
           </div>
 
-          {setupLink ? (
+          {inviteSent ? (
             <div className="p-5 space-y-4">
               <div className="flex items-center gap-2 text-[#0DA265] text-sm font-semibold">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                   <path d="M20 6L9 17l-5-5"/>
                 </svg>
-                Team member created. An email has been sent.
+                Team member created. Invite email sent successfully.
               </div>
-              <div className="flex gap-2">
-                <input readOnly value={setupLink}
-                       className="flex-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-xs font-mono text-gray-700 outline-none" />
-                <button onClick={copyLink}
-                        className="px-3 py-2 bg-gray-900 text-white text-xs font-semibold rounded-lg hover:bg-gray-700 transition-colors whitespace-nowrap">
-                  {copied ? 'Copied!' : 'Copy'}
-                </button>
-              </div>
-              <p className="text-[11px] text-gray-400">
-                Backup link (also sent via email). Expires in 24 hours.
-              </p>
-              <button onClick={() => { setShowInvite(false); setSetupLink(''); }}
+              <button onClick={() => { setShowInvite(false); setInviteSent(false); }}
                       className="text-sm font-semibold text-[#D93A35] hover:underline">
                 Done
               </button>

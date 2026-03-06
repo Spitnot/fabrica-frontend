@@ -1,34 +1,37 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase/server';
+import { NextRequest, NextResponse } from 'next/server'
+import { supabaseAdmin } from '@/lib/supabase/server'
+import { sendResetPasswordEmail } from '@/lib/emailService'
 
 export async function POST(req: NextRequest) {
   try {
-    const { email } = await req.json();
+    const { email } = await req.json()
 
     if (!email) {
-      return NextResponse.json({ error: 'Email is required' }, { status: 400 });
+      return NextResponse.json({ error: 'Email is required' }, { status: 400 })
     }
 
-    // Generate the password recovery link using Admin privileges
-    // This bypasses Supabase's built-in email sender and just gives us the link.
     const { data, error } = await supabaseAdmin.auth.admin.generateLink({
       type: 'recovery',
-      email: email,
-    });
+      email,
+    })
 
     if (error) {
-      console.error('Generate Link Error:', error);
-      // Return generic error to avoid email enumeration
-      return NextResponse.json({ error: 'Could not generate link' }, { status: 500 });
+      console.error('Generate Link Error:', error)
+      // Genérico para evitar email enumeration
+      return NextResponse.json({ success: true })
     }
 
-    // Return the link properties
-    return NextResponse.json({ 
-      link: data.properties?.action_link 
-    });
+    const link = data.properties?.action_link
 
-  } catch (err) {
-    console.error('Server Error:', err);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    if (link) {
+      await sendResetPasswordEmail(email, link)
+    }
+
+    // Siempre responder success — nunca confirmar si el email existe
+    return NextResponse.json({ success: true })
+
+  } catch (err: any) {
+    console.error('Server Error:', err)
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
 }
