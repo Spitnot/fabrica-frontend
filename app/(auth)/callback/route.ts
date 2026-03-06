@@ -1,39 +1,37 @@
-import { createServerClient } from '@supabase/auth-helpers-nextjs'
+import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url)
   const code = requestUrl.searchParams.get('code')
-  const next = requestUrl.searchParams.get('next') ?? '/portal'
 
   if (code) {
-    // 1. Await cookies() for Next.js 16+
     const cookieStore = await cookies()
 
-    // 2. Use createServerClient (suggested by your build error)
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
         cookies: {
-          get(name: string) {
-            return cookieStore.get(name)?.value
-          },
-          set(name: string, value: string, options: any) {
-            cookieStore.set({ name, value, ...options })
-          },
-          remove(name: string, options: any) {
-            cookieStore.set({ name, value: '', ...options })
+          getAll() { return cookieStore.getAll() },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            )
           },
         },
       }
     )
-    
-    // 3. Exchange code for session
-    await supabase.auth.exchangeCodeForSession(code)
+
+    const { data: { user }, error } = await supabase.auth.exchangeCodeForSession(code)
+
+    if (!error && user) {
+      const role = user.user_metadata?.role
+      const dest = role === 'customer' ? '/portal' : '/dashboard'
+      return NextResponse.redirect(new URL(dest, requestUrl.origin))
+    }
   }
 
-  // 4. Redirect
-  return NextResponse.redirect(new URL(next, requestUrl.origin))
+  return NextResponse.redirect(new URL('/login?error=auth', requestUrl.origin))
 }
