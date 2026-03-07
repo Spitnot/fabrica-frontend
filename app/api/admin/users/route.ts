@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/server'
 import { sendTeamInviteEmail } from '@/lib/emailService'
 
-// GET: List all admin users
 export async function GET() {
   try {
     const { data, error } = await supabaseAdmin.auth.admin.listUsers()
@@ -27,7 +26,6 @@ export async function GET() {
   }
 }
 
-// POST: Create a new admin user
 export async function POST(req: NextRequest) {
   try {
     const { email, full_name, role } = await req.json()
@@ -39,28 +37,30 @@ export async function POST(req: NextRequest) {
     // 1. Crear usuario
     const { data: userData, error: userError } = await supabaseAdmin.auth.admin.createUser({
       email,
-      password: crypto.randomUUID(), // password temporal aleatorio
+      password: crypto.randomUUID(),
       email_confirm: true,
       user_metadata: { full_name, role },
     })
 
     if (userError) throw userError
 
-    // 2. Generar magic link para que establezca su password
+    // 2. Generar invite link con flujo PKCE
     const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
-      type: 'magiclink',
+      type: 'invite',
       email,
+      options: {
+        redirectTo: 'https://b2b.firmarollers.com/auth/callback?next=/reset-password',
+      },
     })
 
     if (linkError) throw linkError
 
     const setupLink = linkData.properties?.action_link
-
     if (!setupLink) {
       return NextResponse.json({ error: 'Could not generate invite link' }, { status: 500 })
     }
 
-    // 3. Enviar email desde servidor
+    // 3. Enviar email
     await sendTeamInviteEmail(email, full_name, setupLink)
 
     return NextResponse.json({ id: userData.user?.id }, { status: 201 })
