@@ -4,9 +4,11 @@ import type { NextRequest } from 'next/server'
 
 const ADMIN_PREFIXES = ['/dashboard', '/pedidos', '/clientes', '/tarifas', '/catalogo', '/emails', '/usuarios']
 const ADMIN_ROLES = ['admin', 'manager', 'viewer']
+// Rutas accesibles siempre, incluso con sesión activa
+const AUTH_ROUTES = ['/login', '/forgot-password', '/reset-password']
 
 export async function proxy(req: NextRequest) {
-    let res = NextResponse.next({ request: req })
+  let res = NextResponse.next({ request: req })
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -25,7 +27,6 @@ export async function proxy(req: NextRequest) {
     }
   )
 
-  // getUser() valida contra Supabase — más seguro que getSession()
   const { data: { user } } = await supabase.auth.getUser()
 
   const { pathname } = req.nextUrl
@@ -33,6 +34,7 @@ export async function proxy(req: NextRequest) {
   const isAdminRoute = ADMIN_PREFIXES.some(p => pathname === p || pathname.startsWith(p + '/'))
   const isPortalRoute = pathname === '/portal' || pathname.startsWith('/portal/')
   const isProtected = isAdminRoute || isPortalRoute
+  const isAuthRoute = AUTH_ROUTES.includes(pathname)
 
   // ── Unauthenticated ──────────────────────────────────────────────────────────
   if (!user) {
@@ -45,8 +47,11 @@ export async function proxy(req: NextRequest) {
   // ── Authenticated ────────────────────────────────────────────────────────────
   const role = user.user_metadata?.role as string | undefined
 
-  // Ya logueado — saltar login y root
-  if (pathname === '/login' || pathname === '/') {
+  // Rutas de auth siempre accesibles (reset-password, forgot-password)
+  if (isAuthRoute) return res
+
+  // Ya logueado — saltar root
+  if (pathname === '/') {
     const dest = role === 'customer' ? '/portal' : '/dashboard'
     return NextResponse.redirect(new URL(dest, req.url))
   }

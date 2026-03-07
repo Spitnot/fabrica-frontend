@@ -5,6 +5,7 @@ import { NextResponse } from 'next/server'
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url)
   const code = requestUrl.searchParams.get('code')
+  const next = requestUrl.searchParams.get('next')
 
   if (code) {
     const cookieStore = await cookies()
@@ -27,6 +28,10 @@ export async function GET(request: Request) {
     const { data: { user }, error } = await supabase.auth.exchangeCodeForSession(code)
 
     if (!error && user) {
+      // Si hay next param (ej: /reset-password), ir ahí
+      if (next) {
+        return NextResponse.redirect(new URL(next, requestUrl.origin))
+      }
       const role = user.user_metadata?.role
       const dest = role === 'customer' ? '/portal' : '/dashboard'
       return NextResponse.redirect(new URL(dest, requestUrl.origin))

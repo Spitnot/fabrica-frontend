@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/lib/supabase/server'
+import { createClient } from '@supabase/supabase-js'
+
+// Usar anon client — el service role bypasea el SMTP configurado
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
 
 export async function POST(req: NextRequest) {
   try {
@@ -9,10 +15,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Email is required' }, { status: 400 })
     }
 
-    await supabaseAdmin.auth.resetPasswordForEmail(email, {
+    await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: 'https://b2b.firmarollers.com/auth/callback?next=/reset-password',
     })
 
+    // Siempre success — nunca confirmar si el email existe
     return NextResponse.json({ success: true })
 
   } catch (err: any) {
