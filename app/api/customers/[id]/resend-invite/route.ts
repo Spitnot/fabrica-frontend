@@ -18,20 +18,23 @@ export async function POST(req: NextRequest, { params }: Props) {
       return NextResponse.json({ error: 'Customer not found' }, { status: 404 })
     }
 
+    // Usar 'invite' en vez de 'magiclink' — genera flujo PKCE compatible
     const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
-      type: 'magiclink',
+      type: 'invite',
       email: customer.email,
+      options: {
+        redirectTo: 'https://b2b.firmarollers.com/auth/callback?next=/reset-password',
+      },
     })
 
     if (linkError) throw linkError
 
     const setupLink = linkData.properties?.action_link
-
     if (!setupLink) {
       return NextResponse.json({ error: 'Could not generate link' }, { status: 500 })
     }
 
-    await sendCustomerInviteEmail(customer.email, customer.contacto_nombre, setupLink)
+    await sendCustomerInviteEmail(customer.email, customer.contacto_nombre, setupLink, id)
 
     return NextResponse.json({ success: true })
 
