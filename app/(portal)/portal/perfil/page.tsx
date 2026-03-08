@@ -315,6 +315,29 @@ export default function PerfilPage() {
         </div>
       </div>
 
+      {/* ── Brand Assets card ─────────────────────────────────────── */}
+      <a
+        href="https://drive.google.com/drive/u/4/folders/1ViJQ_IF1PyuzF779usnfcHmHkshhggUx"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center justify-between bg-white border border-gray-200 rounded-xl px-4 py-3 mb-4 hover:border-[#D93A35] hover:shadow-sm transition-all group"
+      >
+        <div className="flex items-center gap-3">
+          <svg className="w-5 h-5 text-gray-400 group-hover:text-[#D93A35] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+              d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3 18h13.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3A1.5 1.5 0 001.5 6v10.5A1.5 1.5 0 003 18zm13.5-11.25h.008v.008h-.008V6.75z" />
+          </svg>
+          <div>
+            <p className="text-[10px] font-black tracking-[0.12em] uppercase text-gray-400 group-hover:text-[#D93A35] transition-colors"
+               style={{ fontFamily: 'var(--font-alexandria)' }}>Brand Assets</p>
+            <p className="text-xs text-gray-500 mt-0.5">Logos, fonts and graphic materials</p>
+          </div>
+        </div>
+        <svg className="w-4 h-4 text-gray-300 group-hover:text-[#D93A35] transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+        </svg>
+      </a>
+
       {/* ── Security card ─────────────────────────────────────────── */}
       <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
         <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
