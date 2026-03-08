@@ -47,10 +47,10 @@ export async function POST(req: NextRequest) {
     'from[zip]':           FROM_POSTAL_CODE,
     'to[country]':         countryCode,
     'to[zip]':             destination.postal_code,
-    'packages[0][weight]': String(peso),
-    'packages[0][width]':  String(ancho),
-    'packages[0][height]': String(alto),
-    'packages[0][length]': String(largo),
+    'packages[0][weight]': String(parseFloat(Number(peso).toFixed(2))),
+    'packages[0][width]':  String(Math.round(Number(ancho))),
+    'packages[0][height]': String(Math.round(Number(alto))),
+    'packages[0][length]': String(Math.round(Number(largo))),
   });
 
   const fullUrl = `${PACKLINK_API_URL}/services?${params}`;
