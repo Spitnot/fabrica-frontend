@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
 
     // 3. Generar invite link y enviar email
     const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
-      type: 'invite',
+      type: 'recovery',
       email: body.email,
       options: {
         redirectTo: 'https://b2b.firmarollers.com/auth/callback?next=/reset-password',
@@ -88,6 +88,8 @@ export async function POST(req: NextRequest) {
         linkData.properties.action_link,
         userId,
       );
+    } else {
+      console.error('[API] Failed to generate invite link:', linkError);
     }
 
     return NextResponse.json({ id: data.id, message: 'Customer created' }, { status: 201 });
