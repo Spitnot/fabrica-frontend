@@ -27,10 +27,10 @@ export async function POST(req: NextRequest, { params }: Props) {
     return NextResponse.json({ error: 'Invalid status' }, { status: 400 })
   }
 
-  // Leer estado actual del pedido
+  // Leer estado actual del pedido (solo columnas que existen)
   const { data: order, error: fetchError } = await supabaseAdmin
     .from('orders')
-    .select('status, customer_id, reference, tracking_number, carrier')
+    .select('status, customer_id, tracking_url')
     .eq('id', id)
     .single()
 
@@ -46,12 +46,9 @@ export async function POST(req: NextRequest, { params }: Props) {
     )
   }
 
-  const updates: Record<string, unknown> = { status: newStatus }
-  if (newStatus === 'enviado') updates.sent_at = new Date().toISOString()
-
   const { error: updateError } = await supabaseAdmin
     .from('orders')
-    .update(updates)
+    .update({ status: newStatus })
     .eq('id', id)
 
   if (updateError) {
@@ -69,9 +66,11 @@ export async function POST(req: NextRequest, { params }: Props) {
       await sendShippingEmail(
         customer.email,
         customer.contacto_nombre,
-        order.reference ?? id,
-        order.tracking_number ?? undefined,
-        order.carrier ?? undefined
+        id,
+        order.tracking_url ?? undefined,
+        undefined,
+        order.customer_id,
+        id,
       )
     }
   }
