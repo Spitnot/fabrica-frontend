@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 interface Quote {
   service_id: string;
@@ -20,6 +21,7 @@ const fmt = (n: number) =>
   new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'EUR' }).format(n);
 
 export function ShipmentPanel({ orderId, pesoTotal, destination }: Props) {
+  const router = useRouter();
   const [ancho, setAncho] = useState('');
   const [alto, setAlto]   = useState('');
   const [largo, setLargo] = useState('');
@@ -56,7 +58,7 @@ export function ShipmentPanel({ orderId, pesoTotal, destination }: Props) {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? 'Error generating shipment');
-      window.location.reload();
+      router.refresh();
     } catch (err: any) { setError(err.message); setGenerating(false); }
   }
 

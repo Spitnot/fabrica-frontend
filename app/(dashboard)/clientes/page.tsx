@@ -53,7 +53,39 @@ export default async function ClientesPage() {
         </Link>
       </div>
 
-      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+      {/* Mobile: card list */}
+      <div className="md:hidden space-y-2">
+        {clients.length === 0 ? (
+          <div className="bg-white border border-gray-200 rounded-xl px-5 py-12 text-center text-sm text-gray-400">No clients registered yet</div>
+        ) : clients.map((c) => (
+          <Link key={c.id} href={`/clientes/${c.id}`}
+            className="flex items-center justify-between gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 hover:border-[#D93A35]/40 hover:shadow-sm transition-all group">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-9 h-9 rounded-lg bg-[#D93A35] flex items-center justify-center text-xs font-bold text-white flex-shrink-0">
+                {initials(c.contacto_nombre)}
+              </div>
+              <div className="min-w-0">
+                <div className="text-sm font-semibold text-gray-900 truncate group-hover:text-[#D93A35] transition-colors">
+                  {c.contacto_nombre}
+                </div>
+                <div className="text-xs text-gray-400 truncate">{c.company_name} · {(c.direccion_envio as any)?.city ?? '—'}</div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {tarifaBadge(c.tarifa)}
+              <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-semibold border rounded-md ${
+                c.estado === 'active' ? 'text-[#0DA265] bg-green-50 border-green-200' : 'text-gray-400 bg-gray-100 border-gray-200'
+              }`}>
+                <span className="w-1 h-1 rounded-full bg-current opacity-80" />
+                {c.estado === 'active' ? 'Active' : 'Off'}
+              </span>
+            </div>
+          </Link>
+        ))}
+      </div>
+
+      {/* Desktop: full table */}
+      <div className="hidden md:block bg-white border border-gray-200 rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full border-collapse min-w-[780px]">
             <thead>

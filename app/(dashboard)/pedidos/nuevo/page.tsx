@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { getColorHex, parseVariant } from '@/lib/colors';
 
 interface Product { sku: string; nombre_producto: string; variante?: string; precio_mayorista: number; peso_kg: number; imagen?: string; }
@@ -23,10 +23,11 @@ const fmt = (n: number) => new Intl.NumberFormat('en-GB', { style: 'currency', c
 
 export default function NuevoPedidoPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [customers, setCustomers]     = useState<Customer[]>([]);
   const [products, setProducts]       = useState<Product[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
-  const [clientId, setClientId]       = useState('');
+  const [clientId, setClientId]       = useState(searchParams.get('cliente') ?? '');
   const [clientTarifa, setClientTarifa] = useState<Tarifa | undefined>(undefined);
   const [clientDescuento, setClientDescuento] = useState(0);
   const [search, setSearch]           = useState('');
