@@ -74,5 +74,5 @@ export async function POST(req: NextRequest, { params }: Props) {
     }
   }
 
-  return NextResponse.redirect(new URL(`/pedidos/${id}`, req.url))
+  return NextResponse.redirect(new URL(`/pedidos/${id}`, req.url), { status: 303 })
 }

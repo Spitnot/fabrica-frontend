@@ -50,5 +50,5 @@ export async function POST(_req: NextRequest, { params }: Props) {
       .eq('id', id);
   }
 
-  return NextResponse.json({ tracking_url, shipment_status: shipment.state });
+  return NextResponse.redirect(new URL(`/pedidos/${id}`, _req.url), { status: 303 });
 }
