@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
-// Usar anon client — el service role bypasea el SMTP configurado
+// Usar anon client con PKCE — el service role bypasea el SMTP configurado
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  { auth: { flowType: 'pkce' } }
 )
 
 export async function POST(req: NextRequest) {
@@ -16,7 +17,7 @@ export async function POST(req: NextRequest) {
     }
 
     await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: 'https://b2b.firmarollers.com/auth/callback?next=/reset-password',
+      redirectTo: 'https://b2b.firmarollers.com/callback?next=/reset-password',
     })
 
     // Siempre success — nunca confirmar si el email existe
