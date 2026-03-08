@@ -88,6 +88,35 @@ export default function NuevoClientePage() {
   }
 
   async function handleSubmit() {
+    // ── Validación de campos obligatorios ──────────────────────────────────
+    const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const required: [string, string][] = [
+      [form.company_name,        'Razón social es obligatoria'],
+      [form.nif_cif,             'Número de identificación fiscal es obligatorio'],
+      [form.fiscal_street,       'Calle y número (dirección fiscal) es obligatorio'],
+      [form.fiscal_city,         'Ciudad (dirección fiscal) es obligatoria'],
+      [form.fiscal_postal_code,  'Código postal (dirección fiscal) es obligatorio'],
+      [form.fiscal_country,      'País (dirección fiscal) es obligatorio'],
+      [form.contacto_nombre,     'Nombre de contacto es obligatorio'],
+      [form.email,               'Email es obligatorio'],
+      [form.password,            'Contraseña inicial es obligatoria'],
+      [form.telefono_numero,     'Teléfono es obligatorio'],
+    ];
+    for (const [value, msg] of required) {
+      if (!value?.trim()) { setError(msg); return; }
+    }
+    if (!emailRe.test(form.email)) {
+      setError('El email no tiene un formato válido (ej: nombre@empresa.com)'); return;
+    }
+    if (form.password.length < 8) {
+      setError('La contraseña debe tener al menos 8 caracteres.'); return;
+    }
+    if (!sameAddress) {
+      if (!form.street?.trim())       { setError('Calle y número (dirección de envío) es obligatorio'); return; }
+      if (!form.city?.trim())         { setError('Ciudad (dirección de envío) es obligatoria'); return; }
+      if (!form.postal_code?.trim())  { setError('Código postal (dirección de envío) es obligatorio'); return; }
+      if (!form.country?.trim())      { setError('País (dirección de envío) es obligatorio'); return; }
+    }
     if (!form.acepta_condiciones || !form.acepta_privacidad) {
       setError('Debes aceptar las condiciones generales y la política de privacidad.');
       return;
