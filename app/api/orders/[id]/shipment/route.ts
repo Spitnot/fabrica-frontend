@@ -13,18 +13,20 @@ export async function POST(req: NextRequest, { params }: Props) {
     // If you use Packlink or similar, that logic goes here.
     // For now, we just update the order status.
     
-    // 2. Update Order Status to 'Shipped'
+    // 2. Update order with final shipping cost and status
+    const updatePayload: Record<string, unknown> = { status: 'enviado' }
+    if (body.coste_envio_final != null) updatePayload.coste_envio_final = body.coste_envio_final
     const { error: updateError } = await supabaseAdmin
       .from('orders')
-      .update({ estado: 'shipped', updated_at: new Date().toISOString() })
+      .update(updatePayload)
       .eq('id', id);
 
     if (updateError) throw updateError;
 
-    // 3. Fetch order details to return to frontend (so they can send email)
+    // 3. Fetch order details to return to frontend
     const { data: order } = await supabaseAdmin
       .from('orders')
-      .select('*, customers(email, contacto_nombre)')
+      .select('*, customer:customers(*)')
       .eq('id', id)
       .single();
 
