@@ -25,6 +25,7 @@ export function ShipmentPanel({ orderId, pesoTotal, destination }: Props) {
   const [ancho, setAncho] = useState('');
   const [alto, setAlto]   = useState('');
   const [largo, setLargo] = useState('');
+  const [pesoAjustado, setPesoAjustado] = useState(String(pesoTotal));
   const [quotes, setQuotes]             = useState<Quote[]>([]);
   const [selectedQuote, setSelectedQuote] = useState<Quote | null>(null);
   const [loading, setLoading]           = useState(false);
@@ -38,7 +39,7 @@ export function ShipmentPanel({ orderId, pesoTotal, destination }: Props) {
       const res = await fetch('/api/quotes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ peso: pesoTotal, ancho: parseFloat(ancho), alto: parseFloat(alto), largo: parseFloat(largo), destination }),
+        body: JSON.stringify({ peso: parseFloat(pesoAjustado) || pesoTotal, ancho: parseFloat(ancho), alto: parseFloat(alto), largo: parseFloat(largo), destination }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? 'Error quoting');
@@ -76,8 +77,17 @@ export function ShipmentPanel({ orderId, pesoTotal, destination }: Props) {
             </div>
           ))}
         </div>
-        <div className="mt-2 text-xs text-gray-400">
-          Total weight: <span className="text-gray-700 font-mono font-semibold">{pesoTotal} kg</span>
+        <div className="mt-3 space-y-1">
+          <label className="text-[11px] text-gray-400">Weight (kg)</label>
+          <div className="flex items-center gap-2">
+            <input type="number" min="0.01" step="0.01" value={pesoAjustado} onChange={(e) => setPesoAjustado(e.target.value)}
+              className="w-32 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:border-[#D93A35] outline-none transition-colors" />
+            {parseFloat(pesoAjustado) !== pesoTotal && (
+              <span className="text-[11px] text-gray-400">
+                (order: {pesoTotal} kg)
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
