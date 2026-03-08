@@ -6,7 +6,7 @@ export async function GET() {
   try {
     const { data, error } = await supabaseAdmin
       .from('orders')
-      .select('*, customers(contacto_nombre, company_name, email)')
+      .select('*, customer:customers(contacto_nombre, company_name, email)')
       .order('created_at', { ascending: false });
 
     if (error) throw error;
