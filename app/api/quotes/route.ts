@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
       service_id:     s.id,
       carrier:        s.carrier_name,
       service_name:   s.name,
-      price:          s.base_price,
+      price:          parseFloat(s.base_price),
       estimated_days: s.transit_hours ? Math.ceil(s.transit_hours / 24) : null,
     }));
 
