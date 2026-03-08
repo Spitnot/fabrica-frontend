@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import { supabaseAdmin } from '@/lib/supabase/server';
 import type { Order, Customer, OrderItem } from '@/types';
 import { ShipmentPanel } from './ShipmentPanel';
+import { OrderActions } from './OrderActions';
 
 export const dynamic = 'force-dynamic';
 
@@ -76,30 +77,7 @@ export default async function PedidoDetallePage({ params }: Props) {
           >
             ↓ Packslip
           </a>
-          {order.status === 'confirmado' && (
-            <form action={`/api/orders/${id}/status`} method="POST">
-              <input type="hidden" name="status" value="produccion" />
-              <button type="submit" className="px-3 py-1.5 text-xs font-semibold bg-white border border-gray-200 rounded-lg text-gray-700 hover:border-orange-300 hover:text-[#b85e00] transition-colors">
-                → Move to Production
-              </button>
-            </form>
-          )}
-          {order.status === 'produccion' && (
-            <form action={`/api/orders/${id}/status`} method="POST">
-              <input type="hidden" name="status" value="listo_envio" />
-              <button type="submit" className="px-3 py-1.5 text-xs font-semibold bg-white border border-gray-200 rounded-lg text-gray-700 hover:border-purple-300 hover:text-[#876693] transition-colors">
-                → Mark Ready to Ship
-              </button>
-            </form>
-          )}
-          {order.status !== 'cancelado' && order.status !== 'enviado' && order.status !== 'listo_envio' && (
-            <form action={`/api/orders/${id}/status`} method="POST">
-              <input type="hidden" name="status" value="cancelado" />
-              <button type="submit" className="px-3 py-1.5 text-xs font-semibold text-[#D93A35] border border-red-200 rounded-lg hover:bg-red-50 transition-colors">
-                Cancel
-              </button>
-            </form>
-          )}
+          <OrderActions orderId={id} status={order.status} />
         </div>
       </div>
 
