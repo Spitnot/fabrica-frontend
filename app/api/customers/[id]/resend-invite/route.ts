@@ -18,9 +18,8 @@ export async function POST(req: NextRequest, { params }: Props) {
       return NextResponse.json({ error: 'Customer not found' }, { status: 404 })
     }
 
-    // Usar 'invite' en vez de 'magiclink' — genera flujo PKCE compatible
     const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
-      type: 'invite',
+      type: 'recovery',
       email: customer.email,
       options: {
         redirectTo: 'https://b2b.firmarollers.com/auth/callback?next=/reset-password',

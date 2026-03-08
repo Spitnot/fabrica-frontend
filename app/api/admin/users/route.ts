@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
 
     // 2. Generar invite link con flujo PKCE
     const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
-      type: 'invite',
+      type: 'recovery',
       email,
       options: {
         redirectTo: 'https://b2b.firmarollers.com/auth/callback?next=/reset-password',
