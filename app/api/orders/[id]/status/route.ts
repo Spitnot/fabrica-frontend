@@ -35,7 +35,7 @@ export async function POST(req: NextRequest, { params }: Props) {
     .single()
 
   if (fetchError || !order) {
-    return NextResponse.json({ error: 'Order not found' }, { status: 404 })
+    return NextResponse.json({ error: 'Order not found', debug: { id, fetchError } }, { status: 404 })
   }
 
   const allowed = ALLOWED_TRANSITIONS[order.status as OrderStatus] ?? []
