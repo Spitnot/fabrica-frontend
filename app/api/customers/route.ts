@@ -2,6 +2,17 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/server';
 import { sendCustomerInviteEmail } from '@/lib/emailService';
 
+export async function GET() {
+  const { data, error } = await supabaseAdmin
+    .from('customers')
+    .select('id, contacto_nombre, company_name, tarifa_id, descuento_pct, direccion_envio')
+    .eq('estado', 'active')
+    .order('company_name');
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json({ data });
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();

@@ -261,9 +261,19 @@ export default function PerfilPage() {
 
       {/* ── Shipping address card ──────────────────────────────────── */}
       <div className="bg-white border border-gray-200 rounded-xl overflow-hidden mb-4">
-        <div className="px-4 py-3 border-b border-gray-100">
+        <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
           <span className="text-[10px] font-black tracking-[0.12em] uppercase text-gray-400"
                 style={{ fontFamily: 'var(--font-alexandria)' }}>Shipping Address</span>
+          {!editing
+            ? <button onClick={startEdit} className="text-xs text-[#D93A35] font-semibold hover:underline">Edit</button>
+            : <div className="flex gap-3">
+                <button onClick={cancelEdit} className="text-xs text-gray-400 font-semibold hover:underline">Cancel</button>
+                <button onClick={saveProfile} disabled={savingProfile}
+                  className="text-xs text-[#D93A35] font-semibold hover:underline disabled:opacity-40">
+                  {savingProfile ? 'Saving…' : 'Save'}
+                </button>
+              </div>
+          }
         </div>
         <div className="p-4 space-y-3">
           {!editing ? (
