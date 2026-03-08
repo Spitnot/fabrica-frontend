@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { getColorHex, parseVariant } from '@/lib/colors';
 
@@ -21,7 +21,7 @@ function computePrice(sku: string, shopifyPrice: number, tarifa?: Tarifa, descue
 
 const fmt = (n: number) => new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'EUR' }).format(n);
 
-export default function NuevoPedidoPage() {
+function NuevoPedidoContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [customers, setCustomers]     = useState<Customer[]>([]);
@@ -312,5 +312,13 @@ export default function NuevoPedidoPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function NuevoPedidoPage() {
+  return (
+    <Suspense>
+      <NuevoPedidoContent />
+    </Suspense>
   );
 }
