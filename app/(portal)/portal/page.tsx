@@ -31,113 +31,88 @@ const STATUS_STYLES: Record<string, string> = {
   cancelado:   'text-[#D93A35] bg-red-50 border-red-200',
 };
 
-const SLIDES = [
-  { headline: 'New Season,\nNew Styles.', sub: 'Fresh drops available now — place your wholesale order today.' },
-  { headline: 'Restock\nSmart.', sub: 'Your customers are waiting. Keep your shelves full.' },
-  { headline: 'Exclusive\nWholesale Prices.', sub: 'Premium rollers at margins that move your business forward.' },
-];
 
 const fmt = (n: number) =>
   new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'EUR' }).format(n);
 
-function HeroBanner({ images }: { images: string[] }) {
+function HeroBanner({ slides }: { slides: { image: string; name: string }[] }) {
   const [slide, setSlide] = useState(0);
   const [fading, setFading] = useState(false);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const total = images.length || 1;
+  const total = slides.length || 1;
 
   function goTo(idx: number) {
     if (idx === slide) return;
     setFading(true);
-    setTimeout(() => {
-      setSlide(idx);
-      setFading(false);
-    }, 350);
+    setTimeout(() => { setSlide(idx); setFading(false); }, 300);
   }
 
   useEffect(() => {
-    if (images.length < 2) return;
+    if (slides.length < 2) return;
     timerRef.current = setInterval(() => {
       setFading(true);
-      setTimeout(() => {
-        setSlide(s => (s + 1) % total);
-        setFading(false);
-      }, 350);
+      setTimeout(() => { setSlide(s => (s + 1) % total); setFading(false); }, 300);
     }, 4000);
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [images.length, total]);
+  }, [slides.length, total]);
 
-  const textSlide = SLIDES[slide % SLIDES.length];
+  const current = slides[slide % total];
 
   return (
-    <div className="relative w-full h-[260px] md:h-[300px] overflow-hidden rounded-2xl mb-8 bg-gray-900">
-      {/* Background image */}
-      {images.length > 0 && (
+    <div className="relative w-full h-[260px] md:h-[300px] overflow-hidden rounded-2xl mb-8 bg-gray-100">
+      {/* Product image — full brightness */}
+      {current && (
         <img
           key={slide}
-          src={images[slide % images.length]}
-          alt=""
+          src={current.image}
+          alt={current.name}
           className="absolute inset-0 w-full h-full object-cover"
-          style={{
-            opacity: fading ? 0 : 0.45,
-            transition: 'opacity 350ms ease',
-          }}
+          style={{ opacity: fading ? 0 : 1, transition: 'opacity 300ms ease' }}
         />
       )}
 
-      {/* Gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent" />
-
-      {/* Content */}
+      {/* Product name badge — bottom left */}
       <div
-        className="absolute inset-0 flex flex-col justify-center px-8 md:px-10"
-        style={{ opacity: fading ? 0 : 1, transition: 'opacity 350ms ease' }}
+        className="absolute bottom-4 left-4"
+        style={{ opacity: fading ? 0 : 1, transition: 'opacity 300ms ease' }}
       >
-        <p className="text-[10px] font-black tracking-[0.25em] uppercase text-[#D93A35] mb-2"
-           style={{ fontFamily: 'var(--font-alexandria)' }}>
-          Firma Rollers · B2B
-        </p>
-        <h2 className="text-2xl md:text-3xl font-black text-white leading-tight mb-3 whitespace-pre-line"
-            style={{ fontFamily: 'var(--font-alexandria)' }}>
-          {textSlide.headline}
-        </h2>
-        <p className="text-sm text-white/60 mb-5 max-w-xs leading-relaxed">
-          {textSlide.sub}
-        </p>
+        {current && (
+          <span className="inline-block bg-white/90 backdrop-blur-sm text-gray-900 text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm">
+            {current.name}
+          </span>
+        )}
+      </div>
+
+      {/* CTA button — bottom right */}
+      <div className="absolute bottom-4 right-4 flex items-center gap-2">
+        {slides.length > 1 && slides.map((_, i) => (
+          <button
+            key={i}
+            onClick={() => goTo(i)}
+            className="transition-all duration-300 rounded-full"
+            style={{
+              width: i === slide ? 18 : 6,
+              height: 6,
+              background: i === slide ? '#D93A35' : 'rgba(0,0,0,0.25)',
+            }}
+          />
+        ))}
         <Link href="/portal/pedidos/nuevo"
-          className="inline-flex items-center gap-2 self-start px-5 py-2.5 bg-[#D93A35] hover:bg-[#b52e2a] text-white text-sm font-bold rounded-xl transition-colors">
-          Place an Order
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          className="ml-2 inline-flex items-center gap-1.5 px-4 py-2 bg-[#D93A35] hover:bg-[#b52e2a] text-white text-xs font-bold rounded-lg transition-colors shadow">
+          New Order
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
         </Link>
       </div>
-
-      {/* Dot indicators */}
-      {images.length > 1 && (
-        <div className="absolute bottom-4 right-6 flex gap-1.5">
-          {images.map((_, i) => (
-            <button
-              key={i}
-              onClick={() => goTo(i)}
-              className="transition-all duration-300 rounded-full"
-              style={{
-                width: i === slide ? 20 : 6,
-                height: 6,
-                background: i === slide ? '#D93A35' : 'rgba(255,255,255,0.4)',
-              }}
-            />
-          ))}
-        </div>
-      )}
     </div>
   );
 }
 
 export default function MyOrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
-  const [heroImages, setHeroImages] = useState<string[]>([]);
+  const [heroSlides, setHeroSlides] = useState<{ image: string; name: string }[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -145,22 +120,21 @@ export default function MyOrdersPage() {
       .then(r => r.json())
       .then(d => { setOrders(d.data ?? []); setLoading(false); });
 
-    // Pull a handful of product images for the hero
+    // Pull product images + names for the hero slideshow
     fetch('/api/products')
       .then(r => r.json())
       .then(d => {
         const products: any[] = d.data ?? [];
-        // Deduplicate by product name, keep first image per product
         const seen = new Set<string>();
-        const imgs: string[] = [];
+        const slides: { image: string; name: string }[] = [];
         for (const p of products) {
           if (p.imagen && !seen.has(p.nombre_producto)) {
             seen.add(p.nombre_producto);
-            imgs.push(p.imagen);
+            slides.push({ image: p.imagen, name: p.nombre_producto });
           }
-          if (imgs.length >= 6) break;
+          if (slides.length >= 6) break;
         }
-        setHeroImages(imgs);
+        setHeroSlides(slides);
       });
   }, []);
 
@@ -174,7 +148,7 @@ export default function MyOrdersPage() {
   return (
     <div className="p-5 md:p-7 max-w-3xl">
       {/* Hero banner */}
-      <HeroBanner images={heroImages} />
+      <HeroBanner slides={heroSlides} />
 
       {/* Orders section */}
       <div className="flex items-center justify-between mb-4">
