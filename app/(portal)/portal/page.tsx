@@ -188,7 +188,10 @@ export default function MyOrdersPage() {
                     </span>
                   </div>
                   <div className="min-w-0">
-                    <div className="font-mono text-[11px] text-gray-400 truncate">{order.id}</div>
+                    <div className="font-mono text-[11px] text-gray-400">
+                      <span className="sm:hidden">{order.id.slice(0, 8)}…</span>
+                      <span className="hidden sm:inline truncate">{order.id}</span>
+                    </div>
                     <div className="text-xs text-gray-500 mt-0.5">{date} · {itemCount} {itemCount === 1 ? 'item' : 'items'} · {order.peso_total} kg</div>
                   </div>
                 </div>

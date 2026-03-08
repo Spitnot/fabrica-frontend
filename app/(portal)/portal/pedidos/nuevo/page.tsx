@@ -124,7 +124,7 @@ export default function NuevoPedidoPortalPage() {
                   <div>
                     <div className="text-sm font-semibold text-gray-900">{customer.contacto_nombre}</div>
                     <div className="text-xs text-gray-400">{customer.company_name}</div>
-                    <div className="font-mono text-xs text-gray-400 mt-0.5">{customer.direccion_envio?.street} · {customer.direccion_envio?.postal_code} {customer.direccion_envio?.city}</div>
+                    <div className="font-mono text-xs text-gray-400 mt-0.5 truncate">{customer.direccion_envio?.street} · {customer.direccion_envio?.postal_code} {customer.direccion_envio?.city}</div>
                   </div>
                 </div>
               </div>
@@ -174,9 +174,9 @@ export default function NuevoPedidoPortalPage() {
                             <div className="flex items-center gap-1.5 flex-shrink-0">
                               {qty > 0 ? (
                                 <>
-                                  <button onClick={() => removeProduct(v)} className="w-6 h-6 rounded-md bg-gray-50 border border-gray-200 text-gray-600 hover:border-[#D93A35]/40 text-sm transition-colors flex items-center justify-center">−</button>
-                                  <span className="font-mono text-sm font-bold text-[#D93A35] w-5 text-center">{qty}</span>
-                                  <button onClick={() => addProduct(v)} className="w-6 h-6 rounded-md bg-gray-50 border border-gray-200 text-gray-600 hover:border-[#D93A35]/40 text-sm transition-colors flex items-center justify-center">+</button>
+                                  <button onClick={() => removeProduct(v)} className="w-9 h-9 rounded-md bg-gray-50 border border-gray-200 text-gray-600 hover:border-[#D93A35]/40 text-base transition-colors flex items-center justify-center">−</button>
+                                  <span className="font-mono text-sm font-bold text-[#D93A35] w-6 text-center">{qty}</span>
+                                  <button onClick={() => addProduct(v)} className="w-9 h-9 rounded-md bg-gray-50 border border-gray-200 text-gray-600 hover:border-[#D93A35]/40 text-base transition-colors flex items-center justify-center">+</button>
                                 </>
                               ) : (
                                 <button onClick={() => addProduct(v)} className="px-2.5 py-1 text-[11px] font-semibold bg-gray-50 border border-gray-200 rounded-md text-gray-600 hover:border-[#D93A35]/40 hover:text-[#D93A35] transition-colors">+ Add</button>
