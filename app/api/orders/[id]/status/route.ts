@@ -27,10 +27,10 @@ export async function POST(req: NextRequest, { params }: Props) {
     return NextResponse.json({ error: 'Invalid status' }, { status: 400 })
   }
 
-  // Leer estado actual + datos del cliente para email
+  // Leer estado actual del pedido
   const { data: order, error: fetchError } = await supabaseAdmin
     .from('orders')
-    .select('status, reference, tracking_number, carrier, customers(email, contacto_nombre)')
+    .select('status, customer_id, reference, tracking_number, carrier')
     .eq('id', id)
     .single()
 
@@ -58,11 +58,13 @@ export async function POST(req: NextRequest, { params }: Props) {
     return NextResponse.json({ error: updateError.message }, { status: 500 })
   }
 
-// Enviar email de shipping cuando el pedido pasa a enviado
-  if (newStatus === 'enviado') {
-    const customer = Array.isArray(order.customers)
-      ? order.customers[0] as { email: string; contacto_nombre: string } | undefined
-      : order.customers as { email: string; contacto_nombre: string } | null
+  // Enviar email de shipping cuando el pedido pasa a enviado
+  if (newStatus === 'enviado' && order.customer_id) {
+    const { data: customer } = await supabaseAdmin
+      .from('customers')
+      .select('email, contacto_nombre')
+      .eq('id', order.customer_id)
+      .single()
     if (customer?.email) {
       await sendShippingEmail(
         customer.email,
