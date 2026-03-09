@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Manual de equipo – Firma Rollers B2B</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 13px; color: #1a1a1a; background: #fff; }
+  .cover { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background: #1a1a2e; color: #fff; text-align: center; page-break-after: always; }
+  .cover h1 { font-size: 42px; font-weight: 900; letter-spacing: -1px; margin-bottom: 12px; }
+  .cover p { font-size: 18px; opacity: .8; }
+  .cover .date { margin-top: 40px; font-size: 13px; opacity: .6; }
+  .toc { padding: 60px 80px; page-break-after: always; }
+  .toc h2 { font-size: 22px; font-weight: 700; margin-bottom: 24px; color: #1a1a2e; }
+  .toc ol { padding-left: 20px; line-height: 2.2; font-size: 14px; }
+  .toc ol li { color: #444; }
+  section { padding: 48px 80px; page-break-inside: avoid; }
+  section + section { border-top: 1px solid #eee; }
+  h2.section-title { font-size: 11px; font-weight: 700; letter-spacing: .15em; text-transform: uppercase; color: #1a1a2e; margin-bottom: 8px; }
+  h3 { font-size: 20px; font-weight: 800; margin-bottom: 16px; }
+  p { line-height: 1.7; color: #333; margin-bottom: 12px; }
+  ul, ol { padding-left: 20px; margin-bottom: 12px; }
+  li { line-height: 1.8; color: #333; }
+  figure { margin: 20px 0; border: 1px solid #e5e5e5; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,.07); page-break-inside: avoid; }
+  figure img { width: 100%; display: block; }
+  figcaption { font-size: 11px; color: #888; padding: 8px 14px; background: #fafafa; border-top: 1px solid #e5e5e5; }
+  .tip { background: #fffbeb; border-left: 3px solid #f59e0b; padding: 10px 16px; border-radius: 4px; margin: 16px 0; font-size: 12px; color: #78350f; }
+  .step { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 10px; }
+  .step-num { background: #1a1a2e; color: #fff; border-radius: 50%; width: 22px; height: 22px; min-width: 22px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; margin-top: 2px; }
+  .step p { margin: 0; }
+  @media print {
+    body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    section { page-break-inside: auto; }
+    figure { page-break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <h1>FIRMA ROLLERS B2B</h1>
+  <p>Manual de equipo — Panel de administración</p>
+  <div class="date">Versión 9 de marzo de 2026</div>
+</div>
+<div class="toc">
+  <h2>Contenido</h2>
+  <ol>
+    <li>Acceso al panel</li>
+    <li>Dashboard</li>
+    <li>Gestión de pedidos</li>
+    <li>Crear un pedido nuevo</li>
+    <li>Envío con Packlink</li>
+    <li>Gestión de clientes</li>
+    <li>Catálogo de productos</li>
+    <li>Tarifas</li>
+    <li>Usuarios del equipo</li>
+    <li>Envío de emails</li>
+  </ol>
+</div>
+
+<!-- 1. ACCESO -->
+<section>
+  <h2 class="section-title">1</h2>
+  <h3>Acceso al panel</h3>
+  <p>El panel de administración está disponible en <strong>b2b.firmarollers.com</strong>. Usa tu cuenta de equipo para entrar.</p>
+  
+    <figure>
+      <img src="screenshots/01-login.png" alt="Pantalla de login">
+      <figcaption>Pantalla de login</figcaption>
+    </figure>
+  <div class="tip">Si olvidaste la contraseña, usa el enlace "Forgot password" en la pantalla de login. Te llegará un email de recuperación.</div>
+</section>
+
+<!-- 2. DASHBOARD -->
+<section>
+  <h2 class="section-title">2</h2>
+  <h3>Dashboard</h3>
+  <p>La página de inicio muestra un resumen rápido de la actividad reciente: pedidos pendientes, clientes activos y métricas clave.</p>
+  
+    <figure>
+      <img src="screenshots/02-dashboard.png" alt="Dashboard principal">
+      <figcaption>Dashboard principal</figcaption>
+    </figure>
+</section>
+
+<!-- 3. PEDIDOS -->
+<section>
+  <h2 class="section-title">3</h2>
+  <h3>Gestión de pedidos</h3>
+  <p>En <strong>Orders</strong> ves todos los pedidos con su estado, peso, importe y fecha. Puedes filtrar por estado, cliente y rango de fechas.</p>
+  
+    <figure>
+      <img src="screenshots/03-orders-list.png" alt="Lista de pedidos con filtros">
+      <figcaption>Lista de pedidos con filtros</figcaption>
+    </figure>
+  <p>Los estados posibles son:</p>
+  <ul>
+    <li><strong>Confirmed</strong> — pedido confirmado, pendiente de preparar</li>
+    <li><strong>Enviado</strong> — paquete enviado con Packlink</li>
+    <li><strong>Cancelled</strong> — pedido cancelado</li>
+  </ul>
+  
+    <figure>
+      <img src="screenshots/05-order-detail.png" alt="Detalle de un pedido">
+      <figcaption>Detalle de un pedido</figcaption>
+    </figure>
+  <p>Desde el detalle puedes ver los ítems, el resumen económico, y gestionar el envío.</p>
+</section>
+
+<!-- 4. NUEVO PEDIDO -->
+<section>
+  <h2 class="section-title">4</h2>
+  <h3>Crear un pedido nuevo</h3>
+  <div class="step"><div class="step-num">1</div><p>Ve a <em>Orders → + New Order</em>.</p></div>
+  <div class="step"><div class="step-num">2</div><p>Selecciona el cliente del desplegable.</p></div>
+  <div class="step"><div class="step-num">3</div><p>Busca productos y ajusta cantidades con los botones <strong>+</strong> / <strong>−</strong>.</p></div>
+  <div class="step"><div class="step-num">4</div><p>Pide un quote de envío (opcional) antes de confirmar.</p></div>
+  <div class="step"><div class="step-num">5</div><p>Pulsa <strong>Confirm order</strong> para crear el pedido.</p></div>
+  
+    <figure>
+      <img src="screenshots/04-new-order.png" alt="Pantalla de nuevo pedido">
+      <figcaption>Pantalla de nuevo pedido</figcaption>
+    </figure>
+</section>
+
+<!-- 5. ENVÍO -->
+<section>
+  <h2 class="section-title">5</h2>
+  <h3>Gestionar el envío con Packlink</h3>
+  <p>Desde el detalle de un pedido, en el bloque <strong>SHIPPING · PACKLINK</strong>:</p>
+  <div class="step"><div class="step-num">1</div><p>Introduce las medidas del paquete (ancho, alto, largo en cm).</p></div>
+  <div class="step"><div class="step-num">2</div><p>Ajusta el peso si el paquete incluye muestras u otros materiales extra.</p></div>
+  <div class="step"><div class="step-num">3</div><p>Pulsa <strong>Get quotes</strong> para obtener precios de Packlink en tiempo real.</p></div>
+  <div class="step"><div class="step-num">4</div><p>Selecciona la opción que prefieras y pulsa <strong>Generate Shipment</strong>.</p></div>
+  <div class="tip">El peso del pedido se calcula automáticamente según los productos. Si añades folletos o muestras, modifica el campo <em>Weight (kg)</em> antes de pedir el quote.</div>
+</section>
+
+<!-- 6. CLIENTES -->
+<section>
+  <h2 class="section-title">6</h2>
+  <h3>Gestión de clientes</h3>
+  <p>En <strong>Clients</strong> están todos los clientes B2B con su empresa, contacto y tarifa asignada.</p>
+  
+    <figure>
+      <img src="screenshots/06-clients-list.png" alt="Lista de clientes">
+      <figcaption>Lista de clientes</figcaption>
+    </figure>
+  <p>Para crear un cliente nuevo, pulsa <strong>+ New Client</strong> y rellena los datos de empresa, contacto, dirección de envío y tarifa.</p>
+  
+    <figure>
+      <img src="screenshots/07-new-client.png" alt="Formulario de nuevo cliente">
+      <figcaption>Formulario de nuevo cliente</figcaption>
+    </figure>
+  <div class="tip">Cada cliente tiene asignada una tarifa que determina sus precios mayoristas. Asegúrate de seleccionar la correcta al crear o editar un cliente.</div>
+  
+    <figure>
+      <img src="screenshots/08-client-detail.png" alt="Detalle de cliente con historial de pedidos">
+      <figcaption>Detalle de cliente con historial de pedidos</figcaption>
+    </figure>
+</section>
+
+<!-- 7. CATÁLOGO -->
+<section>
+  <h2 class="section-title">7</h2>
+  <h3>Catálogo de productos</h3>
+  <p>El catálogo muestra todos los productos disponibles con SKU, variante, peso y precio base. Es de solo lectura desde el panel B2B; los productos se gestionan desde el sistema central.</p>
+  
+    <figure>
+      <img src="screenshots/09-catalog.png" alt="Catálogo de productos">
+      <figcaption>Catálogo de productos</figcaption>
+    </figure>
+</section>
+
+<!-- 8. TARIFAS -->
+<section>
+  <h2 class="section-title">8</h2>
+  <h3>Tarifas</h3>
+  <p>Las tarifas definen los precios mayoristas por producto para cada segmento de cliente. Cada cliente tiene asignada una tarifa.</p>
+  
+    <figure>
+      <img src="screenshots/10-tarifas.png" alt="Lista de tarifas">
+      <figcaption>Lista de tarifas</figcaption>
+    </figure>
+  <p>Para crear una nueva tarifa, pulsa <strong>+ New Rate</strong>, dale un nombre y establece los precios por SKU.</p>
+  
+    <figure>
+      <img src="screenshots/11-new-tarifa.png" alt="Creación de nueva tarifa">
+      <figcaption>Creación de nueva tarifa</figcaption>
+    </figure>
+</section>
+
+<!-- 9. USUARIOS -->
+<section>
+  <h2 class="section-title">9</h2>
+  <h3>Usuarios del equipo</h3>
+  <p>En <strong>Users</strong> puedes gestionar los miembros del equipo con acceso al panel de administración.</p>
+  
+    <figure>
+      <img src="screenshots/12-usuarios.png" alt="Gestión de usuarios">
+      <figcaption>Gestión de usuarios</figcaption>
+    </figure>
+  <div class="tip">Solo los administradores pueden crear o desactivar usuarios del equipo.</div>
+</section>
+
+<!-- 10. EMAILS -->
+<section>
+  <h2 class="section-title">10</h2>
+  <h3>Envío de emails</h3>
+  <p>Desde la sección <strong>Emails</strong> puedes enviar comunicaciones a clientes: confirmaciones de pedido, avisos de envío, etc.</p>
+  
+    <figure>
+      <img src="screenshots/13-emails.png" alt="Panel de emails">
+      <figcaption>Panel de emails</figcaption>
+    </figure>
+</section>
+
+</body>
+</html>

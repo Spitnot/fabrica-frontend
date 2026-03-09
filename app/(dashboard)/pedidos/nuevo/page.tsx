@@ -7,7 +7,7 @@ import { getColorHex, parseVariant } from '@/lib/colors';
 interface Product { sku: string; nombre_producto: string; variante?: string; precio_mayorista: number; peso_kg: number; imagen?: string; }
 interface ProductGroup { nombre: string; variantes: Product[]; imagen?: string; }
 interface TarifaPrecio { sku: string; precio: number; }
-interface Tarifa { id: string; nombre: string; multiplicador: number; precios?: TarifaPrecio[]; }
+interface Tarifa { id: string; nombre: string; multiplicador: number; precios?: TarifaPrecio[]; pack_size: number; }
 interface Customer { id: string; contacto_nombre: string; company_name: string; tarifa_id?: string; descuento_pct: number; tarifa?: Tarifa; direccion_envio: { street: string; city: string; postal_code: string; country: string; }; }
 interface LineItem { sku: string; nombre_producto: string; variante?: string; cantidad: number; precio_unitario: number; peso_unitario: number; }
 interface Quote { service_id: string; carrier: string; service_name: string; price: number; estimated_days: number; }
@@ -72,25 +72,27 @@ function NuevoPedidoContent() {
 
   function getQty(sku: string) { return lineItems.find(i => i.sku === sku)?.cantidad ?? 0; }
 
-  function addProduct(p: Product) {
-    setLineItems(prev => {
-      const ex = prev.find(i => i.sku === p.sku);
-      if (ex) return prev.map(i => i.sku === p.sku ? { ...i, cantidad: i.cantidad + 1 } : i);
-      const precio = computePrice(p.sku, p.precio_mayorista, clientTarifa, clientDescuento);
-      return [...prev, { sku: p.sku, nombre_producto: p.nombre_producto, variante: p.variante, cantidad: 1, precio_unitario: precio, peso_unitario: p.peso_kg }];
-    });
-    setSelectedQuote(null); setQuotes([]);
-  }
+function addProduct(p: Product) {
+  const step = clientTarifa?.pack_size ?? 1;
+  setLineItems(prev => {
+    const ex = prev.find(i => i.sku === p.sku);
+    if (ex) return prev.map(i => i.sku === p.sku ? { ...i, cantidad: i.cantidad + step } : i);
+    const precio = computePrice(p.sku, p.precio_mayorista, clientTarifa, clientDescuento);
+    return [...prev, { sku: p.sku, nombre_producto: p.nombre_producto, variante: p.variante, cantidad: step, precio_unitario: precio, peso_unitario: p.peso_kg }];
+  });
+  setSelectedQuote(null); setQuotes([]);
+}
 
   function removeProduct(p: Product) {
-    setLineItems(prev => {
-      const ex = prev.find(i => i.sku === p.sku);
-      if (!ex) return prev;
-      if (ex.cantidad === 1) return prev.filter(i => i.sku !== p.sku);
-      return prev.map(i => i.sku === p.sku ? { ...i, cantidad: i.cantidad - 1 } : i);
-    });
-    setSelectedQuote(null); setQuotes([]);
-  }
+  const step = clientTarifa?.pack_size ?? 1;
+  setLineItems(prev => {
+    const ex = prev.find(i => i.sku === p.sku);
+    if (!ex) return prev;
+    if (ex.cantidad <= step) return prev.filter(i => i.sku !== p.sku);
+    return prev.map(i => i.sku === p.sku ? { ...i, cantidad: i.cantidad - step } : i);
+  });
+  setSelectedQuote(null); setQuotes([]);
+}
 
   async function requestQuotes() {
     if (!lineItems.length || !client) return;

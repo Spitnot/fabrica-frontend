@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/server';
-import { sendCustomerInviteEmail } from '@/lib/emailService';
 
 export async function GET() {
   const { data, error } = await supabaseAdmin
@@ -88,11 +87,11 @@ export async function POST(req: NextRequest) {
 
     if (dbError) {
       console.error('[API] DB Insert Error:', dbError);
-      // Limpiar usuario de Auth si falla la DB
       await supabaseAdmin.auth.admin.deleteUser(userId!);
       return NextResponse.json({ error: `DB Error: ${dbError.message}` }, { status: 500 });
     }
 
+<<<<<<< Updated upstream
     // 3. Generar invite link y enviar email
     const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
       type: 'recovery',
@@ -111,6 +110,17 @@ export async function POST(req: NextRequest) {
       );
     } else {
       console.error('[API] Failed to generate invite link:', linkError);
+=======
+    // 3. Enviar email de bienvenida via Supabase SMTP (Resend)
+    const { error: resetError } = await supabaseAdmin.auth.resetPasswordForEmail(body.email, {
+      redirectTo: 'https://b2b.firmarollers.com/auth/callback?next=/reset-password',
+    })
+
+    if (resetError) {
+      console.error('[customers] resetPasswordForEmail failed:', resetError.message)
+    } else {
+      console.log('[customers] welcome email sent to:', body.email)
+>>>>>>> Stashed changes
     }
 
     return NextResponse.json({ id: data.id, message: 'Customer created' }, { status: 201 });

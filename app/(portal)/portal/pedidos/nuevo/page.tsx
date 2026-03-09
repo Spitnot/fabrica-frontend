@@ -7,7 +7,8 @@ import { getColorHex, parseVariant } from '@/lib/colors';
 
 interface Product { sku: string; nombre_producto: string; variante?: string; precio_mayorista: number; peso_kg: number; imagen?: string; }
 interface ProductGroup { nombre: string; variantes: Product[]; imagen?: string; }
-interface Customer { id: string; contacto_nombre: string; company_name: string; direccion_envio: { street: string; city: string; postal_code: string; country: string; }; }
+interface Tarifa { pack_size: number; }
+interface Customer { id: string; contacto_nombre: string; company_name: string; tarifa?: Tarifa | null; direccion_envio: { street: string; city: string; postal_code: string; country: string; }; }
 interface LineItem { sku: string; nombre_producto: string; variante?: string; cantidad: number; precio_unitario: number; peso_unitario: number; }
 interface Quote { service_id: string; carrier: string; service_name: string; price: number; estimated_days: number; }
 
@@ -30,11 +31,12 @@ export default function NuevoPedidoPortalPage() {
     async function loadData() {
       const { data: { session } } = await supabaseClient.auth.getSession();
       if (!session?.user) return;
-      const { data: cust } = await supabaseClient
-        .from('customers')
-        .select('id, contacto_nombre, company_name, direccion_envio')
-        .eq('auth_user_id', session.user.id)
-        .single();
+  const { data: cust } = await supabaseClient
+  .from('customers')
+  .select('id, contacto_nombre, company_name, direccion_envio, tarifa:tarifa_id(pack_size)')
+  .eq('auth_user_id', session.user.id)
+  .single();
+
       if (cust) setCustomer(cust);
     }
     loadData();
@@ -58,23 +60,27 @@ export default function NuevoPedidoPortalPage() {
   function getQty(sku: string) { return lineItems.find(i => i.sku === sku)?.cantidad ?? 0; }
 
   function addProduct(p: Product) {
-    setLineItems(prev => {
-      const ex = prev.find(i => i.sku === p.sku);
-      if (ex) return prev.map(i => i.sku === p.sku ? { ...i, cantidad: i.cantidad + 1 } : i);
-      return [...prev, { sku: p.sku, nombre_producto: p.nombre_producto, variante: p.variante, cantidad: 1, precio_unitario: p.precio_mayorista, peso_unitario: p.peso_kg }];
-    });
-    setSelectedQuote(null); setQuotes([]);
-  }
+  const step = customer?.tarifa?.pack_size ?? 1;
+  setLineItems(prev => {
+    const ex = prev.find(i => i.sku === p.sku);
+    if (ex) return prev.map(i => i.sku === p.sku ? { ...i, cantidad: i.cantidad + step } : i);
+    return [...prev, { sku: p.sku, nombre_producto: p.nombre_producto, variante: p.variante, cantidad: step, precio_unitario: p.precio_mayorista, peso_unitario: p.peso_kg }];
+  });
+  setSelectedQuote(null); setQuotes([]);
+}
+
 
   function removeProduct(p: Product) {
-    setLineItems(prev => {
-      const ex = prev.find(i => i.sku === p.sku);
-      if (!ex) return prev;
-      if (ex.cantidad === 1) return prev.filter(i => i.sku !== p.sku);
-      return prev.map(i => i.sku === p.sku ? { ...i, cantidad: i.cantidad - 1 } : i);
-    });
-    setSelectedQuote(null); setQuotes([]);
-  }
+  const step = customer?.tarifa?.pack_size ?? 1;
+  setLineItems(prev => {
+    const ex = prev.find(i => i.sku === p.sku);
+    if (!ex) return prev;
+    if (ex.cantidad <= step) return prev.filter(i => i.sku !== p.sku);
+    return prev.map(i => i.sku === p.sku ? { ...i, cantidad: i.cantidad - step } : i);
+  });
+  setSelectedQuote(null); setQuotes([]);
+}
+
 
   async function requestQuotes() {
     if (!lineItems.length || !customer) return;
