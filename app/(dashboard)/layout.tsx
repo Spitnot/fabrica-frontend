@@ -78,7 +78,7 @@ function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
               (href === '/clientes' && pathname.startsWith('/clientes')) ||
               (href === '/tarifas' && pathname.startsWith('/tarifas')) ||
               (href === '/produccion' && pathname.startsWith('/produccion')) ||
-              (href === '/catalogo' && pathname.startsWith('/catalogo'))                
+              (href === '/catalogo' && pathname.startsWith('/catalogo')) ||            
               (href === '/emails' && pathname.startsWith('/emails')) ||
               (href === '/usuarios' && pathname.startsWith('/usuarios'));
             return (
