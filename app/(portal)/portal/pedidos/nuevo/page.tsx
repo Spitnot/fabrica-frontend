@@ -7,7 +7,7 @@ import { getColorHex, parseVariant } from '@/lib/colors';
 
 interface Product { sku: string; nombre_producto: string; variante?: string; precio_mayorista: number; peso_kg: number; imagen?: string; }
 interface ProductGroup { nombre: string; variantes: Product[]; imagen?: string; }
-interface Tarifa { pack_size: number; }
+interface Tarifa { pack_size: number; minimum_order_value: number; hidden_products: string[]; }
 interface Customer { id: string; contacto_nombre: string; company_name: string; tarifa?: Tarifa | null; direccion_envio: { street: string; city: string; postal_code: string; country: string; }; }
 interface LineItem { sku: string; nombre_producto: string; variante?: string; cantidad: number; precio_unitario: number; peso_unitario: number; }
 interface Quote { service_id: string; carrier: string; service_name: string; price: number; estimated_days: number; }
@@ -31,62 +31,72 @@ export default function NuevoPedidoPortalPage() {
     async function loadData() {
       const { data: { session } } = await supabaseClient.auth.getSession();
       if (!session?.user) return;
-  const { data: cust } = await supabaseClient
-  .from('customers')
-  .select('id, contacto_nombre, company_name, direccion_envio, tarifa:tarifa_id(pack_size)')
-  .eq('auth_user_id', session.user.id)
-  .single();
-
+      const { data: cust } = await supabaseClient
+        .from('customers')
+        .select('id, contacto_nombre, company_name, direccion_envio, tarifa:tarifa_id(pack_size, minimum_order_value, hidden_products)')
+        .eq('auth_user_id', session.user.id)
+        .single();
       if (cust) setCustomer(cust);
     }
     loadData();
     fetch('/api/products').then(r => r.json()).then(d => { setProducts(d.data ?? []); setLoadingProducts(false); });
   }, []);
 
+  const hiddenProducts: string[] = customer?.tarifa?.hidden_products ?? [];
+  const minimumOrderValue: number = customer?.tarifa?.minimum_order_value ?? 0;
+
   const productGroups = useMemo<ProductGroup[]>(() => {
+    const visible = products.filter(p => !hiddenProducts.includes(p.nombre_producto));
     const filtered = search.length >= 2
-      ? products.filter(p => p.nombre_producto.toLowerCase().includes(search.toLowerCase()) || p.sku.toLowerCase().includes(search.toLowerCase()) || (p.variante ?? '').toLowerCase().includes(search.toLowerCase()))
-      : products;
+      ? visible.filter(p =>
+          p.nombre_producto.toLowerCase().includes(search.toLowerCase()) ||
+          p.sku.toLowerCase().includes(search.toLowerCase()) ||
+          (p.variante ?? '').toLowerCase().includes(search.toLowerCase()))
+      : visible;
     const map = new Map<string, Product[]>();
     filtered.forEach(p => { const g = map.get(p.nombre_producto) ?? []; g.push(p); map.set(p.nombre_producto, g); });
     return Array.from(map.entries()).map(([nombre, variantes]) => ({ nombre, variantes, imagen: variantes[0]?.imagen }));
-  }, [products, search]);
+  }, [products, search, hiddenProducts]);
 
   const subtotal = lineItems.reduce((s, i) => s + i.cantidad * i.precio_unitario, 0);
   const totalWeight = lineItems.reduce((s, i) => s + i.peso_unitario * i.cantidad, 0);
   const total = subtotal + (selectedQuote?.price ?? 0);
-  const canConfirm = !!customer && lineItems.length > 0;
+
+  const belowMinimum = minimumOrderValue > 0 && subtotal < minimumOrderValue;
+  const canConfirm = !!customer && lineItems.length > 0 && !belowMinimum;
 
   function getQty(sku: string) { return lineItems.find(i => i.sku === sku)?.cantidad ?? 0; }
 
   function addProduct(p: Product) {
-  const step = customer?.tarifa?.pack_size ?? 1;
-  setLineItems(prev => {
-    const ex = prev.find(i => i.sku === p.sku);
-    if (ex) return prev.map(i => i.sku === p.sku ? { ...i, cantidad: i.cantidad + step } : i);
-    return [...prev, { sku: p.sku, nombre_producto: p.nombre_producto, variante: p.variante, cantidad: step, precio_unitario: p.precio_mayorista, peso_unitario: p.peso_kg }];
-  });
-  setSelectedQuote(null); setQuotes([]);
-}
-
+    const step = customer?.tarifa?.pack_size ?? 1;
+    setLineItems(prev => {
+      const ex = prev.find(i => i.sku === p.sku);
+      if (ex) return prev.map(i => i.sku === p.sku ? { ...i, cantidad: i.cantidad + step } : i);
+      return [...prev, { sku: p.sku, nombre_producto: p.nombre_producto, variante: p.variante, cantidad: step, precio_unitario: p.precio_mayorista, peso_unitario: p.peso_kg }];
+    });
+    setSelectedQuote(null); setQuotes([]);
+  }
 
   function removeProduct(p: Product) {
-  const step = customer?.tarifa?.pack_size ?? 1;
-  setLineItems(prev => {
-    const ex = prev.find(i => i.sku === p.sku);
-    if (!ex) return prev;
-    if (ex.cantidad <= step) return prev.filter(i => i.sku !== p.sku);
-    return prev.map(i => i.sku === p.sku ? { ...i, cantidad: i.cantidad - step } : i);
-  });
-  setSelectedQuote(null); setQuotes([]);
-}
-
+    const step = customer?.tarifa?.pack_size ?? 1;
+    setLineItems(prev => {
+      const ex = prev.find(i => i.sku === p.sku);
+      if (!ex) return prev;
+      if (ex.cantidad <= step) return prev.filter(i => i.sku !== p.sku);
+      return prev.map(i => i.sku === p.sku ? { ...i, cantidad: i.cantidad - step } : i);
+    });
+    setSelectedQuote(null); setQuotes([]);
+  }
 
   async function requestQuotes() {
     if (!lineItems.length || !customer) return;
     setQuotesLoading(true); setQuotes([]); setSelectedQuote(null);
     try {
-      const res = await fetch('/api/quotes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ peso: totalWeight, ancho: 30, alto: 20, largo: 30, destination: customer.direccion_envio }) });
+      const res = await fetch('/api/quotes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ peso: totalWeight, ancho: 30, alto: 20, largo: 30, destination: customer.direccion_envio }),
+      });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? 'Error quoting');
       setQuotes(data.data ?? []);
@@ -98,7 +108,21 @@ export default function NuevoPedidoPortalPage() {
     if (!canConfirm || !customer) return;
     setConfirming(true); setError('');
     try {
-      const res = await fetch('/api/orders', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ customer_id: customer.id, items: lineItems.map(i => ({ sku: i.sku, nombre_producto: i.nombre_producto + (i.variante ? ` - ${i.variante}` : ''), cantidad: i.cantidad, precio_unitario: i.precio_unitario, peso_unitario: i.peso_unitario })), coste_envio_estimado: selectedQuote?.price ?? null }) });
+      const res = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customer_id: customer.id,
+          items: lineItems.map(i => ({
+            sku: i.sku,
+            nombre_producto: i.nombre_producto + (i.variante ? ` - ${i.variante}` : ''),
+            cantidad: i.cantidad,
+            precio_unitario: i.precio_unitario,
+            peso_unitario: i.peso_unitario,
+          })),
+          coste_envio_estimado: selectedQuote?.price ?? null,
+        }),
+      });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? 'Error creating order');
       router.push('/portal');
@@ -130,9 +154,19 @@ export default function NuevoPedidoPortalPage() {
                   <div>
                     <div className="text-sm font-semibold text-gray-900">{customer.contacto_nombre}</div>
                     <div className="text-xs text-gray-400">{customer.company_name}</div>
-                    <div className="font-mono text-xs text-gray-400 mt-0.5 truncate">{customer.direccion_envio?.street} · {customer.direccion_envio?.postal_code} {customer.direccion_envio?.city}</div>
+                    <div className="font-mono text-xs text-gray-400 mt-0.5 truncate">
+                      {customer.direccion_envio?.street} · {customer.direccion_envio?.postal_code} {customer.direccion_envio?.city}
+                    </div>
                   </div>
                 </div>
+                {minimumOrderValue > 0 && (
+                  <div className="mt-3 flex items-center justify-between text-xs px-1">
+                    <span className="text-gray-400">Minimum order</span>
+                    <span className={`font-mono font-semibold ${belowMinimum && lineItems.length > 0 ? 'text-[#D93A35]' : 'text-gray-500'}`}>
+                      {fmt(minimumOrderValue)}
+                    </span>
+                  </div>
+                )}
               </div>
             </section>
           )}
@@ -142,10 +176,15 @@ export default function NuevoPedidoPortalPage() {
             <div className="flex items-center gap-3 mb-3">
               <span className="text-[10px] font-black tracking-[0.18em] uppercase text-gray-400 whitespace-nowrap">2 · Catalogue</span>
               <div className="flex-1 h-px bg-gray-100" />
-              <span className="text-[11px] text-gray-400">{products.length} products</span>
+              <span className="text-[11px] text-gray-400">{productGroups.length} products</span>
             </div>
-            <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by name, SKU or variant…"
-              className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-[#D93A35] outline-none mb-4" />
+            <input
+              type="text"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Search by name, SKU or variant…"
+              className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-[#D93A35] outline-none mb-4"
+            />
             {loadingProducts ? (
               <div className="flex items-center justify-center py-12 text-gray-400 text-sm gap-2">
                 <div className="w-4 h-4 border border-gray-300 border-t-[#D93A35] rounded-full animate-spin" />
@@ -160,42 +199,42 @@ export default function NuevoPedidoPortalPage() {
                       <img src={group.imagen} alt={group.nombre} className="w-full h-36 object-cover" />
                     )}
                     <div className="p-4">
-                    <div className="text-sm font-semibold text-gray-900 mb-3">{group.nombre}</div>
-                    <div className="space-y-2">
-                      {group.variantes.map(v => {
-                        const qty = getQty(v.sku);
-                        const { color } = parseVariant(v.variante);
-                        const colorHex = color ? getColorHex(color) : null;
-                        return (
-                          <div key={v.sku} className="flex items-center justify-between gap-2">
-                            <div className="min-w-0">
-                              {v.variante && (
-                                <div className="flex items-center gap-1.5">
-                                  {colorHex && <span className="w-3 h-3 rounded-full flex-shrink-0 border border-black/10" style={{ backgroundColor: colorHex }} />}
-                                  <div className="text-xs text-gray-500 truncate">{v.variante}</div>
-                                </div>
-                              )}
-                              <div className="font-mono text-[10px] text-gray-400">{v.sku}</div>
+                      <div className="text-sm font-semibold text-gray-900 mb-3">{group.nombre}</div>
+                      <div className="space-y-2">
+                        {group.variantes.map(v => {
+                          const qty = getQty(v.sku);
+                          const { color } = parseVariant(v.variante);
+                          const colorHex = color ? getColorHex(color) : null;
+                          return (
+                            <div key={v.sku} className="flex items-center justify-between gap-2">
+                              <div className="min-w-0">
+                                {v.variante && (
+                                  <div className="flex items-center gap-1.5">
+                                    {colorHex && <span className="w-3 h-3 rounded-full flex-shrink-0 border border-black/10" style={{ backgroundColor: colorHex }} />}
+                                    <div className="text-xs text-gray-500 truncate">{v.variante}</div>
+                                  </div>
+                                )}
+                                <div className="font-mono text-[10px] text-gray-400">{v.sku}</div>
+                              </div>
+                              <div className="flex items-center gap-1.5 flex-shrink-0">
+                                {qty > 0 ? (
+                                  <>
+                                    <button onClick={() => removeProduct(v)} className="w-9 h-9 rounded-md bg-gray-50 border border-gray-200 text-gray-600 hover:border-[#D93A35]/40 text-base transition-colors flex items-center justify-center">−</button>
+                                    <span className="font-mono text-sm font-bold text-[#D93A35] w-6 text-center">{qty}</span>
+                                    <button onClick={() => addProduct(v)} className="w-9 h-9 rounded-md bg-gray-50 border border-gray-200 text-gray-600 hover:border-[#D93A35]/40 text-base transition-colors flex items-center justify-center">+</button>
+                                  </>
+                                ) : (
+                                  <button onClick={() => addProduct(v)} className="px-2.5 py-1 text-[11px] font-semibold bg-gray-50 border border-gray-200 rounded-md text-gray-600 hover:border-[#D93A35]/40 hover:text-[#D93A35] transition-colors">+ Add</button>
+                                )}
+                              </div>
                             </div>
-                            <div className="flex items-center gap-1.5 flex-shrink-0">
-                              {qty > 0 ? (
-                                <>
-                                  <button onClick={() => removeProduct(v)} className="w-9 h-9 rounded-md bg-gray-50 border border-gray-200 text-gray-600 hover:border-[#D93A35]/40 text-base transition-colors flex items-center justify-center">−</button>
-                                  <span className="font-mono text-sm font-bold text-[#D93A35] w-6 text-center">{qty}</span>
-                                  <button onClick={() => addProduct(v)} className="w-9 h-9 rounded-md bg-gray-50 border border-gray-200 text-gray-600 hover:border-[#D93A35]/40 text-base transition-colors flex items-center justify-center">+</button>
-                                </>
-                              ) : (
-                                <button onClick={() => addProduct(v)} className="px-2.5 py-1 text-[11px] font-semibold bg-gray-50 border border-gray-200 rounded-md text-gray-600 hover:border-[#D93A35]/40 hover:text-[#D93A35] transition-colors">+ Add</button>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                    <div className="mt-3 pt-3 border-t border-gray-100 flex justify-between text-xs text-gray-400">
-                      <span>{fmt(group.variantes[0].precio_mayorista)}</span>
-                      <span>{group.variantes[0].peso_kg} kg/u</span>
-                    </div>
+                          );
+                        })}
+                      </div>
+                      <div className="mt-3 pt-3 border-t border-gray-100 flex justify-between text-xs text-gray-400">
+                        <span>{fmt(group.variantes[0].precio_mayorista)}</span>
+                        <span>{group.variantes[0].peso_kg} kg/u</span>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -227,9 +266,14 @@ export default function NuevoPedidoPortalPage() {
                 </div>
               )}
               <div className="space-y-1.5 border-t border-gray-100 pt-3">
-                {[['Total weight', `${totalWeight.toFixed(2)} kg`], ['Subtotal', fmt(subtotal)], ['Shipping', selectedQuote ? fmt(selectedQuote.price) : '—']].map(([label, value]) => (
+                {[
+                  ['Total weight', `${totalWeight.toFixed(2)} kg`],
+                  ['Subtotal', fmt(subtotal)],
+                  ['Shipping', selectedQuote ? fmt(selectedQuote.price) : '—'],
+                ].map(([label, value]) => (
                   <div key={String(label)} className="flex justify-between text-sm">
-                    <span className="text-gray-400">{label}</span><span className="text-gray-700">{value}</span>
+                    <span className="text-gray-400">{label}</span>
+                    <span className="text-gray-700">{value}</span>
                   </div>
                 ))}
                 <div className="flex justify-between pt-2 border-t border-gray-100">
@@ -237,14 +281,24 @@ export default function NuevoPedidoPortalPage() {
                   <span className="font-black text-lg text-[#D93A35]" style={{ fontFamily: 'var(--font-alexandria)' }}>{fmt(total)}</span>
                 </div>
               </div>
+
+              {/* Minimum order warning */}
+              {belowMinimum && lineItems.length > 0 && (
+                <div className="mt-3 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-700">
+                  Minimum order is {fmt(minimumOrderValue)}. Add {fmt(minimumOrderValue - subtotal)} more to proceed.
+                </div>
+              )}
             </div>
           </div>
 
           <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
             <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
               <span className="text-[10px] font-black tracking-[0.12em] uppercase text-gray-400" style={{ fontFamily: 'var(--font-alexandria)' }}>Shipping · Packlink</span>
-              <button onClick={requestQuotes} disabled={!lineItems.length || !customer || quotesLoading}
-                className="px-2.5 py-1 text-[11px] font-semibold bg-gray-50 border border-gray-200 rounded-md text-gray-600 hover:border-[#D93A35]/40 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+              <button
+                onClick={requestQuotes}
+                disabled={!lineItems.length || !customer || quotesLoading}
+                className="px-2.5 py-1 text-[11px] font-semibold bg-gray-50 border border-gray-200 rounded-md text-gray-600 hover:border-[#D93A35]/40 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >
                 Quote
               </button>
             </div>
@@ -255,7 +309,9 @@ export default function NuevoPedidoPortalPage() {
                   Querying Packlink…
                 </div>
               )}
-              {!quotesLoading && quotes.length === 0 && <div className="text-xs text-gray-400 text-center py-2">Add products and quote</div>}
+              {!quotesLoading && quotes.length === 0 && (
+                <div className="text-xs text-gray-400 text-center py-2">Add products and quote</div>
+              )}
               {quotes.map(q => (
                 <button key={q.service_id} onClick={() => setSelectedQuote(q)}
                   className={`w-full flex items-center justify-between p-3 rounded-lg mb-1.5 last:mb-0 border transition-colors text-left ${selectedQuote?.service_id === q.service_id ? 'border-[#D93A35]/40 bg-red-50' : 'border-gray-200 hover:border-gray-300'}`}>
@@ -270,17 +326,22 @@ export default function NuevoPedidoPortalPage() {
             </div>
           </div>
 
-          {error && <div className="px-3 py-2 bg-red-50 border border-red-200 rounded-lg text-xs text-[#D93A35]">{error}</div>}
+          {error && (
+            <div className="px-3 py-2 bg-red-50 border border-red-200 rounded-lg text-xs text-[#D93A35]">{error}</div>
+          )}
 
-          <button onClick={handleConfirm} disabled={!canConfirm || confirming}
-            className="w-full py-3 bg-[#D93A35] text-white text-sm font-bold rounded-xl hover:bg-[#b52e2a] disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+          <button
+            onClick={handleConfirm}
+            disabled={!canConfirm || confirming}
+            className="w-full py-3 bg-[#D93A35] text-white text-sm font-bold rounded-xl hover:bg-[#b52e2a] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
             {confirming ? 'Creating order…' : 'Confirm Order'}
           </button>
           <p className="text-[11px] text-gray-400 text-center">Prices and weights will be locked on confirmation</p>
         </div>
       </div>
 
-      {/* ── Mobile sticky bottom bar (hidden on lg+) ─────────────────── */}
+      {/* ── Mobile sticky bottom bar ─────────────────────────────────── */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-3 z-30">
         <div className="flex items-center gap-3">
           <div className="flex-1 min-w-0">
@@ -295,6 +356,11 @@ export default function NuevoPedidoPortalPage() {
             {selectedQuote && (
               <div className="text-[11px] text-gray-400 truncate">
                 + {fmt(selectedQuote.price)} shipping ({selectedQuote.carrier})
+              </div>
+            )}
+            {belowMinimum && lineItems.length > 0 && (
+              <div className="text-[11px] text-amber-600 font-semibold">
+                Min. order: {fmt(minimumOrderValue)} · still need {fmt(minimumOrderValue - subtotal)}
               </div>
             )}
           </div>
