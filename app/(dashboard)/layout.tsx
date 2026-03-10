@@ -11,6 +11,7 @@ const NAV_ITEMS = [
   { href: '/pedidos/nuevo', label: 'New Order', icon: ( <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg> ) },
   { href: '/clientes', label: 'Clients', icon: ( <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zM23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg> ) },
   { href: '/tarifas', label: 'Pricing', icon: ( <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg> ) },
+  { href: '/produccion', label: 'Production', icon: ( <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 20h20M6 20V10l6-6 6 6v10M10 20v-5h4v5"/></svg> ) },
   { href: '/catalogo', label: 'Catalog', icon: ( <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg> ) },
   { href: '/emails', label: 'Email', icon: ( <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 7l10 7 10-7"/></svg> ) },
   { href: '/usuarios', label: 'Team', icon: ( <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg> ) },
@@ -76,7 +77,8 @@ function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
               (href === '/pedidos' && pathname.startsWith('/pedidos') && !pathname.startsWith('/pedidos/nuevo')) ||
               (href === '/clientes' && pathname.startsWith('/clientes')) ||
               (href === '/tarifas' && pathname.startsWith('/tarifas')) ||
-              (href === '/catalogo' && pathname.startsWith('/catalogo')) ||
+              (href === '/produccion' && pathname.startsWith('/produccion')) ||
+              (href === '/catalogo' && pathname.startsWith('/catalogo'))                
               (href === '/emails' && pathname.startsWith('/emails')) ||
               (href === '/usuarios' && pathname.startsWith('/usuarios'));
             return (
