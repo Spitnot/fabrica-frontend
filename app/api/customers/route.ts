@@ -1,3 +1,4 @@
+import { sendCustomerInviteEmail } from '@/lib/emailService';
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/server';
 
