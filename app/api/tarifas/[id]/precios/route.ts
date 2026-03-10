@@ -30,7 +30,7 @@ export async function PUT(req: NextRequest, { params }: Props) {
   // Insertar los nuevos (si hay)
   if (precios.length > 0) {
     const rows = precios
-      .filter(p => p.sku && p.precio > 0)
+      .filter(p => p.sku && (p.precio > 0 || p.pack_size != null))
       .map(p => ({
         tarifa_id,
         sku:       p.sku,
