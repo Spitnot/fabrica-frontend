@@ -36,7 +36,7 @@ export default function NuevoPedidoPortalPage() {
         .select('id, contacto_nombre, company_name, direccion_envio, tarifa:tarifa_id(pack_size, minimum_order_value, hidden_products)')
         .eq('auth_user_id', session.user.id)
         .single();
-      if (cust) setCustomer(cust);
+      if (cust) setCustomer(cust as unknown as Customer);
     }
     loadData();
     fetch('/api/products').then(r => r.json()).then(d => { setProducts(d.data ?? []); setLoadingProducts(false); });
