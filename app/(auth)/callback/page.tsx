@@ -1,32 +1,23 @@
 'use client'
-
+import { Suspense } from 'react'
 import { useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabaseClient } from '@/lib/supabase/client'
 
-export default function CallbackPage() {
+function CallbackContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
-
   useEffect(() => {
     const code = searchParams.get('code')
     const next = searchParams.get('next') ?? ''
-
     if (code) {
-      // Flujo PKCE — intercambiar código por sesión
       supabaseClient.auth.exchangeCodeForSession(code).then(({ data: { session }, error }) => {
-        if (error || !session) {
-          router.push('/login?error=auth')
-          return
-        }
+        if (error || !session) { router.push('/login?error=auth'); return }
         const role = session.user.user_metadata?.role
-        const dest = next || (role === 'customer' ? '/portal' : '/dashboard')
-        router.push(dest)
+        router.push(next || (role === 'customer' ? '/portal' : '/dashboard'))
       })
       return
     }
-
-    // Flujo implícito — escuchar el hash #access_token
     const { data: { subscription } } = supabaseClient.auth.onAuthStateChange((event, session) => {
       if ((event === 'SIGNED_IN' || event === 'PASSWORD_RECOVERY') && session) {
         const role = session.user.user_metadata?.role
@@ -35,10 +26,8 @@ export default function CallbackPage() {
         subscription.unsubscribe()
       }
     })
-
     return () => subscription.unsubscribe()
   }, [router, searchParams])
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-white">
       <div className="text-center">
@@ -47,4 +36,8 @@ export default function CallbackPage() {
       </div>
     </div>
   )
+}
+
+export default function CallbackPage() {
+  return <Suspense><CallbackContent /></Suspense>
 }
