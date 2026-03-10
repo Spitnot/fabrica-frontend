@@ -6,7 +6,7 @@ import { getColorHex, parseVariant } from '@/lib/colors';
 
 interface Product { sku: string; nombre_producto: string; variante?: string; precio_mayorista: number; peso_kg: number; imagen?: string; }
 interface ProductGroup { nombre: string; variantes: Product[]; imagen?: string; }
-interface TarifaPrecio { sku: string; precio: number; }
+interface TarifaPrecio { sku: string; precio: number; pack_size?: number | null; }
 interface Tarifa { id: string; nombre: string; multiplicador: number; precios?: TarifaPrecio[]; pack_size: number; minimum_order_value: number; }
 interface Customer { id: string; contacto_nombre: string; company_name: string; tarifa_id?: string; descuento_pct: number; tarifa?: Tarifa; direccion_envio: { street: string; city: string; postal_code: string; country: string; }; }
 interface LineItem { sku: string; nombre_producto: string; variante?: string; cantidad: number; precio_unitario: number; peso_unitario: number; }
@@ -79,8 +79,14 @@ function NuevoPedidoContent() {
 
   function getQty(sku: string) { return lineItems.find(i => i.sku === sku)?.cantidad ?? 0; }
 
+  function getPackStep(sku: string): number {
+    const skuPs = clientTarifa?.precios?.find(pr => pr.sku === sku)?.pack_size;
+    if (skuPs != null && skuPs > 0) return skuPs;
+    return clientTarifa?.pack_size ?? 1;
+  }
+
   function addProduct(p: Product) {
-    const step = clientTarifa?.pack_size ?? 1;
+    const step = getPackStep(p.sku);
     setLineItems(prev => {
       const ex = prev.find(i => i.sku === p.sku);
       if (ex) return prev.map(i => i.sku === p.sku ? { ...i, cantidad: i.cantidad + step } : i);
@@ -91,7 +97,7 @@ function NuevoPedidoContent() {
   }
 
   function removeProduct(p: Product) {
-    const step = clientTarifa?.pack_size ?? 1;
+    const step = getPackStep(p.sku);
     setLineItems(prev => {
       const ex = prev.find(i => i.sku === p.sku);
       if (!ex) return prev;

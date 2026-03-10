@@ -3,13 +3,13 @@ import { supabaseAdmin } from '@/lib/supabase/server';
 
 interface Props { params: Promise<{ id: string }> }
 
-// GET — tarifa con sus precios por SKU
+// GET — tarifa con sus precios por SKU (incluye pack_size por SKU)
 export async function GET(_req: NextRequest, { params }: Props) {
   const { id } = await params;
 
   const { data, error } = await supabaseAdmin
     .from('tarifas')
-    .select('*, precios:tarifas_precios(sku, precio)')
+    .select('*, precios:tarifas_precios(sku, precio, pack_size)')
     .eq('id', id)
     .single();
 

@@ -4,10 +4,10 @@ import { supabaseAdmin } from '@/lib/supabase/server';
 interface Props { params: Promise<{ id: string }> }
 
 // PUT — reemplaza todos los precios de la tarifa (bulk upsert)
-// body: { precios: { sku: string; precio: number }[] }
+// body: { precios: { sku: string; precio: number; pack_size?: number | null }[] }
 export async function PUT(req: NextRequest, { params }: Props) {
   const { id: tarifa_id } = await params;
-  const { precios } = await req.json() as { precios: { sku: string; precio: number }[] };
+  const { precios } = await req.json() as { precios: { sku: string; precio: number; pack_size?: number | null }[] };
 
   if (!Array.isArray(precios)) {
     return NextResponse.json({ error: 'prices must be an array' }, { status: 400 });
@@ -31,7 +31,12 @@ export async function PUT(req: NextRequest, { params }: Props) {
   if (precios.length > 0) {
     const rows = precios
       .filter(p => p.sku && p.precio > 0)
-      .map(p => ({ tarifa_id, sku: p.sku, precio: p.precio }));
+      .map(p => ({
+        tarifa_id,
+        sku:       p.sku,
+        precio:    p.precio,
+        pack_size: p.pack_size ?? null,
+      }));
 
     if (rows.length > 0) {
       const { error } = await supabaseAdmin.from('tarifas_precios').insert(rows);

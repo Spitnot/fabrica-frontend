@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 
-interface TarifaPrecio { sku: string; precio: number; }
+interface TarifaPrecio { sku: string; precio: number; pack_size?: number | null; }
 interface Tarifa {
   id: string; nombre: string; descripcion?: string; multiplicador: number; activo: boolean;
   hidden_products: string[]; minimum_order_value: number; pack_size: number;
@@ -17,24 +17,25 @@ const fmt = (n: number) => new Intl.NumberFormat('en-GB', { style: 'currency', c
 export default function TarifaDetailPage() {
   const { id } = useParams<{ id: string }>();
 
-  const [tarifa, setTarifa]       = useState<Tarifa | null>(null);
-  const [products, setProducts]   = useState<Product[]>([]);
-  const [loading, setLoading]     = useState(true);
-  const [saving, setSaving]       = useState(false);
-  const [savingMeta, setSavingMeta] = useState(false);
-  const [error, setError]         = useState('');
-  const [success, setSuccess]     = useState('');
-  const [search, setSearch]       = useState('');
+  const [tarifa, setTarifa]           = useState<Tarifa | null>(null);
+  const [products, setProducts]       = useState<Product[]>([]);
+  const [loading, setLoading]         = useState(true);
+  const [saving, setSaving]           = useState(false);
+  const [savingMeta, setSavingMeta]   = useState(false);
+  const [error, setError]             = useState('');
+  const [success, setSuccess]         = useState('');
+  const [search, setSearch]           = useState('');
 
   // Mapa editable: sku → precio (string para el input)
-  const [preciosEdit, setPreciosEdit] = useState<Record<string, string>>({});
+  const [preciosEdit, setPreciosEdit]     = useState<Record<string, string>>({});
+  // Mapa editable: sku → pack_size override (string para el input, '' = usar el de la tarifa)
+  const [packSizeEdit, setPackSizeEdit]   = useState<Record<string, string>>({});
 
   // Meta edición
   const [meta, setMeta] = useState({
     nombre: '', descripcion: '', multiplicador: '',
     minimum_order_value: '0', pack_size: '1',
   });
-  // Hidden products: stored as set of product IDs (we use product name as key for display)
   const [hiddenProducts, setHiddenProducts] = useState<string[]>([]);
 
   useEffect(() => {
@@ -59,17 +60,21 @@ export default function TarifaDetailPage() {
       });
       setHiddenProducts(tData.hidden_products ?? []);
 
-      // Inicializar mapa de precios
-      const map: Record<string, string> = {};
-      (tData.precios ?? []).forEach((p: TarifaPrecio) => { map[p.sku] = String(p.precio); });
-      setPreciosEdit(map);
+      // Inicializar mapas de precios y pack_sizes
+      const precioMap: Record<string, string>   = {};
+      const packMap:   Record<string, string>   = {};
+      (tData.precios ?? []).forEach((p: TarifaPrecio) => {
+        precioMap[p.sku] = String(p.precio);
+        if (p.pack_size != null) packMap[p.sku] = String(p.pack_size);
+      });
+      setPreciosEdit(precioMap);
+      setPackSizeEdit(packMap);
 
       setLoading(false);
     }
     load();
   }, [id]);
 
-  // Agrupamos por producto para la tabla
   const productGroups = useMemo(() => {
     const filtered = search.length >= 2
       ? products.filter(p =>
@@ -90,15 +95,26 @@ export default function TarifaDetailPage() {
   function setPrice(sku: string, value: string) {
     setPreciosEdit(prev => ({ ...prev, [sku]: value }));
   }
-
   function clearPrice(sku: string) {
     setPreciosEdit(prev => { const n = { ...prev }; delete n[sku]; return n; });
+  }
+  function setPackSize(sku: string, value: string) {
+    setPackSizeEdit(prev => ({ ...prev, [sku]: value }));
+  }
+  function clearPackSize(sku: string) {
+    setPackSizeEdit(prev => { const n = { ...prev }; delete n[sku]; return n; });
   }
 
   function effectivePrice(sku: string, shopifyPrice: number): number {
     const val = parseFloat(preciosEdit[sku] ?? '');
     if (!isNaN(val) && val > 0) return val;
     return shopifyPrice * parseFloat(meta.multiplicador || '1');
+  }
+
+  function effectivePackSize(sku: string): number {
+    const val = parseInt(packSizeEdit[sku] ?? '');
+    if (!isNaN(val) && val > 0) return val;
+    return parseInt(meta.pack_size) || 1;
   }
 
   async function handleSaveMeta() {
@@ -123,9 +139,22 @@ export default function TarifaDetailPage() {
 
   async function handleSavePrecios() {
     setSaving(true); setError(''); setSuccess('');
-    const precios = Object.entries(preciosEdit)
-      .map(([sku, val]) => ({ sku, precio: parseFloat(val) }))
-      .filter(p => !isNaN(p.precio) && p.precio > 0);
+
+    // Combinar todos los SKUs que tienen precio o pack_size override
+    const allSkus = new Set([
+      ...Object.keys(preciosEdit).filter(sku => parseFloat(preciosEdit[sku]) > 0),
+      ...Object.keys(packSizeEdit).filter(sku => parseInt(packSizeEdit[sku]) > 0),
+    ]);
+
+    const precios = Array.from(allSkus).map(sku => {
+      const precio   = parseFloat(preciosEdit[sku] ?? '');
+      const packSize = parseInt(packSizeEdit[sku]  ?? '');
+      return {
+        sku,
+        precio:    isNaN(precio)   || precio   <= 0 ? 0         : precio,
+        pack_size: isNaN(packSize) || packSize <= 0 ? null       : packSize,
+      };
+    }).filter(p => p.precio > 0 || p.pack_size != null);
 
     const res = await fetch(`/api/tarifas/${id}/precios`, {
       method: 'PUT',
@@ -153,6 +182,7 @@ export default function TarifaDetailPage() {
   );
 
   const customPriceCount = Object.values(preciosEdit).filter(v => parseFloat(v) > 0).length;
+  const customPackCount  = Object.values(packSizeEdit).filter(v => parseInt(v) > 0).length;
 
   const inputCls = "bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-[#D93A35] outline-none transition-colors";
 
@@ -183,7 +213,9 @@ export default function TarifaDetailPage() {
           <div className="flex items-center gap-3 mb-4">
             <span className="text-[10px] font-black tracking-[0.18em] uppercase text-gray-400 whitespace-nowrap">Per-SKU Prices</span>
             <div className="flex-1 h-px bg-gray-100" />
-            <span className="text-[11px] text-gray-400">{customPriceCount} custom · {products.length} total</span>
+            <span className="text-[11px] text-gray-400">
+              {customPriceCount} custom price{customPriceCount !== 1 ? 's' : ''} · {customPackCount} pack override{customPackCount !== 1 ? 's' : ''} · {products.length} total
+            </span>
           </div>
 
           <input type="text" value={search} onChange={e => setSearch(e.target.value)}
@@ -191,78 +223,107 @@ export default function TarifaDetailPage() {
             className={`w-full mb-4 ${inputCls}`} />
 
           <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-            <table className="w-full border-collapse min-w-[520px]">
+            <table className="w-full border-collapse min-w-[620px]">
               <thead>
                 <tr className="bg-gray-50">
-                  {['Product / Variant', 'SKU', 'Shopify', 'Custom Price', 'Effective', ''].map((h) => (
+                  {['Product / Variant', 'SKU', 'Shopify', 'Custom Price', 'Pack Size', 'Effective', ''].map(h => (
                     <th key={h} className="text-left px-4 py-3 text-[10px] font-bold uppercase tracking-[0.1em] text-gray-400 border-b border-gray-100">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {productGroups.length === 0 ? (
-                  <tr><td colSpan={6} className="px-4 py-10 text-center text-sm text-gray-400">No products found</td></tr>
+                  <tr><td colSpan={7} className="px-4 py-10 text-center text-sm text-gray-400">No products found</td></tr>
                 ) : (
                   productGroups.flatMap(group =>
                     group.variantes.map((v, vi) => {
-                      const hasCustom = !!preciosEdit[v.sku] && parseFloat(preciosEdit[v.sku]) > 0;
-                      const effective = effectivePrice(v.sku, v.precio_mayorista);
-                      const productId = group.nombre;
-                      const isHidden  = hiddenProducts.includes(productId);
+                      const hasCustomPrice = !!preciosEdit[v.sku] && parseFloat(preciosEdit[v.sku]) > 0;
+                      const hasCustomPack  = !!packSizeEdit[v.sku] && parseInt(packSizeEdit[v.sku]) > 0;
+                      const effective      = effectivePrice(v.sku, v.precio_mayorista);
+                      const effPack        = effectivePackSize(v.sku);
+                      const productId      = group.nombre;
+                      const isHidden       = hiddenProducts.includes(productId);
                       return (
                         <tr key={v.sku} className={`border-b border-gray-50 last:border-0 transition-colors ${isHidden ? 'opacity-40' : 'hover:bg-gray-50/50'}`}>
-                              <td className="px-4 py-2.5">
-                                {vi === 0 && <div className="text-xs font-semibold text-gray-700">{group.nombre}</div>}
-                                {v.variante && <div className="text-[11px] text-gray-400">{v.variante}</div>}
-                              </td>
-                              <td className="px-4 py-2.5 font-mono text-[11px] text-gray-400">{v.sku}</td>
-                              <td className="px-4 py-2.5 font-mono text-xs text-gray-500">{fmt(v.precio_mayorista)}</td>
-                              <td className="px-4 py-2.5">
-                                <div className="flex items-center gap-1.5">
-                                  <input
-                                    type="number"
-                                    step="0.01"
-                                    min="0"
-                                    value={preciosEdit[v.sku] ?? ''}
-                                    onChange={e => setPrice(v.sku, e.target.value)}
-                                    placeholder={fmt(v.precio_mayorista * parseFloat(meta.multiplicador || '1'))}
-                                    className="w-24 bg-gray-50 border border-gray-200 rounded-md px-2 py-1 text-xs font-mono text-gray-900 focus:border-[#D93A35] outline-none"
-                                  />
-                                  {hasCustom && (
-                                    <button onClick={() => clearPrice(v.sku)} title="Clear custom price"
-                                      className="text-gray-300 hover:text-[#D93A35] transition-colors text-sm leading-none">×</button>
-                                  )}
-                                </div>
-                              </td>
-                              <td className="px-4 py-2.5">
-                                <span className={`font-mono text-xs font-bold ${hasCustom ? 'text-[#D93A35]' : 'text-gray-500'}`}>
-                                  {fmt(effective)}
-                                </span>
-                                {hasCustom && (
-                                  <span className="ml-1.5 text-[9px] text-[#D93A35] font-bold uppercase tracking-wide">custom</span>
+                          <td className="px-4 py-2.5">
+                            {vi === 0 && <div className="text-xs font-semibold text-gray-700">{group.nombre}</div>}
+                            {v.variante && <div className="text-[11px] text-gray-400">{v.variante}</div>}
+                          </td>
+                          <td className="px-4 py-2.5 font-mono text-[11px] text-gray-400">{v.sku}</td>
+                          <td className="px-4 py-2.5 font-mono text-xs text-gray-500">{fmt(v.precio_mayorista)}</td>
+
+                          {/* Custom Price */}
+                          <td className="px-4 py-2.5">
+                            <div className="flex items-center gap-1.5">
+                              <input
+                                type="number" step="0.01" min="0"
+                                value={preciosEdit[v.sku] ?? ''}
+                                onChange={e => setPrice(v.sku, e.target.value)}
+                                placeholder={fmt(v.precio_mayorista * parseFloat(meta.multiplicador || '1'))}
+                                className="w-24 bg-gray-50 border border-gray-200 rounded-md px-2 py-1 text-xs font-mono text-gray-900 focus:border-[#D93A35] outline-none"
+                              />
+                              {hasCustomPrice && (
+                                <button onClick={() => clearPrice(v.sku)} title="Clear custom price"
+                                  className="text-gray-300 hover:text-[#D93A35] transition-colors text-sm leading-none">×</button>
+                              )}
+                            </div>
+                          </td>
+
+                          {/* Pack Size override */}
+                          <td className="px-4 py-2.5">
+                            <div className="flex items-center gap-1.5">
+                              <input
+                                type="number" step="1" min="1"
+                                value={packSizeEdit[v.sku] ?? ''}
+                                onChange={e => setPackSize(v.sku, e.target.value)}
+                                placeholder={String(parseInt(meta.pack_size) || 1)}
+                                className={`w-16 bg-gray-50 border rounded-md px-2 py-1 text-xs font-mono text-gray-900 outline-none transition-colors ${hasCustomPack ? 'border-[#D93A35]/40 text-[#D93A35]' : 'border-gray-200 focus:border-[#D93A35]'}`}
+                              />
+                              {hasCustomPack && (
+                                <button onClick={() => clearPackSize(v.sku)} title="Use tier default"
+                                  className="text-gray-300 hover:text-[#D93A35] transition-colors text-sm leading-none">×</button>
+                              )}
+                            </div>
+                            {hasCustomPack && (
+                              <div className="text-[9px] text-[#D93A35] font-bold uppercase tracking-wide mt-0.5">override</div>
+                            )}
+                          </td>
+
+                          {/* Effective price */}
+                          <td className="px-4 py-2.5">
+                            <span className={`font-mono text-xs font-bold ${hasCustomPrice ? 'text-[#D93A35]' : 'text-gray-500'}`}>
+                              {fmt(effective)}
+                            </span>
+                            {hasCustomPrice && (
+                              <span className="ml-1.5 text-[9px] text-[#D93A35] font-bold uppercase tracking-wide">custom</span>
+                            )}
+                            <div className="text-[10px] text-gray-400 mt-0.5">
+                              ×{effPack}{hasCustomPack ? '' : ' (tier)'}
+                            </div>
+                          </td>
+
+                          {/* Hide toggle */}
+                          {vi === 0 ? (
+                            <td className="px-4 py-2.5" rowSpan={group.variantes.length}>
+                              <button
+                                title={isHidden ? 'Show product for this tier' : 'Hide product for this tier'}
+                                onClick={() => setHiddenProducts(p =>
+                                  isHidden ? p.filter(x => x !== productId) : [...p, productId]
                                 )}
-                              </td>
-                              {vi === 0 ? (
-                                <td className="px-4 py-2.5" rowSpan={group.variantes.length}>
-                                  <button
-                                    title={isHidden ? 'Show product for this tier' : 'Hide product for this tier'}
-                                    onClick={() => setHiddenProducts(p =>
-                                      isHidden ? p.filter(x => x !== productId) : [...p, productId]
-                                    )}
-                                    className="p-1 rounded hover:bg-gray-100 transition-colors"
-                                  >
-                                    {isHidden ? (
-                                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#D93A35" strokeWidth="2">
-                                        <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24M1 1l22 22"/>
-                                      </svg>
-                                    ) : (
-                                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2">
-                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
-                                      </svg>
-                                    )}
-                                  </button>
-                                </td>
-                              ) : null}
+                                className="p-1 rounded hover:bg-gray-100 transition-colors"
+                              >
+                                {isHidden ? (
+                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#D93A35" strokeWidth="2">
+                                    <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24M1 1l22 22"/>
+                                  </svg>
+                                ) : (
+                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                                  </svg>
+                                )}
+                              </button>
+                            </td>
+                          ) : null}
                         </tr>
                       );
                     })
@@ -275,7 +336,7 @@ export default function TarifaDetailPage() {
           <div className="mt-4 flex items-center gap-3">
             <button onClick={handleSavePrecios} disabled={saving}
               className="px-5 py-2 bg-[#D93A35] text-white text-sm font-bold rounded-lg hover:bg-[#b52e2a] disabled:opacity-40 transition-colors">
-              {saving ? 'Saving…' : `Save Prices (${customPriceCount})`}
+              {saving ? 'Saving…' : `Save Prices & Pack Sizes`}
             </button>
             {success && <span className="text-xs text-[#0DA265] font-semibold">{success}</span>}
             {error   && <span className="text-xs text-[#D93A35]">{error}</span>}
@@ -301,17 +362,11 @@ export default function TarifaDetailPage() {
                   placeholder="Optional" className={`w-full ${inputCls}`} />
               </div>
               <div className="space-y-1.5">
-                <label className="text-[11px] font-bold tracking-[0.1em] uppercase text-gray-400">
-                  Default Multiplier
-                </label>
-                <div className="relative">
-                  <input
-                    type="number" step="0.01" min="0" max="10"
-                    value={meta.multiplicador}
-                    onChange={e => setMeta(p => ({ ...p, multiplicador: e.target.value }))}
-                    className={`w-full ${inputCls}`}
-                  />
-                </div>
+                <label className="text-[11px] font-bold tracking-[0.1em] uppercase text-gray-400">Default Multiplier</label>
+                <input type="number" step="0.01" min="0" max="10"
+                  value={meta.multiplicador}
+                  onChange={e => setMeta(p => ({ ...p, multiplicador: e.target.value }))}
+                  className={`w-full ${inputCls}`} />
                 <p className="text-[10px] text-gray-400">
                   Applied to Shopify price when no custom price is set.<br />
                   e.g. 0.65 = 65% of retail · 1.0 = full price
@@ -319,32 +374,24 @@ export default function TarifaDetailPage() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-[11px] font-bold tracking-[0.1em] uppercase text-gray-400">
-                  Minimum Order Value (€)
-                </label>
-                <input
-                  type="number" step="0.01" min="0"
+                <label className="text-[11px] font-bold tracking-[0.1em] uppercase text-gray-400">Minimum Order Value (€)</label>
+                <input type="number" step="0.01" min="0"
                   value={meta.minimum_order_value}
                   onChange={e => setMeta(p => ({ ...p, minimum_order_value: e.target.value }))}
-                  className={`w-full ${inputCls}`}
-                />
+                  className={`w-full ${inputCls}`} />
                 <p className="text-[10px] text-gray-400">
                   Customers on this tier cannot submit orders below this amount. 0 = no minimum.
                 </p>
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-[11px] font-bold tracking-[0.1em] uppercase text-gray-400">
-                  Pack Size
-                </label>
-                <input
-                  type="number" step="1" min="1"
+                <label className="text-[11px] font-bold tracking-[0.1em] uppercase text-gray-400">Default Pack Size</label>
+                <input type="number" step="1" min="1"
                   value={meta.pack_size}
                   onChange={e => setMeta(p => ({ ...p, pack_size: e.target.value }))}
-                  className={`w-full ${inputCls}`}
-                />
+                  className={`w-full ${inputCls}`} />
                 <p className="text-[10px] text-gray-400">
-                  Quantities must be a multiple of this number. 1 = no restriction (e.g. 8 → 8, 16, 24…)
+                  Fallback for products without a per-SKU pack size. 1 = no restriction.
                 </p>
               </div>
 
@@ -386,9 +433,11 @@ export default function TarifaDetailPage() {
             <div>1. If a <strong>custom price</strong> is set for a SKU → use it</div>
             <div>2. Otherwise → <span className="font-mono">Shopify price × {meta.multiplicador || '1'}</span></div>
             <div>3. Then apply the client's <strong>personal discount</strong> on top</div>
+            <div className="pt-1 border-t border-gray-200 font-bold text-gray-700 text-[11px] uppercase tracking-wide">Pack Size Logic</div>
+            <div>1. If a <strong>per-SKU pack size</strong> is set → use it</div>
+            <div>2. Otherwise → tier default (<span className="font-mono">{meta.pack_size || '1'}</span>)</div>
             <div className="pt-1 border-t border-gray-200 font-bold text-gray-700 text-[11px] uppercase tracking-wide">Order Rules</div>
             <div>Min. order: <span className="font-mono">{parseFloat(meta.minimum_order_value) > 0 ? `€${meta.minimum_order_value}` : 'none'}</span></div>
-            <div>Pack size: <span className="font-mono">{meta.pack_size || '1'}</span> unit{parseInt(meta.pack_size) !== 1 ? 's' : ''} per step</div>
             <div>Hidden products: <span className="font-mono">{hiddenProducts.length}</span></div>
           </div>
         </div>

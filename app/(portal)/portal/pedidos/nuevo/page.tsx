@@ -7,7 +7,8 @@ import { getColorHex, parseVariant } from '@/lib/colors';
 
 interface Product { sku: string; nombre_producto: string; variante?: string; precio_mayorista: number; peso_kg: number; imagen?: string; }
 interface ProductGroup { nombre: string; variantes: Product[]; imagen?: string; }
-interface Tarifa { pack_size: number; minimum_order_value: number; hidden_products: string[]; }
+interface TarifaPrecioPortal { sku: string; pack_size?: number | null; }
+interface Tarifa { pack_size: number; minimum_order_value: number; hidden_products: string[]; precios?: TarifaPrecioPortal[]; }
 interface Customer { id: string; contacto_nombre: string; company_name: string; tarifa?: Tarifa | null; direccion_envio: { street: string; city: string; postal_code: string; country: string; }; }
 interface LineItem { sku: string; nombre_producto: string; variante?: string; cantidad: number; precio_unitario: number; peso_unitario: number; }
 interface Quote { service_id: string; carrier: string; service_name: string; price: number; estimated_days: number; }
@@ -33,7 +34,7 @@ export default function NuevoPedidoPortalPage() {
       if (!session?.user) return;
       const { data: cust } = await supabaseClient
         .from('customers')
-        .select('id, contacto_nombre, company_name, direccion_envio, tarifa:tarifa_id(pack_size, minimum_order_value, hidden_products)')
+        .select('id, contacto_nombre, company_name, direccion_envio, tarifa:tarifa_id(pack_size, minimum_order_value, hidden_products, precios:tarifas_precios(sku, pack_size))')
         .eq('auth_user_id', session.user.id)
         .single();
       if (cust) setCustomer(cust as unknown as Customer);
@@ -67,8 +68,14 @@ export default function NuevoPedidoPortalPage() {
 
   function getQty(sku: string) { return lineItems.find(i => i.sku === sku)?.cantidad ?? 0; }
 
+  function getPackStep(sku: string): number {
+    const skuPs = customer?.tarifa?.precios?.find(pr => pr.sku === sku)?.pack_size;
+    if (skuPs != null && skuPs > 0) return skuPs;
+    return customer?.tarifa?.pack_size ?? 1;
+  }
+
   function addProduct(p: Product) {
-    const step = customer?.tarifa?.pack_size ?? 1;
+    const step = getPackStep(p.sku);
     setLineItems(prev => {
       const ex = prev.find(i => i.sku === p.sku);
       if (ex) return prev.map(i => i.sku === p.sku ? { ...i, cantidad: i.cantidad + step } : i);
@@ -78,7 +85,7 @@ export default function NuevoPedidoPortalPage() {
   }
 
   function removeProduct(p: Product) {
-    const step = customer?.tarifa?.pack_size ?? 1;
+    const step = getPackStep(p.sku);
     setLineItems(prev => {
       const ex = prev.find(i => i.sku === p.sku);
       if (!ex) return prev;
