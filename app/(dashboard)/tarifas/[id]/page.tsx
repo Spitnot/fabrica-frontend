@@ -285,7 +285,6 @@ export default function TarifaDetailPage() {
                               )}
                             </div>
                             {hasCustomPack && (
-                              <div className="text-[9px] text-[#D93A35] font-bold uppercase tracking-wide mt-0.5">override</div>
                             )}
                           </td>
 
