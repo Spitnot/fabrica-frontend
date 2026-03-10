@@ -284,8 +284,6 @@ export default function TarifaDetailPage() {
                                   className="text-gray-300 hover:text-[#D93A35] transition-colors text-sm leading-none">×</button>
                               )}
                             </div>
-                            {hasCustomPack && (
-                            )}
                           </td>
 
                           {/* Effective price */}
