@@ -2,10 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 
 async function getAuthenticatedCustomerId() {
-const supabase = await createSupabaseServerClient()
-const { data: { user }, error } = await supabase.auth.getUser()
-if (error || !user) return { supabase, userId: null }
-return { supabase, userId: user.id }
+  const supabase = await createSupabaseServerClient()
+  const { data: { user }, error } = await supabase.auth.getUser()
+  if (error || !user) return { supabase, userId: null }
+  return { supabase, userId: user.id }
 }
 
 export async function POST(req: NextRequest) {
@@ -36,15 +36,15 @@ export async function POST(req: NextRequest) {
     direccion_fiscal: {
       street:      body.fiscal_street.trim(),
       city:        body.fiscal_city.trim(),
-      state:       body.fiscal_state?.trim()       ?? '',
+      state:       body.fiscal_state?.trim()      ?? '',
       postal_code: body.fiscal_postal_code.trim(),
       country:     body.fiscal_country.trim(),
     },
     direccion_envio: {
-      street:      (body.same_address ? body.fiscal_street      : body.street)?.trim()       ?? '',
-      city:        (body.same_address ? body.fiscal_city        : body.city)?.trim()         ?? '',
-      postal_code: (body.same_address ? body.fiscal_postal_code : body.postal_code)?.trim()  ?? '',
-      country:     (body.same_address ? body.fiscal_country     : body.country)?.trim()      ?? '',
+      street:      (body.same_address ? body.fiscal_street      : body.street)?.trim()      ?? '',
+      city:        (body.same_address ? body.fiscal_city        : body.city)?.trim()        ?? '',
+      postal_code: (body.same_address ? body.fiscal_postal_code : body.postal_code)?.trim() ?? '',
+      country:     (body.same_address ? body.fiscal_country     : body.country)?.trim()     ?? '',
     },
     tipo_cliente:           body.tipo_cliente           ?? null,
     zona_distribucion:      body.zona_distribucion      ?? null,
@@ -63,6 +63,9 @@ export async function POST(req: NextRequest) {
     console.error('[portal/onboarding POST]', error.message)
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
+
+  // Sync to auth metadata so middleware can read it without a DB query
+  await supabase.auth.updateUser({ data: { onboarding_completed: true } })
 
   return NextResponse.json({ ok: true })
 }

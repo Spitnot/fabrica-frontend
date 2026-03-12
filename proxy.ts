@@ -4,7 +4,6 @@ import type { NextRequest } from 'next/server'
 
 const ADMIN_PREFIXES = ['/dashboard', '/pedidos', '/clientes', '/tarifas', '/catalogo', '/emails', '/usuarios']
 const ADMIN_ROLES = ['admin', 'manager', 'viewer']
-// Rutas accesibles siempre, incluso con sesión activa
 const AUTH_ROUTES = ['/login', '/forgot-password', '/reset-password']
 
 export async function proxy(req: NextRequest) {
@@ -28,13 +27,12 @@ export async function proxy(req: NextRequest) {
   )
 
   const { data: { user } } = await supabase.auth.getUser()
-
   const { pathname } = req.nextUrl
 
   const isAdminRoute = ADMIN_PREFIXES.some(p => pathname === p || pathname.startsWith(p + '/'))
   const isPortalRoute = pathname === '/portal' || pathname.startsWith('/portal/')
-  const isProtected = isAdminRoute || isPortalRoute
-  const isAuthRoute = AUTH_ROUTES.includes(pathname)
+  const isProtected  = isAdminRoute || isPortalRoute
+  const isAuthRoute  = AUTH_ROUTES.includes(pathname)
 
   // ── Unauthenticated ──────────────────────────────────────────────────────────
   if (!user) {
@@ -47,23 +45,29 @@ export async function proxy(req: NextRequest) {
   // ── Authenticated ────────────────────────────────────────────────────────────
   const role = user.user_metadata?.role as string | undefined
 
-  // Rutas de auth siempre accesibles (reset-password, forgot-password)
   if (isAuthRoute) return res
 
-  // Ya logueado — saltar root
   if (pathname === '/') {
     const dest = role === 'customer' ? '/portal' : '/dashboard'
     return NextResponse.redirect(new URL(dest, req.url))
   }
 
-  // Customer intentando acceder al dashboard admin
+  // Customer trying to access admin
   if (isAdminRoute && !ADMIN_ROLES.includes(role ?? '')) {
     return NextResponse.redirect(new URL('/portal', req.url))
   }
 
-  // Admin intentando acceder al portal customer
+  // Admin trying to access portal
   if (isPortalRoute && role !== 'customer') {
     return NextResponse.redirect(new URL('/dashboard', req.url))
+  }
+
+  // Customer without completed onboarding → redirect to onboarding
+  if (isPortalRoute && pathname !== '/portal/onboarding' && role === 'customer') {
+    const onboardingDone = user.user_metadata?.onboarding_completed
+    if (!onboardingDone) {
+      return NextResponse.redirect(new URL('/portal/onboarding', req.url))
+    }
   }
 
   return res

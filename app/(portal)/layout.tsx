@@ -57,7 +57,7 @@ function PortalSidebar({ open, onClose }: { open: boolean; onClose: () => void }
   const router = useRouter();
   const [userInfo, setUserInfo] = useState<{ name: string; company: string } | null>(null);
 
- useEffect(() => {
+  useEffect(() => {
     async function loadUser() {
       const { data: { session } } = await supabaseClient.auth.getSession()
       if (!session?.user) return
@@ -65,14 +65,10 @@ function PortalSidebar({ open, onClose }: { open: boolean; onClose: () => void }
       if (!res.ok) return
       const { data } = await res.json()
       if (!data) return
-      if (!data.onboarding_completed && pathname !== '/portal/onboarding') {
-        router.replace('/portal/onboarding')
-        return
-      }
       setUserInfo({ name: data.contacto_nombre, company: data.company_name })
     }
     loadUser()
-  }, [pathname, router])
+  }, [])
 
   async function handleLogout() {
     await supabaseClient.auth.signOut();
