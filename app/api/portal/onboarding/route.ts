@@ -2,10 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 
 async function getAuthenticatedCustomerId() {
-  const supabase = await createSupabaseServerClient()
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session?.user) return { supabase, userId: null }
-  return { supabase, userId: session.user.id }
+const supabase = await createSupabaseServerClient()
+const { data: { user }, error } = await supabase.auth.getUser()
+if (error || !user) return { supabase, userId: null }
+return { supabase, userId: user.id }
 }
 
 export async function POST(req: NextRequest) {
