@@ -54,14 +54,21 @@ export async function POST(req: NextRequest) {
     onboarding_completed:   true,
   }
 
-  const { error } = await supabase
+const { error, count } = await supabase
     .from('customers')
-    .update(updates)
+    .update(updates, { count: 'exact' })
     .eq('auth_user_id', userId)
+
+  console.log('[onboarding] userId:', userId, 'rows updated:', count, 'error:', error?.message)
 
   if (error) {
     console.error('[portal/onboarding POST]', error.message)
     return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+
+  if (count === 0) {
+    console.error('[onboarding] No customer found for auth_user_id:', userId)
+    return NextResponse.json({ error: 'Customer not found' }, { status: 404 })
   }
 
   // Sync to auth metadata so middleware can read it without a DB query

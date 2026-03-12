@@ -122,8 +122,9 @@ export default function OnboardingPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         contacto_nombre:    form.contacto_nombre.trim(),
-        telefono:           `${form.telefono_prefix} ${form.telefono_number}`.trim(),
-        company_name:       form.company_name.trim(),
+        telefono: form.telefono_number.trim()
+        ? `${form.telefono_prefix} ${form.telefono_number.trim()}`
+        : null,        company_name:       form.company_name.trim(),
         nombre_comercial:   form.nombre_comercial  || null,
         tipo_empresa:       form.tipo_empresa       || null,
         tipo_fiscal:        form.tipo_fiscal,
