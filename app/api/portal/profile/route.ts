@@ -10,8 +10,8 @@ async function getAuthenticatedCustomerId() {
 
 export async function GET() {
   const { supabase, userId } = await getAuthenticatedCustomerId()
+  console.log('[profile GET] userId:', userId)
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
   const { data, error } = await supabase
     .from('customers')
     .select(`
@@ -24,7 +24,7 @@ export async function GET() {
     `)
     .eq('auth_user_id', userId)
     .single()
-
+  console.log('[profile GET] onboarding_completed:', data?.onboarding_completed, 'error:', error?.message)
   if (error || !data) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   return NextResponse.json({ data })
 }
