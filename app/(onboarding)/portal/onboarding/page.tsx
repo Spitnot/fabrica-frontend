@@ -155,7 +155,8 @@ export default function OnboardingPage() {
       return
     }
     setStep(4)
-  }
+    // Force full reload so layout re-fetches onboarding_completed from DB
+    setTimeout(() => { window.location.href = '/portal' }, 1500)  }
 
   const inputCls  = "w-full bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-[#D93A35] focus:ring-1 focus:ring-[#D93A35]/20 outline-none transition-all"
   const selectCls = inputCls
@@ -422,7 +423,7 @@ export default function OnboardingPage() {
               <p className="text-gray-500 text-base mb-8 max-w-sm mx-auto">
                 Your profile is complete. You can now browse the catalogue and place orders.
               </p>
-              <button onClick={() => router.replace('/portal')}
+              <button onClick={() => { window.location.href = '/portal' }}
                 className="inline-flex items-center gap-2 px-8 py-3 bg-[#D93A35] text-white font-bold rounded-xl hover:bg-[#b52e2a] transition-colors shadow-lg shadow-[#D93A35]/20 text-sm">
                 Go to my portal
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
