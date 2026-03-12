@@ -57,24 +57,22 @@ function PortalSidebar({ open, onClose }: { open: boolean; onClose: () => void }
   const router = useRouter();
   const [userInfo, setUserInfo] = useState<{ name: string; company: string } | null>(null);
 
-  useEffect(() => {
+ useEffect(() => {
     async function loadUser() {
-      const { data: { session } } = await supabaseClient.auth.getSession();
-      if (!session?.user) return;
-      const { data: cust } = await supabaseClient
-        .from('customers')
-        .select('contacto_nombre, company_name, onboarding_completed')
-        .eq('auth_user_id', session.user.id)
-        .single();
-      if (!cust) return;
-      if (!cust.onboarding_completed && pathname !== '/portal/onboarding') {
-        router.replace('/portal/onboarding');
-        return;
+      const { data: { session } } = await supabaseClient.auth.getSession()
+      if (!session?.user) return
+      const res = await fetch('/api/portal/profile')
+      if (!res.ok) return
+      const { data } = await res.json()
+      if (!data) return
+      if (!data.onboarding_completed && pathname !== '/portal/onboarding') {
+        router.replace('/portal/onboarding')
+        return
       }
-      setUserInfo({ name: cust.contacto_nombre, company: cust.company_name });
+      setUserInfo({ name: data.contacto_nombre, company: data.company_name })
     }
-    loadUser();
-  }, [pathname, router]);
+    loadUser()
+  }, [pathname, router])
 
   async function handleLogout() {
     await supabaseClient.auth.signOut();
