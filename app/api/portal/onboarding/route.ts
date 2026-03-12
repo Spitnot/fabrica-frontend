@@ -59,7 +59,6 @@ const { error, count } = await supabase
     .update(updates, { count: 'exact' })
     .eq('auth_user_id', userId)
 
-  console.log('[onboarding] userId:', userId, 'rows updated:', count, 'error:', error?.message)
 
   if (error) {
     console.error('[portal/onboarding POST]', error.message)
@@ -67,7 +66,6 @@ const { error, count } = await supabase
   }
 
   if (count === 0) {
-    console.error('[onboarding] No customer found for auth_user_id:', userId)
     return NextResponse.json({ error: 'Customer not found' }, { status: 404 })
   }
 
