@@ -62,7 +62,7 @@ export default function NuevoClientePage() {
   const [form, setForm] = useState({
     company_name: '', nombre_comercial: '', tipo_empresa: '',
     tipo_fiscal: 'NIF/CIF', nif_cif: '', numero_eori: '', fecha_constitucion: '',
-    contacto_nombre: '', email: '', password: '',
+    contacto_nombre: '', email: '',
     telefono_prefijo: '+34', telefono_numero: '',
     fiscal_street: '', fiscal_city: '', fiscal_state: '', fiscal_postal_code: '', fiscal_country: 'ES',
     street: '', city: '', postal_code: '', country: 'ES',
@@ -99,7 +99,6 @@ export default function NuevoClientePage() {
       [form.fiscal_country,      'País (dirección fiscal) es obligatorio'],
       [form.contacto_nombre,     'Nombre de contacto es obligatorio'],
       [form.email,               'Email es obligatorio'],
-      [form.password,            'Contraseña inicial es obligatoria'],
       [form.telefono_numero,     'Teléfono es obligatorio'],
     ];
     for (const [value, msg] of required) {
@@ -107,9 +106,6 @@ export default function NuevoClientePage() {
     }
     if (!emailRe.test(form.email)) {
       setError('El email no tiene un formato válido (ej: nombre@empresa.com)'); return;
-    }
-    if (form.password.length < 8) {
-      setError('La contraseña debe tener al menos 8 caracteres.'); return;
     }
     if (!sameAddress) {
       if (!form.street?.trim())       { setError('Calle y número (dirección de envío) es obligatorio'); return; }
@@ -131,7 +127,6 @@ export default function NuevoClientePage() {
       contacto_nombre: form.contacto_nombre,
       company_name:    form.company_name,
       email:           form.email,
-      password:        form.password,
       telefono:        `${form.telefono_prefijo} ${form.telefono_numero}`.trim(),
       nombre_comercial:   form.nombre_comercial   || null,
       tipo_empresa:       form.tipo_empresa        || null,
@@ -338,11 +333,6 @@ export default function NuevoClientePage() {
               <label className={labelCls}>Email {req}</label>
               <input type="email" value={form.email} onChange={e => set('email', e.target.value)}
                 placeholder="carlos@empresa.com" className={inputCls} />
-            </div>
-            <div className="space-y-1.5">
-              <label className={labelCls}>Contraseña inicial {req}</label>
-              <input type="password" value={form.password} onChange={e => set('password', e.target.value)}
-                placeholder="••••••••" className={inputCls} />
             </div>
             <div className="space-y-1.5">
               <label className={labelCls}>Teléfono {req}</label>

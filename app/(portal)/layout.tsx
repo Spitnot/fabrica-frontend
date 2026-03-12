@@ -63,13 +63,18 @@ function PortalSidebar({ open, onClose }: { open: boolean; onClose: () => void }
       if (!session?.user) return;
       const { data: cust } = await supabaseClient
         .from('customers')
-        .select('contacto_nombre, company_name')
+        .select('contacto_nombre, company_name, onboarding_completed')
         .eq('auth_user_id', session.user.id)
         .single();
-      if (cust) setUserInfo({ name: cust.contacto_nombre, company: cust.company_name });
+      if (!cust) return;
+      if (!cust.onboarding_completed && pathname !== '/portal/onboarding') {
+        router.replace('/portal/onboarding');
+        return;
+      }
+      setUserInfo({ name: cust.contacto_nombre, company: cust.company_name });
     }
     loadUser();
-  }, []);
+  }, [pathname, router]);
 
   async function handleLogout() {
     await supabaseClient.auth.signOut();

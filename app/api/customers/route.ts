@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
     // 1. Create user in Supabase Auth
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email: body.email,
-      password: body.password ?? crypto.randomUUID(),
+      password: crypto.randomUUID(),
       email_confirm: true,
       user_metadata: {
         role: 'customer',
@@ -54,13 +54,11 @@ export async function POST(req: NextRequest) {
       fecha_constitucion: body.fecha_constitucion ?? null,
       tarifa_id: body.tarifa_id,
       descuento_pct: body.descuento_pct,
-      tipo_cliente: body.tipo_cliente,
-      perfil_comercial: {
-        zona_distribucion:      body.zona_distribucion      ?? null,
-        marcas_comercializadas: body.marcas_comercializadas ?? null,
-        volumen_estimado:       body.volumen_estimado       ?? null,
-        num_puntos_venta:       body.num_puntos_venta       ?? null,
-      },
+     tipo_cliente:           body.tipo_cliente            ?? null,
+      zona_distribucion:      body.zona_distribucion       ?? null,
+      marcas_comercializadas: body.marcas_comercializadas  ?? null,
+      volumen_estimado:       body.volumen_estimado        ?? null,
+      num_puntos_venta:       body.num_puntos_venta        ?? null,
       condiciones_legales: body.condiciones_legales,
       condiciones_comerciales: body.condiciones_comerciales,
       estado: 'active',

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase/server';
+import { sendShippingEmail } from '@/lib/emailService';
 
 interface Props { params: Promise<{ id: string }> }
 
@@ -30,10 +31,24 @@ export async function POST(req: NextRequest, { params }: Props) {
       .eq('id', id)
       .single();
 
-    // Note: Email sending is now handled by the Frontend using sendEmail()
     
-    return NextResponse.json({ success: true, order });
-  } catch (err: any) {
+// Enviar email de shipping al cliente
+    if (order?.customer) {
+      const customer = order.customer as any;
+      if (customer.email) {
+        await sendShippingEmail(
+          customer.email,
+          customer.contacto_nombre,
+          id,
+          undefined,
+          undefined,
+          customer.id,
+          id,
+        );
+      }
+    }
+
+    return NextResponse.json({ success: true, order });  } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
