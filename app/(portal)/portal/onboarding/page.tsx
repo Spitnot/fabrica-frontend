@@ -1,4 +1,3 @@
-cat << 'ENDOFFILE' > ~/desktop/FIRMA_FRESH/app/\(portal\)/portal/onboarding/page.tsx
 'use client'
 
 import { useState, useEffect } from 'react'
