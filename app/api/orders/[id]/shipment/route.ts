@@ -20,7 +20,6 @@ export async function POST(req: NextRequest, { params }: Props) {
     const body = await req.json()
     const { service_id, coste_envio_final, ancho, alto, largo } = body
 
-    // 1. Fetch order + customer
     const { data: order, error: fetchError } = await supabaseAdmin
       .from('orders')
       .select('*, customer:customers(*)')
@@ -31,11 +30,9 @@ export async function POST(req: NextRequest, { params }: Props) {
       return NextResponse.json({ error: 'Pedido no encontrado' }, { status: 404 })
     }
 
-    // Supabase puede devolver customer como array o como objeto según la FK
     const customer = Array.isArray(order.customer) ? order.customer[0] : order.customer
     const address = customer?.direccion_envio as any
 
-    // 2. Crear draft en Packlink
     let shipmentRef: string | null = null
     let trackingUrl: string | null = null
 
@@ -88,11 +85,9 @@ export async function POST(req: NextRequest, { params }: Props) {
       } else {
         const errText = await plRes.text()
         console.error('[shipment] Packlink error:', plRes.status, errText)
-        // No bloqueamos — Supabase se actualiza igualmente
       }
     }
 
-    // 3. Actualizar orden en Supabase
     const updatePayload: Record<string, unknown> = { status: 'enviado' }
     if (coste_envio_final != null) updatePayload.coste_envio_final    = coste_envio_final
     if (shipmentRef)               updatePayload.packlink_shipment_id = shipmentRef
@@ -108,7 +103,6 @@ export async function POST(req: NextRequest, { params }: Props) {
 
     if (updateError) throw updateError
 
-    // 4. Email — aislado, nunca bloquea la respuesta
     if (customer?.email) {
       sendShippingEmail(
         customer.email,

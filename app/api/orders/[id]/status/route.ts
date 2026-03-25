@@ -53,8 +53,5 @@ export async function POST(req: NextRequest, { params }: Props) {
     return NextResponse.json({ error: updateError.message }, { status: 500 })
   }
 
-  // Nota: el email de 'enviado' lo gestiona exclusivamente shipment/route.ts
-  // para evitar duplicados. status/route.ts solo cambia el estado.
-
   return NextResponse.redirect(new URL(`/pedidos/${id}`, req.url), { status: 303 })
 }

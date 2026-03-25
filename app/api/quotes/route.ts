@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const PACKLINK_API_URL  = process.env.PACKLINK_API_URL!;
-const PACKLINK_API_KEY  = process.env.PACKLINK_API_KEY!;
-const FROM_COUNTRY      = process.env.PACKLINK_FROM_COUNTRY!;
-const FROM_POSTAL_CODE  = process.env.PACKLINK_FROM_POSTAL_CODE!;
+const PACKLINK_API_URL = process.env.PACKLINK_API_URL!;
+const PACKLINK_API_KEY = process.env.PACKLINK_API_KEY!;
+const FROM_COUNTRY     = process.env.PACKLINK_FROM_COUNTRY!;
+const FROM_POSTAL_CODE = process.env.PACKLINK_FROM_POSTAL_CODE!;
 
 function normalizeCountry(country: string): string {
   if (!country) return '';
@@ -33,14 +33,14 @@ export async function POST(req: NextRequest) {
   const countryCode = normalizeCountry(destination.country);
 
   const params = new URLSearchParams({
-    'from[country]':        FROM_COUNTRY,
-    'from[zip]':            FROM_POSTAL_CODE,
-    'to[country]':          countryCode,
-    'to[zip]':              destination.postal_code,
-    'packages[0][weight]':  String(parseFloat(Number(peso).toFixed(2))),
-    'packages[0][width]':   String(Math.round(Number(ancho))),
-    'packages[0][height]':  String(Math.round(Number(alto))),
-    'packages[0][length]':  String(Math.round(Number(largo))),
+    'from[country]':       FROM_COUNTRY,
+    'from[zip]':           FROM_POSTAL_CODE,
+    'to[country]':         countryCode,
+    'to[zip]':             destination.postal_code,
+    'packages[0][weight]': String(parseFloat(Number(peso).toFixed(2))),
+    'packages[0][width]':  String(Math.round(Number(ancho))),
+    'packages[0][height]': String(Math.round(Number(alto))),
+    'packages[0][length]': String(Math.round(Number(largo))),
   });
 
   try {
@@ -64,11 +64,8 @@ export async function POST(req: NextRequest) {
         price:          parseFloat(s.base_price),
         estimated_days: s.transit_hours ? Math.ceil(s.transit_hours / 24) : null,
       }))
-      // Filtrar: solo servicios con precio y max 14 días de tránsito
       .filter((q: any) => q.price > 0 && (q.estimated_days === null || q.estimated_days <= 14))
-      // Ordenar por precio ascendente
       .sort((a: any, b: any) => a.price - b.price)
-      // Limitar a los 6 más baratos
       .slice(0, 6);
 
     return NextResponse.json({ data: quotes });
