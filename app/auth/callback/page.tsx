@@ -12,9 +12,9 @@ function CallbackHandler() {
   useEffect(() => {
     const handleCallback = async () => {
       const next = searchParams.get('next')
-      const code = searchParams.get('code')
 
       // PKCE flow: code in query params
+      const code = searchParams.get('code')
       if (code) {
         const { data: { user }, error } = await supabaseClient.auth.exchangeCodeForSession(code)
         if (!error && user) {
@@ -26,12 +26,13 @@ function CallbackHandler() {
         return
       }
 
-      // Implicit flow: tokens in URL hash (from generateLink recovery)
+      // Implicit flow: tokens in URL hash (fallback for recovery links)
       const hash = window.location.hash.substring(1)
       if (hash) {
         const params = new URLSearchParams(hash)
         const access_token = params.get('access_token')
         const refresh_token = params.get('refresh_token')
+        const type = params.get('type')
 
         if (access_token && refresh_token) {
           const { data: { user }, error } = await supabaseClient.auth.setSession({
@@ -39,7 +40,10 @@ function CallbackHandler() {
             refresh_token,
           })
           if (!error && user) {
-            const dest = next || (user.user_metadata?.role === 'customer' ? '/portal' : '/dashboard')
+            // Respetar next siempre, con fallback inteligente según tipo
+            const dest = next
+              || (type === 'recovery' ? '/reset-password' : null)
+              || (user.user_metadata?.role === 'customer' ? '/portal' : '/dashboard')
             router.replace(dest)
             return
           }
