@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/server'
-import { sendShippingEmail } from '@/lib/emailService'
 import type { OrderStatus } from '@/types'
 
 const VALID_STATUSES: OrderStatus[] = [
@@ -27,15 +26,14 @@ export async function POST(req: NextRequest, { params }: Props) {
     return NextResponse.json({ error: 'Invalid status' }, { status: 400 })
   }
 
-  // Leer estado actual del pedido (solo columnas que existen)
   const { data: order, error: fetchError } = await supabaseAdmin
     .from('orders')
-    .select('status, customer_id, tracking_url')
+    .select('status')
     .eq('id', id)
     .single()
 
   if (fetchError || !order) {
-    return NextResponse.json({ error: 'Order not found', debug: { id, fetchError } }, { status: 404 })
+    return NextResponse.json({ error: 'Order not found' }, { status: 404 })
   }
 
   const allowed = ALLOWED_TRANSITIONS[order.status as OrderStatus] ?? []
@@ -55,25 +53,8 @@ export async function POST(req: NextRequest, { params }: Props) {
     return NextResponse.json({ error: updateError.message }, { status: 500 })
   }
 
-  // Enviar email de shipping cuando el pedido pasa a enviado
-  if (newStatus === 'enviado' && order.customer_id) {
-    const { data: customer } = await supabaseAdmin
-      .from('customers')
-      .select('email, contacto_nombre')
-      .eq('id', order.customer_id)
-      .single()
-    if (customer?.email) {
-      await sendShippingEmail(
-        customer.email,
-        customer.contacto_nombre,
-        id,
-        order.tracking_url ?? undefined,
-        undefined,
-        order.customer_id,
-        id,
-      )
-    }
-  }
+  // Nota: el email de 'enviado' lo gestiona exclusivamente shipment/route.ts
+  // para evitar duplicados. status/route.ts solo cambia el estado.
 
   return NextResponse.redirect(new URL(`/pedidos/${id}`, req.url), { status: 303 })
 }
