@@ -1,17 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const PACKLINK_API_URL = process.env.PACKLINK_API_URL!;
-const PACKLINK_API_KEY = process.env.PACKLINK_API_KEY!;
+const PACKLINK_API_URL  = process.env.PACKLINK_API_URL!;
+const PACKLINK_API_KEY  = process.env.PACKLINK_API_KEY!;
+const FROM_COUNTRY      = process.env.PACKLINK_FROM_COUNTRY!;
+const FROM_POSTAL_CODE  = process.env.PACKLINK_FROM_POSTAL_CODE!;
 
-const FROM_COUNTRY     = process.env.PACKLINK_FROM_COUNTRY!;
-const FROM_POSTAL_CODE = process.env.PACKLINK_FROM_POSTAL_CODE!;
-
-// Helper to convert "España" -> "ES"
 function normalizeCountry(country: string): string {
   if (!country) return '';
-  // If already a 2-letter code, return it uppercase
   if (country.length === 2) return country.toUpperCase();
-
   const map: Record<string, string> = {
     'españa': 'ES', 'spain': 'ES',
     'francia': 'FR', 'france': 'FR',
@@ -21,47 +17,35 @@ function normalizeCountry(country: string): string {
     'estados unidos': 'US', 'usa': 'US', 'united states': 'US',
     'méxico': 'MX', 'mexico': 'MX',
   };
-
   return map[country.toLowerCase()] || country;
 }
 
 export async function POST(req: NextRequest) {
   const { peso, ancho, alto, largo, destination } = await req.json();
 
-  console.log('[quotes] Request Data:', { peso, ancho, alto, largo, destination });
-
   if (!peso || !ancho || !alto || !largo || !destination) {
     return NextResponse.json({ error: 'Missing data for shipping quote' }, { status: 400 });
   }
-
   if (!destination.country || !destination.postal_code) {
     return NextResponse.json({ error: 'Client has no country or postal code in their shipping address' }, { status: 400 });
   }
 
-  // Normalize the country code
   const countryCode = normalizeCountry(destination.country);
-  console.log(`[quotes] Normalizing country: "${destination.country}" -> "${countryCode}"`);
 
   const params = new URLSearchParams({
-    'from[country]':       FROM_COUNTRY,
-    'from[zip]':           FROM_POSTAL_CODE,
-    'to[country]':         countryCode,
-    'to[zip]':             destination.postal_code,
-    'packages[0][weight]': String(parseFloat(Number(peso).toFixed(2))),
-    'packages[0][width]':  String(Math.round(Number(ancho))),
-    'packages[0][height]': String(Math.round(Number(alto))),
-    'packages[0][length]': String(Math.round(Number(largo))),
+    'from[country]':        FROM_COUNTRY,
+    'from[zip]':            FROM_POSTAL_CODE,
+    'to[country]':          countryCode,
+    'to[zip]':              destination.postal_code,
+    'packages[0][weight]':  String(parseFloat(Number(peso).toFixed(2))),
+    'packages[0][width]':   String(Math.round(Number(ancho))),
+    'packages[0][height]':  String(Math.round(Number(alto))),
+    'packages[0][length]':  String(Math.round(Number(largo))),
   });
 
-  const fullUrl = `${PACKLINK_API_URL}/services?${params}`;
-  console.log('[quotes] Fetching:', fullUrl);
-
   try {
-    const res = await fetch(fullUrl, {
-      headers: {
-        'Authorization': PACKLINK_API_KEY,
-        'Content-Type': 'application/json',
-      },
+    const res = await fetch(`${PACKLINK_API_URL}/services?${params}`, {
+      headers: { 'Authorization': PACKLINK_API_KEY, 'Content-Type': 'application/json' },
     });
 
     if (!res.ok) {
@@ -72,13 +56,20 @@ export async function POST(req: NextRequest) {
 
     const services = await res.json();
 
-    const quotes = services.map((s: any) => ({
-      service_id:     s.id,
-      carrier:        s.carrier_name,
-      service_name:   s.name,
-      price:          parseFloat(s.base_price),
-      estimated_days: s.transit_hours ? Math.ceil(s.transit_hours / 24) : null,
-    }));
+    const quotes = services
+      .map((s: any) => ({
+        service_id:     s.id,
+        carrier:        s.carrier_name,
+        service_name:   s.name,
+        price:          parseFloat(s.base_price),
+        estimated_days: s.transit_hours ? Math.ceil(s.transit_hours / 24) : null,
+      }))
+      // Filtrar: solo servicios con precio y max 14 días de tránsito
+      .filter((q: any) => q.price > 0 && (q.estimated_days === null || q.estimated_days <= 14))
+      // Ordenar por precio ascendente
+      .sort((a: any, b: any) => a.price - b.price)
+      // Limitar a los 6 más baratos
+      .slice(0, 6);
 
     return NextResponse.json({ data: quotes });
 
