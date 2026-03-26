@@ -3,7 +3,31 @@ import { supabaseAdmin } from '@/lib/supabase/server';
 
 export const dynamic = 'force-dynamic';
 
+// ─── helpers ────────────────────────────────────────────────────────────────
+
+const fmt = (n: number) =>
+  new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n);
+
+const STATUS_COLORS: Record<string, string> = {
+  draft:       '#876693',
+  confirmado:  '#0087B8',
+  produccion:  '#E6883E',
+  listo_envio: '#0DA265',
+  enviado:     '#111111',
+  cancelado:   '#999999',
+};
+
+const STATUS_LABELS: Record<string, string> = {
+  draft: 'Draft', confirmado: 'Confirmed', produccion: 'In Production',
+  listo_envio: 'Ready to Ship', enviado: 'Shipped', cancelado: 'Cancelled',
+};
+
+// ─── data ───────────────────────────────────────────────────────────────────
+
 async function getStats() {
+  const now = new Date();
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+
   const [
     { count: activos },
     { count: listos },
@@ -12,11 +36,10 @@ async function getStats() {
   ] = await Promise.all([
     supabaseAdmin.from('orders').select('*', { count: 'exact', head: true }).in('status', ['confirmado', 'produccion']),
     supabaseAdmin.from('orders').select('*', { count: 'exact', head: true }).eq('status', 'listo_envio'),
-    supabaseAdmin.from('orders').select('*', { count: 'exact', head: true }).eq('status', 'enviado')
-      .gte('created_at', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()),
-    supabaseAdmin.from('orders').select('total_productos').in('status', ['confirmado', 'produccion', 'listo_envio', 'enviado'])
-      .gte('created_at', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()),
+    supabaseAdmin.from('orders').select('*', { count: 'exact', head: true }).eq('status', 'enviado').gte('created_at', startOfMonth),
+    supabaseAdmin.from('orders').select('total_productos').in('status', ['confirmado', 'produccion', 'listo_envio', 'enviado']).gte('created_at', startOfMonth),
   ]);
+
   const facturacionMes = (facturacion ?? []).reduce((s: number, o: any) => s + (o.total_productos ?? 0), 0);
   return { activos: activos ?? 0, listos: listos ?? 0, enviados: enviados ?? 0, facturacionMes };
 }
@@ -26,7 +49,7 @@ async function getRecentOrders() {
     .from('orders')
     .select('id, status, total_productos, created_at, customer:customers(contacto_nombre, company_name)')
     .order('created_at', { ascending: false })
-    .limit(8);
+    .limit(6);
   return data ?? [];
 }
 
@@ -45,9 +68,7 @@ async function getStockWidget() {
 
   const skuMap: Record<string, { sku: string; nombre: string; unidades: number; litros: number; alerta: boolean }> = {};
   (items ?? []).forEach((item: any) => {
-    if (!skuMap[item.sku]) {
-      skuMap[item.sku] = { sku: item.sku, nombre: item.nombre_producto, unidades: 0, litros: 0, alerta: false };
-    }
+    if (!skuMap[item.sku]) skuMap[item.sku] = { sku: item.sku, nombre: item.nombre_producto, unidades: 0, litros: 0, alerta: false };
     skuMap[item.sku].unidades += item.cantidad;
   });
 
@@ -59,150 +80,165 @@ async function getStockWidget() {
     }
   });
 
-  const all         = Object.values(skuMap).sort((a, b) => b.unidades - a.unidades);
-  const alertas     = all.filter(s => s.alerta).length;
-  const top         = all.slice(0, 5);
-  const totalLitros = parseFloat(all.reduce((s, i) => s + i.litros, 0).toFixed(1));
-
-  return { top, alertas, totalLitros, totalSkus: all.length };
+  const all = Object.values(skuMap).sort((a, b) => b.unidades - a.unidades);
+  return {
+    top: all.slice(0, 5),
+    alertas: all.filter(s => s.alerta).length,
+    totalLitros: parseFloat(all.reduce((s, i) => s + i.litros, 0).toFixed(1)),
+    totalSkus: all.length,
+  };
 }
 
-const STATUS_LABELS: Record<string, string> = {
-  draft: 'Draft', confirmado: 'Confirmed', produccion: 'In Production',
-  listo_envio: 'Ready to Ship', enviado: 'Shipped', cancelado: 'Cancelled',
-};
-const STATUS_STYLES: Record<string, string> = {
-  draft:       'text-gray-500 bg-gray-100 border-gray-200',
-  confirmado:  'text-[#0087B8] bg-blue-50 border-blue-200',
-  produccion:  'text-[#b85e00] bg-orange-50 border-orange-200',
-  listo_envio: 'text-[#876693] bg-purple-50 border-purple-200',
-  enviado:     'text-[#0DA265] bg-green-50 border-green-200',
-  cancelado:   'text-[#D93A35] bg-red-50 border-red-200',
-};
-
-const fmt = (n: number) =>
-  new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'EUR' }).format(n);
-const mes = new Date().toLocaleString('en-US', { month: 'long', year: 'numeric' });
+// ─── page ────────────────────────────────────────────────────────────────────
 
 export default async function DashboardPage() {
-  const [stats, orders, stockWidget] = await Promise.all([getStats(), getRecentOrders(), getStockWidget()]);
+  const [stats, orders, stock] = await Promise.all([getStats(), getRecentOrders(), getStockWidget()]);
 
-  const cards = [
-    { label: 'Active Orders',      value: stats.activos,             sub: 'Confirmed or in production', color: '#0087B8' },
-    { label: 'Ready to Ship',      value: stats.listos,              sub: 'Pending Packlink label',     color: '#876693' },
-    { label: 'Shipped This Month', value: stats.enviados,            sub: mes,                          color: '#0DA265' },
-    { label: 'Monthly Revenue',    value: fmt(stats.facturacionMes), sub: mes,                          color: '#D93A35' },
+  const mes = new Date().toLocaleString('es-ES', { month: 'long', year: 'numeric' });
+
+  const statCards = [
+    { label: 'Active Orders',       value: stats.activos,              color: '#0087B8' },
+    { label: 'Ready to Ship',       value: stats.listos,               color: '#876693' },
+    { label: 'Shipped This Month',  value: stats.enviados,             color: '#0DA265', sub: mes },
+    { label: 'Revenue MTD',         value: fmt(stats.facturacionMes),  color: '#D93A35', sub: mes },
   ];
 
   return (
-    <div className="p-6 md:p-7">
-      <div className="mb-6 flex items-center justify-between">
+    <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 16, borderBottom: 'var(--border)' }}>
         <div>
-          <h1 className="text-lg font-black tracking-wider uppercase text-gray-900"
-              style={{ fontFamily: 'var(--font-alexandria)' }}>Dashboard</h1>
-          <p className="text-xs text-gray-400 mt-0.5">General overview</p>
+          <div className="page-title">Dashboard</div>
+          <div style={{ fontSize: 10, color: '#aaa', marginTop: 3, letterSpacing: '0.04em' }}>General overview</div>
         </div>
-        <Link href="/pedidos/nuevo"
-          className="px-4 py-2 bg-[#D93A35] text-white text-sm font-semibold rounded-lg hover:bg-[#b52e2a] transition-colors">
-          + New Order
+        <Link href="/pedidos/nuevo">
+          <button className="btn-primary">+ New Order</button>
         </Link>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-        {cards.map((card) => (
-          <div key={card.label} className="bg-white border border-gray-200 rounded-xl p-5">
-            <div className="text-[10px] uppercase tracking-[0.12em] font-bold text-gray-400 mb-2">{card.label}</div>
-            <div className="text-2xl font-black tracking-tight" style={{ color: card.color, fontFamily: 'var(--font-alexandria)' }}>
-              {card.value}
+      {/* Stat cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
+        {statCards.map((c) => (
+          <div key={c.label} className="card" style={{ borderLeft: `3px solid ${c.color}` }}>
+            <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: '#aaa', marginBottom: 6 }}>
+              {c.label}
             </div>
-            <div className="text-[11px] text-gray-400 mt-1">{card.sub}</div>
+            <div style={{ fontSize: 26, fontWeight: 900, color: c.color, lineHeight: 1, letterSpacing: '-0.02em' }}>
+              {c.value}
+            </div>
+            {c.sub && (
+              <div style={{ fontSize: 9, color: '#bbb', marginTop: 3 }}>{c.sub}</div>
+            )}
           </div>
         ))}
       </div>
 
-      <div className="grid md:grid-cols-[1fr_320px] gap-5">
+      {/* Orders + Stock */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: 12 }}>
+
         {/* Recent orders */}
-        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-          <div className="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between">
-            <span className="text-[11px] font-black tracking-[0.14em] uppercase text-gray-900"
-                  style={{ fontFamily: 'var(--font-alexandria)' }}>Recent Orders</span>
-            <Link href="/pedidos" className="text-xs text-[#D93A35] hover:text-[#b52e2a] font-semibold transition-colors">View all →</Link>
+        <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+          <div style={{ padding: '11px 16px', borderBottom: 'var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span className="section-label">Recent Orders</span>
+            <Link href="/pedidos" style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', color: '#D93A35', textTransform: 'uppercase' }}>
+              View all →
+            </Link>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse min-w-[500px]">
-              <thead>
-                <tr className="bg-gray-50">
-                  {['Client', 'Status', 'Amount', 'Date'].map((h) => (
-                    <th key={h} className="text-left px-5 py-3 text-[10px] font-bold uppercase tracking-[0.1em] text-gray-400 border-b border-gray-100">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {orders.length === 0 ? (
-                  <tr><td colSpan={4} className="px-5 py-10 text-center text-sm text-gray-400">No orders yet</td></tr>
-                ) : orders.map((o: any) => (
-                  <tr key={o.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors">
-                    <td className="px-5 py-3">
-                      <Link href={`/pedidos/${o.id}`} className="group">
-                        <div className="text-sm font-semibold text-gray-900 group-hover:text-[#D93A35] transition-colors">
-                          {o.customer?.contacto_nombre ?? '—'}
-                        </div>
-                        <div className="text-xs text-gray-400">{o.customer?.company_name}</div>
-                      </Link>
-                    </td>
-                    <td className="px-5 py-3">
-                      <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-[11px] font-semibold border rounded-md ${STATUS_STYLES[o.status]}`}>
-                        <span className="w-1.5 h-1.5 rounded-full bg-current opacity-80" />
-                        {STATUS_LABELS[o.status]}
-                      </span>
-                    </td>
-                    <td className="px-5 py-3 text-sm font-semibold text-gray-900">{fmt(o.total_productos)}</td>
-                    <td className="px-5 py-3 font-mono text-xs text-gray-400">
-                      {new Date(o.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
-                    </td>
-                  </tr>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ background: '#111' }}>
+                {['Client', 'Status', 'Amount', 'Date'].map((h) => (
+                  <th key={h} style={{ textAlign: 'left', padding: '8px 14px', fontSize: 8, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#fff' }}>
+                    {h}
+                  </th>
                 ))}
-              </tbody>
-            </table>
-          </div>
+              </tr>
+            </thead>
+            <tbody>
+              {orders.length === 0 ? (
+                <tr>
+                  <td colSpan={4} style={{ padding: '32px 16px', textAlign: 'center', fontSize: 12, color: '#aaa' }}>
+                    No orders yet
+                  </td>
+                </tr>
+              ) : orders.map((o: any, i: number) => (
+                <tr key={o.id} style={{ borderBottom: i < orders.length - 1 ? '1px solid #f5f5f5' : 'none' }}>
+                  <td style={{ padding: '9px 14px' }}>
+                    <Link href={`/pedidos/${o.id}`}>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: '#111' }}>
+                        {o.customer?.contacto_nombre ?? '—'}
+                      </div>
+                      <div style={{ fontSize: 10, color: '#aaa' }}>{o.customer?.company_name}</div>
+                    </Link>
+                  </td>
+                  <td style={{ padding: '9px 14px' }}>
+                    <span className="badge" style={{ background: STATUS_COLORS[o.status] ?? '#999' }}>
+                      {STATUS_LABELS[o.status] ?? o.status}
+                    </span>
+                  </td>
+                  <td style={{ padding: '9px 14px', fontSize: 12, fontWeight: 900, color: '#111' }}>
+                    {fmt(o.total_productos)}
+                  </td>
+                  <td style={{ padding: '9px 14px', fontSize: 10, color: '#bbb', fontVariantNumeric: 'tabular-nums' }}>
+                    {new Date(o.created_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
 
         {/* Stock widget */}
-        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-          <div className="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between">
-            <span className="text-[11px] font-black tracking-[0.14em] uppercase text-gray-900"
-                  style={{ fontFamily: 'var(--font-alexandria)' }}>Production Stock</span>
-            <Link href="/produccion" className="text-xs text-[#D93A35] hover:text-[#b52e2a] font-semibold transition-colors">View all →</Link>
+        <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+          <div style={{ padding: '11px 16px', borderBottom: 'var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span className="section-label">Production</span>
+            <Link href="/produccion" style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', color: '#D93A35', textTransform: 'uppercase' }}>
+              View →
+            </Link>
           </div>
-          <div className="grid grid-cols-3 divide-x divide-gray-100 border-b border-gray-100">
+
+          {/* Mini stats */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', borderBottom: 'var(--border)' }}>
             {[
-              { label: 'SKUs',   value: stockWidget.totalSkus,           alert: false },
-              { label: 'Liters', value: `${stockWidget.totalLitros} L`,  alert: false },
-              { label: 'Alerts', value: stockWidget.alertas,             alert: stockWidget.alertas > 0 },
-            ].map(c => (
-              <div key={c.label} className="px-4 py-3 text-center">
-                <div className={`text-lg font-black ${c.alert ? 'text-[#D93A35]' : 'text-gray-900'}`}
-                     style={{ fontFamily: 'var(--font-alexandria)' }}>{c.value}</div>
-                <div className="text-[10px] text-gray-400 uppercase tracking-wide">{c.label}</div>
+              { label: 'SKUs',    value: stock.totalSkus,    alert: false },
+              { label: 'Liters',  value: `${stock.totalLitros}L`, alert: false },
+              { label: 'Alerts',  value: stock.alertas,      alert: stock.alertas > 0 },
+            ].map((s, i) => (
+              <div key={s.label} style={{ padding: '10px', textAlign: 'center', borderRight: i < 2 ? '1px solid #f0f0f0' : 'none' }}>
+                <div style={{ fontSize: 20, fontWeight: 900, color: s.alert ? '#D93A35' : '#111', lineHeight: 1 }}>
+                  {s.value}
+                </div>
+                <div style={{ fontSize: 8, color: '#aaa', letterSpacing: '0.12em', textTransform: 'uppercase', marginTop: 3 }}>
+                  {s.label}
+                </div>
               </div>
             ))}
           </div>
-          <div className="divide-y divide-gray-50">
-            {stockWidget.top.length === 0 ? (
-              <div className="px-5 py-8 text-center text-sm text-gray-400">No pending stock</div>
-            ) : stockWidget.top.map(s => (
-              <div key={s.sku} className={`px-5 py-3 flex items-center gap-3 ${s.alerta ? 'bg-red-50/40' : ''}`}>
-                <div className="flex-1 min-w-0">
-                  <div className="text-xs font-semibold text-gray-900 truncate">{s.nombre}</div>
-                  <div className="font-mono text-[10px] text-gray-400">{s.sku}</div>
+
+          {/* Top SKUs */}
+          <div>
+            {stock.top.length === 0 ? (
+              <div style={{ padding: '24px 16px', textAlign: 'center', fontSize: 12, color: '#aaa' }}>
+                No pending stock
+              </div>
+            ) : stock.top.map((s, i) => (
+              <div key={s.sku} style={{
+                padding: '8px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                borderBottom: i < stock.top.length - 1 ? '1px solid #f5f5f5' : 'none',
+                background: s.alerta ? '#fff8f8' : 'transparent',
+              }}>
+                <div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: '#111' }}>{s.nombre}</div>
+                  <div style={{ fontSize: 9, color: '#bbb', fontFamily: 'monospace' }}>{s.sku}</div>
                 </div>
-                <div className="text-right flex-shrink-0">
-                  <div className="text-sm font-black text-gray-900" style={{ fontFamily: 'var(--font-alexandria)' }}>
-                    {s.unidades.toLocaleString()}<span className="text-[10px] font-normal text-gray-400 ml-0.5">u</span>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontSize: 13, fontWeight: 900, color: '#111' }}>
+                    {s.unidades.toLocaleString()}<span style={{ fontSize: 9, fontWeight: 400, color: '#aaa' }}>u</span>
                   </div>
                   {s.litros > 0 && (
-                    <div className={`text-[10px] font-mono ${s.alerta ? 'text-[#D93A35] font-bold' : 'text-gray-400'}`}>
-                      {s.alerta ? '⚠ ' : ''}{s.litros} L
+                    <div style={{ fontSize: 9, color: s.alerta ? '#D93A35' : '#bbb', fontFamily: 'monospace' }}>
+                      {s.alerta ? '⚠ ' : ''}{s.litros}L
                     </div>
                   )}
                 </div>

@@ -6,16 +6,25 @@ import { useState, useEffect } from 'react';
 import { supabaseClient } from '@/lib/supabase/client';
 
 const NAV_ITEMS = [
-  { href: '/dashboard', label: 'Dashboard', icon: ( <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg> ) },
-  { href: '/pedidos', label: 'Orders', icon: ( <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg> ) },
-  { href: '/pedidos/nuevo', label: 'New Order', icon: ( <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg> ) },
-  { href: '/clientes', label: 'Clients', icon: ( <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zM23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg> ) },
-  { href: '/tarifas', label: 'Pricing', icon: ( <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg> ) },
-  { href: '/produccion', label: 'Production', icon: ( <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 20h20M6 20V10l6-6 6 6v10M10 20v-5h4v5"/></svg> ) },
-  { href: '/catalogo', label: 'Catalog', icon: ( <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg> ) },
-  { href: '/emails', label: 'Email', icon: ( <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 7l10 7 10-7"/></svg> ) },
-  { href: '/usuarios', label: 'Team', icon: ( <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg> ) },
+  { href: '/dashboard',    label: 'Dashboard',  group: 'Main' },
+  { href: '/pedidos',      label: 'Orders',     group: 'Main' },
+  { href: '/clientes',     label: 'Clients',    group: 'Main' },
+  { href: '/tarifas',      label: 'Pricing',    group: 'Main' },
+  { href: '/produccion',   label: 'Production', group: 'Operations' },
+  { href: '/catalogo',     label: 'Catalog',    group: 'Operations' },
+  { href: '/emails',       label: 'Emails',     group: 'Admin' },
+  { href: '/usuarios',     label: 'Team',       group: 'Admin' },
 ];
+
+const GROUPS = ['Main', 'Operations', 'Admin'];
+
+const FRLogo = () => (
+  <svg viewBox="0 0 133.16 43.48" xmlns="http://www.w3.org/2000/svg" style={{ width: 92, height: 'auto', display: 'block' }}>
+    <path fill="#111111" d="M94.94,0c-11.92,0-18.81,5.57-22.51,8.57-.52.42-1.08.89-.74,1.28-.62-.37-1.13-.85-1.66-1.28-3.7-3-10.59-8.57-22.51-8.57s-18.82,5.57-22.52,8.56c-.53.44-1.07.9-.81,1.28-.62-.36-1.13-.84-1.67-1.28C18.82,5.57,11.93,0,0,0v33.92c.44.31.83.66,1.24,1,3.7,2.99,10.59,8.56,22.52,8.56s18.82-5.57,22.52-8.56c.54-.44,1.03-.89.78-1.29.62.36,1.12.85,1.66,1.28,3.7,3,10.59,8.57,22.52,8.57s18.82-5.58,22.52-8.57c.55-.44,1.04-.93.73-1.28.62.36,1.12.85,1.65,1.28,3.71,3,10.59,8.57,22.52,8.57V9.55c-.42-.31-.8-.66-1.2-.98-3.71-3-10.59-8.57-22.52-8.57h0Z"/>
+    <path fill="#111111" d="M129.87,39.05c.33-.3.49-.71.49-1.23s-.16-.9-.49-1.17c-.33-.27-.79-.4-1.4-.4h-1.96v4.51h1.15v-1.26h.85l.67,1.27h1.32l-.98-1.51c.12-.06.25-.11.35-.2h0ZM127.67,37.13h.81c.25,0,.45.06.58.19.13.13.2.31.2.53s-.07.42-.2.55c-.13.13-.33.2-.58.2h-.81v-1.47Z"/>
+    <path fill="#111111" d="M132.78,36.78c-.25-.58-.59-1.09-1.02-1.53s-.94-.79-1.52-1.04-1.21-.38-1.88-.38-1.31.13-1.89.38c-.58.26-1.09.61-1.52,1.05s-.78.96-1.02,1.55c-.25.59-.37,1.21-.37,1.86s.12,1.27.36,1.85c.24.58.58,1.09,1.01,1.54.43.44.94.79,1.53,1.04.58.25,1.21.38,1.88.38s1.31-.13,1.89-.38c.58-.26,1.09-.6,1.53-1.05.44-.44.78-.96,1.03-1.55.24-.59.37-1.21.37-1.86s-.12-1.28-.37-1.87h-.01ZM131.72,40.06c-.18.44-.44.83-.78,1.17-.34.34-.73.6-1.17.79s-.93.29-1.45.29-.99-.09-1.43-.28-.83-.45-1.16-.79c-.33-.34-.58-.72-.77-1.16s-.27-.91-.27-1.41.09-.97.28-1.42c.18-.44.44-.83.77-1.17.33-.34.71-.6,1.16-.79.44-.19.93-.29,1.45-.29s.99.09,1.43.28.83.45,1.16.79c.33.34.59.72.77,1.16s.28.91.28,1.41-.09.97-.28,1.42h.01Z"/>
+  </svg>
+);
 
 function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
   const pathname = usePathname();
@@ -23,12 +32,12 @@ function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [userInfo, setUserInfo] = useState<{ name: string; role: string } | null>(null);
 
   useEffect(() => {
-    supabaseClient.auth.getSession().then(({ data: { session } }) => {
-      if (!session?.user) return;
-      const meta = session.user.user_metadata ?? {};
-      const name = meta.full_name || session.user.email?.split('@')[0] || 'Admin';
-      const role = meta.role === 'manager' ? 'Manager' : meta.role === 'viewer' ? 'Viewer' : 'Administrator';
-      setUserInfo({ name, role });
+    supabaseClient.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return;
+      const meta = user.user_metadata ?? {};
+      const name = meta.full_name || user.email?.split('@')[0] || 'Admin';
+      const roleMap: Record<string, string> = { admin: 'Administrator', manager: 'Manager', viewer: 'Viewer' };
+      setUserInfo({ name, role: roleMap[meta.role] ?? 'Administrator' });
     });
   }, []);
 
@@ -37,85 +46,137 @@ function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
     router.push('/login');
   }
 
+  const initials = (name: string) =>
+    name.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase();
+
+  function isActive(href: string) {
+    if (href === '/pedidos') return pathname.startsWith('/pedidos') && !pathname.startsWith('/pedidos/nuevo');
+    if (href === '/dashboard') return pathname === '/dashboard';
+    return pathname === href || pathname.startsWith(href + '/');
+  }
+
   return (
     <>
       {open && (
-        <div className="fixed inset-0 bg-black/20 z-40 md:hidden" onClick={onClose} />
+        <div
+          className="fixed inset-0 z-40 md:hidden"
+          style={{ background: 'rgba(0,0,0,0.3)' }}
+          onClick={onClose}
+        />
       )}
-      <aside className={`
-        fixed top-0 left-0 bottom-0 z-50
-        w-[220px] bg-white border-r border-gray-200
-        flex flex-col transition-transform duration-250
-        md:translate-x-0 md:static md:z-auto
-        ${open ? 'translate-x-0' : '-translate-x-full'}
-      `}>
-        
-        {/* Logo Section */}
-        <div className="px-5 pt-6 pb-4 border-b border-gray-200 flex items-center justify-between">
-          <div className="flex flex-col">
-            {/* NEW LOGO */}
-            <img src="/FR_ICON_B.svg" alt="Firma" className="w-[108px] h-auto" />
-            <div className="mt-1 text-[13px] font-black tracking-[.22em] uppercase text-[#D93A35]"
-                 style={{ fontFamily: "'Alexandria', sans-serif" }}>
-              B2B
-            </div>
+
+      <aside style={{
+        width: 'var(--sidebar-w)',
+        background: '#fff',
+        borderRight: 'var(--border)',
+        display: 'flex',
+        flexDirection: 'column',
+        flexShrink: 0,
+        position: 'fixed' as const,
+        top: 0, left: 0, bottom: 0,
+        zIndex: 50,
+        transform: open ? 'translateX(0)' : 'translateX(-100%)',
+        transition: 'transform 0.2s',
+      }}
+        className="md:static md:translate-x-0 md:z-auto"
+      >
+        {/* Logo */}
+        <div style={{ padding: '16px 16px 12px', borderBottom: 'var(--border)' }}>
+          <Link href="/dashboard">
+            <FRLogo />
+          </Link>
+          <div style={{
+            marginTop: 6,
+            fontSize: 8,
+            fontWeight: 900,
+            letterSpacing: '0.3em',
+            textTransform: 'uppercase' as const,
+            color: '#999',
+            borderTop: '1px solid #eee',
+            paddingTop: 6,
+          }}>
+            B2B Platform
           </div>
-          {/* Close button for mobile inside sidebar */}
-          <button onClick={onClose} className="md:hidden p-1 rounded hover:bg-gray-100">
-             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2">
-                <path d="M18 6L6 18M6 6l12 12"/>
-             </svg>
-          </button>
         </div>
 
-        <nav className="flex-1 py-3 px-2.5 flex flex-col gap-0.5 overflow-y-auto">
-          <div className="px-2 py-2 pb-1 text-[9px] tracking-[.14em] uppercase text-gray-400 font-bold">
-            Main
-          </div>
-          {NAV_ITEMS.map(({ href, label, icon }) => {
-            const active = pathname === href ||
-              (href === '/pedidos' && pathname.startsWith('/pedidos') && !pathname.startsWith('/pedidos/nuevo')) ||
-              (href === '/clientes' && pathname.startsWith('/clientes')) ||
-              (href === '/tarifas' && pathname.startsWith('/tarifas')) ||
-              (href === '/produccion' && pathname.startsWith('/produccion')) ||
-              (href === '/catalogo' && pathname.startsWith('/catalogo')) ||            
-              (href === '/emails' && pathname.startsWith('/emails')) ||
-              (href === '/usuarios' && pathname.startsWith('/usuarios'));
+        {/* Nav */}
+        <nav style={{ flex: 1, padding: '8px 8px', overflowY: 'auto' as const, display: 'flex', flexDirection: 'column' as const, gap: 0 }}>
+          {GROUPS.map((group) => {
+            const items = NAV_ITEMS.filter((i) => i.group === group);
             return (
-              <Link
-                key={href}
-                href={href}
-                onClick={onClose}
-                className={`
-                  flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13.5px] font-medium transition-all
-                  ${active
-                    ? 'bg-red-50 text-[#D93A35]'
-                    : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'}
-                `}
-              >
-                <span className={active ? 'text-[#D93A35]' : 'text-gray-400'}>
-                  {icon}
-                </span>
-                {label}
-              </Link>
+              <div key={group}>
+                <div style={{
+                  fontSize: 8, fontWeight: 700, letterSpacing: '0.2em',
+                  textTransform: 'uppercase' as const, color: '#bbb',
+                  padding: '10px 8px 3px',
+                }}>
+                  {group}
+                </div>
+                {items.map(({ href, label }) => {
+                  const active = isActive(href);
+                  return (
+                    <Link
+                      key={href}
+                      href={href}
+                      onClick={onClose}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 9,
+                        padding: '7px 9px',
+                        fontSize: 11,
+                        fontWeight: 700,
+                        letterSpacing: '0.07em',
+                        textTransform: 'uppercase' as const,
+                        color: active ? '#fff' : '#666',
+                        background: active ? '#111' : 'transparent',
+                        border: `1px solid ${active ? '#111' : 'transparent'}`,
+                        transition: 'all 0.08s',
+                        textDecoration: 'none',
+                        marginBottom: 1,
+                      }}
+                    >
+                      <span style={{
+                        width: 7, height: 7, flexShrink: 0,
+                        border: `1.5px solid ${active ? '#D93A35' : 'currentColor'}`,
+                        background: active ? '#D93A35' : 'transparent',
+                      }} />
+                      {label}
+                    </Link>
+                  );
+                })}
+              </div>
             );
           })}
         </nav>
 
-        <div className="border-t border-gray-200 px-3 py-3">
-          <button onClick={handleLogout} className="w-full flex items-center gap-2.5 px-2 py-2 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
-            <div className="w-7 h-7 rounded-md bg-[#D93A35] flex items-center justify-center text-[11px] font-bold text-white flex-shrink-0">
-              {userInfo
-                ? userInfo.name.split(' ').map((w: string) => w[0]).slice(0, 2).join('').toUpperCase()
-                : '—'}
+        {/* User / logout */}
+        <div style={{ padding: '11px 13px', borderTop: 'var(--border)', display: 'flex', alignItems: 'center', gap: 9 }}>
+          <button
+            onClick={handleLogout}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 9,
+              width: '100%', background: 'transparent',
+              border: 'none', boxShadow: 'none', padding: 0,
+              cursor: 'pointer', textAlign: 'left' as const,
+            }}
+          >
+            <div style={{
+              width: 28, height: 28, background: '#D93A35',
+              border: '1px solid #111', display: 'flex', alignItems: 'center',
+              justifyContent: 'center', fontSize: 9, fontWeight: 900,
+              color: '#fff', flexShrink: 0,
+            }}>
+              {userInfo ? initials(userInfo.name) : '—'}
             </div>
-            <div className="flex-1 min-w-0 text-left">
-              <div className="text-[12.5px] font-semibold text-gray-900 truncate">{userInfo?.name ?? '—'}</div>
-              <div className="text-[11px] text-gray-400">{userInfo?.role ?? 'Administrator'}</div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 11, fontWeight: 900, color: '#111', letterSpacing: '0.06em', whiteSpace: 'nowrap' as const, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {userInfo?.name ?? '—'}
+              </div>
+              <div style={{ fontSize: 9, color: '#aaa', letterSpacing: '0.05em' }}>
+                {userInfo?.role ?? 'Administrator'}
+              </div>
             </div>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#aaa" strokeWidth="2">
-              <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/>
-            </svg>
           </button>
         </div>
       </aside>
@@ -127,15 +188,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="flex h-screen overflow-hidden bg-white text-gray-900">
-      
-      {/* Hamburger - Hidden when sidebar is open */}
+    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: 'var(--fr-cream)' }}>
+      {/* Mobile hamburger */}
       {!sidebarOpen && (
         <button
-          className="fixed top-3 left-3 z-[60] md:hidden bg-white border border-gray-200 rounded-lg p-2 shadow-sm"
           onClick={() => setSidebarOpen(true)}
+          style={{
+            position: 'fixed', top: 10, left: 10, zIndex: 60,
+            background: '#fff', border: 'var(--border)',
+            boxShadow: 'var(--shadow-sm)', padding: '6px 8px',
+          }}
+          className="md:hidden"
         >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="2.5">
             <path d="M3 12h18M3 6h18M3 18h18"/>
           </svg>
         </button>
@@ -143,7 +208,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-      <main className="flex-1 overflow-y-auto">
+      {/* Main content — offset for fixed sidebar on desktop */}
+      <main style={{
+        flex: 1,
+        overflowY: 'auto',
+        marginLeft: 0,
+      }} className="md:ml-[210px]">
         {children}
       </main>
     </div>

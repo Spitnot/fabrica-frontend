@@ -5,45 +5,25 @@ import Link from 'next/link';
 
 interface Tarifa { id: string; nombre: string; }
 interface Customer {
-  id: string;
-  contacto_nombre: string;
-  company_name: string;
-  email: string;
-  telefono?: string;
-  estado: string;
-  tarifa_id?: string;
-  tarifa?: Tarifa;
-  descuento_pct: number;
-  direccion_envio?: { city?: string };
-  created_at: string;
-  onboarding_completed?: boolean;
+  id: string; contacto_nombre: string; company_name: string; email: string;
+  telefono?: string; estado: string; tarifa_id?: string; tarifa?: Tarifa;
+  descuento_pct: number; direccion_envio?: { city?: string };
+  created_at: string; onboarding_completed?: boolean;
 }
 
-const TARIFA_STYLES: Record<string, string> = {
-  retail:    'text-[#0087B8] bg-blue-50 border-blue-200',
-  wholesale: 'text-[#876693] bg-purple-50 border-purple-200',
+const TARIFA_COLORS: Record<string, string> = {
+  retail:    '#0087B8',
+  wholesale: '#876693',
 };
 
 function initials(name: string) {
-  return name.split(' ').map((w) => w[0]).slice(0, 2).join('');
-}
-
-function tarifaBadge(tarifa?: Tarifa) {
-  if (!tarifa) return null;
-  const key = tarifa.nombre.toLowerCase();
-  const cls = TARIFA_STYLES[key] ?? 'text-gray-600 bg-gray-100 border-gray-200';
-  return (
-    <span className={`inline-flex px-2 py-0.5 text-[10px] font-bold border rounded-md tracking-wide uppercase ${cls}`}>
-      {tarifa.nombre}
-    </span>
-  );
+  return name.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase();
 }
 
 export default function ClientesPage() {
-  const [clients, setClients]   = useState<Customer[]>([]);
-  const [tarifas, setTarifas]   = useState<Tarifa[]>([]);
-  const [loading, setLoading]   = useState(true);
-
+  const [clients, setClients]         = useState<Customer[]>([]);
+  const [tarifas, setTarifas]         = useState<Tarifa[]>([]);
+  const [loading, setLoading]         = useState(true);
   const [showInvite, setShowInvite]   = useState(false);
   const [inviteName, setInviteName]   = useState('');
   const [inviteEmail, setInviteEmail] = useState('');
@@ -56,22 +36,17 @@ export default function ClientesPage() {
 
   const loadClients = useCallback(async () => {
     setLoading(true);
-    const [clientsRes, tarifasRes] = await Promise.all([
-      fetch('/api/customers'),
-      fetch('/api/tarifas'),
-    ]);
-    const clientsData = await clientsRes.json();
-    const tarifasData = await tarifasRes.json();
-    const tarifaList: Tarifa[] = tarifasData.data ?? [];
-    const tarifaMap = Object.fromEntries(tarifaList.map((t) => [t.id, t]));
-    const raw = clientsData.data ?? [];
-    setClients(raw.map((c: Customer) => ({ ...c, tarifa: c.tarifa_id ? tarifaMap[c.tarifa_id] : undefined })));
-    setTarifas(tarifaList);
-    // Pre-select Wholesale
-    const wholesale = tarifaList.find(t => t.nombre.toLowerCase() === 'wholesale');
+    const [cRes, tRes] = await Promise.all([fetch('/api/customers'), fetch('/api/tarifas')]);
+    const cData = await cRes.json();
+    const tData = await tRes.json();
+    const tList: Tarifa[] = tData.data ?? [];
+    const tMap = Object.fromEntries(tList.map((t) => [t.id, t]));
+    setClients((cData.data ?? []).map((c: Customer) => ({ ...c, tarifa: c.tarifa_id ? tMap[c.tarifa_id] : undefined })));
+    setTarifas(tList);
+    const wholesale = tList.find(t => t.nombre.toLowerCase() === 'wholesale');
     if (wholesale && !inviteTarifa) setInviteTarifa(wholesale.id);
     setLoading(false);
-  }, []);  // eslint-disable-line
+  }, []); // eslint-disable-line
 
   useEffect(() => { loadClients(); }, [loadClients]);
 
@@ -83,16 +58,11 @@ export default function ClientesPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          contacto_nombre: inviteName,
-          email:           inviteEmail,
-          tarifa_id:       inviteTarifa   || null,
-          descuento_pct:   parseFloat(inviteDescuento) || 0,
+          contacto_nombre: inviteName, email: inviteEmail,
+          tarifa_id: inviteTarifa || null,
+          descuento_pct: parseFloat(inviteDescuento) || 0,
           condiciones_comerciales: { notas_especiales: inviteNotas || null },
-          // Required fields with defaults — client will complete via onboarding
-          company_name:    inviteName,
-          nif_cif:         '',
-          tipo_fiscal:     'NIF/CIF',
-          tipo_cliente:    null,
+          company_name: inviteName, nif_cif: '', tipo_fiscal: 'NIF/CIF', tipo_cliente: null,
         }),
       });
       const data = await res.json();
@@ -107,22 +77,25 @@ export default function ClientesPage() {
     }
   }
 
-  const inputCls = "w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-[#D93A35] outline-none transition-colors";
+  const inputSt: React.CSSProperties = {
+    fontFamily: 'var(--font-main)', fontSize: 12, fontWeight: 400,
+    border: 'var(--border)', borderRadius: 0, padding: '7px 10px',
+    background: '#fff', color: '#111', outline: 'none', width: '100%',
+  };
 
   return (
-    <div className="p-6 md:p-7">
-      <div className="flex items-center justify-between mb-6">
+    <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 16, borderBottom: 'var(--border)' }}>
         <div>
-          <h1 className="text-lg font-black tracking-wider uppercase text-gray-900"
-              style={{ fontFamily: 'var(--font-alexandria)' }}>Clients</h1>
-          <p className="text-xs text-gray-400 mt-0.5">
+          <div className="page-title">Clients</div>
+          <div style={{ fontSize: 10, color: '#aaa', marginTop: 3, letterSpacing: '0.04em' }}>
             {clients.length} client{clients.length !== 1 ? 's' : ''} registered
-          </p>
+          </div>
         </div>
         {!showInvite && (
-          <button
-            onClick={() => { setShowInvite(true); setInviteSent(false); setInviteError(''); }}
-            className="px-4 py-2 bg-[#D93A35] text-white text-sm font-semibold rounded-lg hover:bg-[#b52e2a] transition-colors">
+          <button className="btn-primary" onClick={() => { setShowInvite(true); setInviteSent(false); setInviteError(''); }}>
             + Invite Client
           </button>
         )}
@@ -130,88 +103,101 @@ export default function ClientesPage() {
 
       {/* Invite form */}
       {showInvite && (
-        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden mb-5">
-          <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
-            <span className="text-[10px] font-black tracking-[0.12em] uppercase text-gray-400"
-                  style={{ fontFamily: 'var(--font-alexandria)' }}>Invite Client</span>
-            <button onClick={() => { setShowInvite(false); setInviteSent(false); setInviteError(''); }}
-                    className="text-gray-400 hover:text-gray-600 text-sm">✕</button>
+        <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+          <div style={{ padding: '11px 16px', borderBottom: 'var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span className="section-label">Invite Client</span>
+            <button
+              onClick={() => { setShowInvite(false); setInviteSent(false); setInviteError(''); }}
+              style={{ background: 'transparent', border: 'none', boxShadow: 'none', color: '#aaa', fontSize: 14, padding: '2px 6px' }}
+            >
+              ✕
+            </button>
           </div>
 
           {inviteSent ? (
-            <div className="p-5 space-y-4">
-              <div className="flex items-center gap-2 text-[#0DA265] text-sm font-semibold">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <path d="M20 6L9 17l-5-5"/>
-                </svg>
-                Client created. Invite email sent — they'll complete their profile on first login.
+            <div style={{ padding: 20 }}>
+              <div style={{ fontSize: 12, color: '#0DA265', fontWeight: 700, marginBottom: 12 }}>
+                ✓ Client created — invite email sent.
               </div>
-              <button onClick={() => { setShowInvite(false); setInviteSent(false); }}
-                      className="text-sm font-semibold text-[#D93A35] hover:underline">Done</button>
+              <button onClick={() => { setShowInvite(false); setInviteSent(false); }} className="btn-ghost">
+                Done
+              </button>
             </div>
           ) : (
-            <form onSubmit={handleInvite} className="p-5 space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-bold tracking-[0.1em] uppercase text-gray-400">
-                    Full Name <span className="text-[#D93A35]">*</span>
+            <form onSubmit={handleInvite} style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                  <label style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#aaa' }}>
+                    Full Name *
                   </label>
                   <input type="text" value={inviteName} onChange={e => setInviteName(e.target.value)}
-                    placeholder="Carlos Mendez" className={inputCls} required />
+                    placeholder="Carlos Mendez" style={inputSt} required />
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-bold tracking-[0.1em] uppercase text-gray-400">
-                    Email <span className="text-[#D93A35]">*</span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                  <label style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#aaa' }}>
+                    Email *
                   </label>
                   <input type="email" value={inviteEmail} onChange={e => setInviteEmail(e.target.value)}
-                    placeholder="carlos@empresa.com" className={inputCls} required />
+                    placeholder="carlos@empresa.com" style={inputSt} required />
                 </div>
               </div>
 
-              {/* Tier selector — same pattern as role in team */}
-              <div className="space-y-2">
-                <label className="text-[11px] font-bold tracking-[0.1em] uppercase text-gray-400">Pricing Tier</label>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {/* Tier selector */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <label style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#aaa' }}>
+                  Pricing Tier
+                </label>
+                <div style={{ display: 'flex', gap: 8 }}>
                   {tarifas.map((t) => (
-                    <button key={t.id} type="button" onClick={() => setInviteTarifa(t.id)}
-                      className={`p-3 rounded-lg border text-left transition-colors ${
-                        inviteTarifa === t.id
-                          ? 'border-[#D93A35]/50 bg-red-50'
-                          : 'border-gray-200 hover:border-gray-300'
-                      }`}>
-                      <div className="text-sm font-semibold text-gray-900">{t.nombre}</div>
+                    <button
+                      key={t.id}
+                      type="button"
+                      onClick={() => setInviteTarifa(t.id)}
+                      style={{
+                        padding: '8px 16px',
+                        background: inviteTarifa === t.id ? '#111' : '#fff',
+                        color: inviteTarifa === t.id ? '#fff' : '#111',
+                        border: 'var(--border)',
+                        boxShadow: inviteTarifa === t.id ? 'none' : 'var(--shadow-sm)',
+                        transform: inviteTarifa === t.id ? 'translate(2px, 2px)' : 'none',
+                        fontSize: 11, fontWeight: 900, letterSpacing: '0.1em',
+                        textTransform: 'uppercase',
+                      }}
+                    >
+                      {t.nombre}
                     </button>
                   ))}
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-bold tracking-[0.1em] uppercase text-gray-400">Discount (%)</label>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                  <label style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#aaa' }}>
+                    Discount (%)
+                  </label>
                   <input type="number" min="0" max="100" step="0.5" value={inviteDescuento}
-                    onChange={e => setInviteDescuento(e.target.value)}
-                    placeholder="0" className={inputCls} />
+                    onChange={e => setInviteDescuento(e.target.value)} placeholder="0" style={inputSt} />
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-bold tracking-[0.1em] uppercase text-gray-400">Internal notes</label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                  <label style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#aaa' }}>
+                    Internal notes
+                  </label>
                   <input type="text" value={inviteNotas} onChange={e => setInviteNotas(e.target.value)}
-                    placeholder="Special conditions, exceptions…" className={inputCls} />
+                    placeholder="Special conditions…" style={inputSt} />
                 </div>
               </div>
 
               {inviteError && (
-                <div className="px-3 py-2 bg-red-50 border border-red-200 rounded-lg text-xs text-[#D93A35]">
+                <div style={{ padding: '8px 12px', background: '#fff8f8', border: '1px solid #D93A35', fontSize: 11, color: '#D93A35' }}>
                   {inviteError}
                 </div>
               )}
 
-              <div className="flex gap-3 pt-1">
-                <button type="submit" disabled={inviting}
-                  className="px-5 py-2 bg-[#D93A35] text-white text-sm font-bold rounded-lg hover:bg-[#b52e2a] disabled:opacity-40 transition-colors">
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button type="submit" disabled={inviting} className="btn-primary">
                   {inviting ? 'Creating…' : 'Create & Send Invite'}
                 </button>
-                <button type="button" onClick={() => { setShowInvite(false); setInviteError(''); }}
-                  className="px-5 py-2 border border-gray-200 text-sm font-semibold text-gray-600 rounded-lg hover:border-gray-300 transition-colors">
+                <button type="button" onClick={() => { setShowInvite(false); setInviteError(''); }} className="btn-ghost">
                   Cancel
                 </button>
               </div>
@@ -220,112 +206,70 @@ export default function ClientesPage() {
         </div>
       )}
 
-      {/* Mobile: card list */}
-      <div className="md:hidden space-y-2">
-        {loading ? (
-          <div className="bg-white border border-gray-200 rounded-xl px-5 py-12 text-center">
-            <div className="flex items-center justify-center gap-2 text-gray-400 text-sm">
-              <div className="w-4 h-4 border border-gray-200 border-t-[#D93A35] rounded-full animate-spin" />
-              Loading…
-            </div>
-          </div>
-        ) : clients.length === 0 ? (
-          <div className="bg-white border border-gray-200 rounded-xl px-5 py-12 text-center text-sm text-gray-400">No clients registered yet</div>
-        ) : clients.map((c) => (
-          <Link key={c.id} href={`/clientes/${c.id}`}
-            className="flex items-center justify-between gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3.5 hover:border-[#D93A35]/40 hover:shadow-sm transition-all group">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-9 h-9 rounded-lg bg-[#D93A35] flex items-center justify-center text-xs font-bold text-white flex-shrink-0">
-                {initials(c.contacto_nombre)}
-              </div>
-              <div className="min-w-0">
-                <div className="text-sm font-semibold text-gray-900 truncate group-hover:text-[#D93A35] transition-colors">
-                  {c.contacto_nombre}
-                </div>
-                <div className="text-xs text-gray-400 truncate">{c.company_name} · {c.direccion_envio?.city ?? '—'}</div>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 flex-shrink-0">
-              {tarifaBadge(c.tarifa)}
-              {!c.onboarding_completed && (
-                <span className="inline-flex px-1.5 py-0.5 text-[10px] font-bold border rounded-md text-amber-600 bg-amber-50 border-amber-200">
-                  Pending
-                </span>
-              )}
-            </div>
-          </Link>
-        ))}
-      </div>
-
-      {/* Desktop: full table */}
-      <div className="hidden md:block bg-white border border-gray-200 rounded-xl overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse min-w-[780px]">
+      {/* Table */}
+      <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 700 }}>
             <thead>
-              <tr className="bg-gray-50">
+              <tr style={{ background: '#111' }}>
                 {['Client', 'Company', 'Tier', 'Email', 'Status', 'Onboarding', 'Joined'].map((h) => (
-                  <th key={h} className="text-left px-5 py-3 text-[10px] font-bold uppercase tracking-[0.1em] text-gray-400 border-b border-gray-100">{h}</th>
+                  <th key={h} style={{ textAlign: 'left', padding: '9px 14px', fontSize: 8, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#fff' }}>
+                    {h}
+                  </th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="px-5 py-12 text-center">
-                    <div className="flex items-center justify-center gap-2 text-gray-400 text-sm">
-                      <div className="w-4 h-4 border border-gray-200 border-t-[#D93A35] rounded-full animate-spin" />
-                      Loading…
-                    </div>
-                  </td>
+                  <td colSpan={7} style={{ padding: '48px 16px', textAlign: 'center', fontSize: 12, color: '#aaa' }}>Loading…</td>
                 </tr>
               ) : clients.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-5 py-12 text-center text-sm text-gray-400">No clients registered yet</td>
+                  <td colSpan={7} style={{ padding: '48px 16px', textAlign: 'center', fontSize: 12, color: '#aaa' }}>No clients registered yet.</td>
                 </tr>
-              ) : clients.map((c) => (
-                <tr key={c.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors">
-                  <td className="px-5 py-3">
-                    <Link href={`/clientes/${c.id}`} className="flex items-center gap-3 group">
-                      <div className="w-8 h-8 rounded-lg bg-[#D93A35] flex items-center justify-center text-xs font-bold text-white flex-shrink-0">
-                        {initials(c.contacto_nombre)}
-                      </div>
-                      <span className="text-sm font-semibold text-gray-900 group-hover:text-[#D93A35] transition-colors">
-                        {c.contacto_nombre}
+              ) : clients.map((c, i) => {
+                const tarifaColor = c.tarifa ? (TARIFA_COLORS[c.tarifa.nombre.toLowerCase()] ?? '#555') : '#555';
+                return (
+                  <tr key={c.id} style={{ borderBottom: i < clients.length - 1 ? '1px solid #f5f5f5' : 'none' }}>
+                    <td style={{ padding: '9px 14px' }}>
+                      <Link href={`/clientes/${c.id}`} style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
+                        <div style={{ width: 28, height: 28, background: '#D93A35', border: '1px solid #111', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 900, color: '#fff', flexShrink: 0 }}>
+                          {initials(c.contacto_nombre)}
+                        </div>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: '#111' }}>{c.contacto_nombre}</span>
+                      </Link>
+                    </td>
+                    <td style={{ padding: '9px 14px', fontSize: 11, color: '#555' }}>{c.company_name}</td>
+                    <td style={{ padding: '9px 14px' }}>
+                      {c.tarifa && (
+                        <span className="badge" style={{ background: tarifaColor }}>
+                          {c.tarifa.nombre}
+                        </span>
+                      )}
+                      {c.descuento_pct > 0 && (
+                        <span style={{ marginLeft: 6, fontSize: 9, fontFamily: 'monospace', color: '#D93A35', fontWeight: 700 }}>
+                          -{c.descuento_pct}%
+                        </span>
+                      )}
+                    </td>
+                    <td style={{ padding: '9px 14px', fontSize: 10, color: '#aaa', fontFamily: 'monospace' }}>{c.email}</td>
+                    <td style={{ padding: '9px 14px' }}>
+                      <span className="badge" style={{ background: c.estado === 'active' ? '#0DA265' : '#999' }}>
+                        {c.estado === 'active' ? 'Active' : 'Inactive'}
                       </span>
-                    </Link>
-                  </td>
-                  <td className="px-5 py-3 text-sm text-gray-500">{c.company_name}</td>
-                  <td className="px-5 py-3">
-                    {tarifaBadge(c.tarifa)}
-                    {c.descuento_pct > 0 && (
-                      <span className="ml-1.5 text-[10px] font-mono text-[#D93A35] font-bold">-{c.descuento_pct}%</span>
-                    )}
-                  </td>
-                  <td className="px-5 py-3 font-mono text-xs text-gray-400">{c.email}</td>
-                  <td className="px-5 py-3">
-                    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-[11px] font-semibold border rounded-md ${
-                      c.estado === 'active'
-                        ? 'text-[#0DA265] bg-green-50 border-green-200'
-                        : 'text-gray-400 bg-gray-100 border-gray-200'
-                    }`}>
-                      <span className="w-1.5 h-1.5 rounded-full bg-current opacity-80" />
-                      {c.estado === 'active' ? 'Active' : 'Inactive'}
-                    </span>
-                  </td>
-                  <td className="px-5 py-3">
-                    <span className={`inline-flex px-2 py-0.5 text-[10px] font-bold border rounded-md ${
-                      c.onboarding_completed
-                        ? 'text-[#0DA265] bg-green-50 border-green-200'
-                        : 'text-amber-600 bg-amber-50 border-amber-200'
-                    }`}>
-                      {c.onboarding_completed ? 'Complete' : 'Pending'}
-                    </span>
-                  </td>
-                  <td className="px-5 py-3 font-mono text-xs text-gray-400">
-                    {new Date(c.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                    <td style={{ padding: '9px 14px' }}>
+                      <span className="badge" style={{ background: c.onboarding_completed ? '#0DA265' : '#E6883E' }}>
+                        {c.onboarding_completed ? 'Complete' : 'Pending'}
+                      </span>
+                    </td>
+                    <td style={{ padding: '9px 14px', fontSize: 10, color: '#bbb', fontVariantNumeric: 'tabular-nums' }}>
+                      {new Date(c.created_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

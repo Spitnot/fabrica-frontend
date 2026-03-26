@@ -1,6 +1,184 @@
 @import "tailwindcss";
 
+/* ─────────────────────────────────────────────
+   FIRMA ROLLERS B2B — Design System
+   ───────────────────────────────────────────── */
+
+:root {
+  --fr-red:     #D93A35;
+  --fr-orange:  #E6883E;
+  --fr-yellow:  #F6E451;
+  --fr-green:   #0DA265;
+  --fr-blue:    #0087B8;
+  --fr-purple:  #876693;
+  --fr-black:   #111111;
+  --fr-white:   #ffffff;
+  --fr-cream:   #F7F7F2;
+
+  --status-draft:       var(--fr-purple);
+  --status-confirmado:  var(--fr-blue);
+  --status-produccion:  var(--fr-orange);
+  --status-listo:       var(--fr-green);
+  --status-enviado:     var(--fr-black);
+  --status-cancelado:   #999999;
+
+  --font-main: 'Alexandria', sans-serif;
+  --border:        1px solid var(--fr-black);
+  --border-light:  1px solid #e5e5e5;
+  --shadow-sm:  2px 2px 0 var(--fr-black);
+  --shadow-md:  3px 3px 0 var(--fr-black);
+  --sidebar-w: 210px;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body { height: 100%; margin: 0; padding: 0; }
+
 body {
-  background: #ffffff;
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-main);
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--fr-black);
+  background: var(--fr-cream);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-main);
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin: 0;
+  line-height: 1.1;
+}
+
+h1 { font-size: 22px; }
+h2 { font-size: 16px; }
+h3 { font-size: 13px; letter-spacing: 0.1em; }
+p { margin: 0; }
+
+/* BUTTON RESET — sin border-radius */
+button, [type='button'], [type='submit'], [type='reset'] {
+  font-family: var(--font-main);
+  font-weight: 900;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  border-radius: 0;
+  border: var(--border);
+  background: var(--fr-white);
+  color: var(--fr-black);
+  cursor: pointer;
+  padding: 7px 14px;
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.08s, transform 0.08s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+button:hover, [type='button']:hover {
+  box-shadow: none;
+  transform: translate(2px, 2px);
+}
+
+button:active { box-shadow: none; transform: translate(2px, 2px); }
+button:disabled { opacity: 0.4; pointer-events: none; }
+
+.btn-primary { background: var(--fr-black); color: var(--fr-white); }
+.btn-danger  { background: var(--fr-red); color: var(--fr-white); border-color: var(--fr-red); }
+.btn-ghost   { box-shadow: none; border-color: #ddd; }
+.btn-ghost:hover { border-color: var(--fr-black); transform: none; }
+
+/* INPUT RESET */
+input, select, textarea {
+  font-family: var(--font-main);
+  font-size: 12px;
+  font-weight: 400;
+  border-radius: 0;
+  border: var(--border);
+  background: var(--fr-white);
+  color: var(--fr-black);
+  padding: 7px 10px;
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: var(--fr-black);
+  box-shadow: var(--shadow-sm);
+}
+
+input::placeholder, textarea::placeholder { color: #bbb; font-weight: 400; }
+
+select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23111'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 28px;
+}
+
+/* BADGE */
+.badge {
+  font-family: var(--font-main);
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 0;
+  color: var(--fr-white);
+  display: inline-block;
+}
+
+.badge-draft      { background: var(--status-draft); }
+.badge-confirmado { background: var(--status-confirmado); }
+.badge-produccion { background: var(--status-produccion); }
+.badge-listo      { background: var(--status-listo); }
+.badge-enviado    { background: var(--status-enviado); }
+.badge-cancelado  { background: var(--status-cancelado); }
+
+/* CARD */
+.card {
+  background: var(--fr-white);
+  border: var(--border);
+  box-shadow: var(--shadow-sm);
+  padding: 16px;
+}
+
+.section-label {
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--fr-black);
+}
+
+.page-title {
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--fr-black);
+}
+
+hr { border: none; border-top: var(--border); margin: 0; }
+
+a { color: var(--fr-black); text-decoration: none; }
+a:hover { color: var(--fr-red); }
+
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #ddd; }
+::-webkit-scrollbar-thumb:hover { background: #bbb; }
+
+/* Tailwind border-radius override */
+.rounded, .rounded-sm, .rounded-md, .rounded-lg,
+.rounded-xl, .rounded-2xl, .rounded-full {
+  border-radius: 0 !important;
 }
