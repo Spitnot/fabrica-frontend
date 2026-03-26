@@ -20,32 +20,28 @@ async function getLogs(): Promise<EmailLog[]> {
     .select('*, customer:customers(company_name), order:orders(id)')
     .order('sent_at', { ascending: false })
     .limit(200);
-
-  if (error) {
-    console.error('[emails page]', error.message);
-    return [];
-  }
+  if (error) console.error('[emails page]', error.message);
   return (data ?? []) as EmailLog[];
 }
 
 const TYPE_LABELS: Record<string, string> = {
   welcome:            'Welcome',
-  order_confirmation: 'Order confirmed',
+  order_confirmation: 'Confirmed',
   order_shipped:      'Shipped',
   admin_notification: 'Admin',
   admin_invite:       'Team invite',
 };
 
-const TYPE_STYLES: Record<string, string> = {
-  welcome:            'text-blue-700 bg-blue-50 border-blue-200',
-  order_confirmation: 'text-green-700 bg-green-50 border-green-200',
-  order_shipped:      'text-purple-700 bg-purple-50 border-purple-200',
-  admin_notification: 'text-gray-600 bg-gray-100 border-gray-200',
-  admin_invite:       'text-orange-700 bg-orange-50 border-orange-200',
+const TYPE_COLORS: Record<string, string> = {
+  welcome:            '#0087B8',
+  order_confirmation: '#0DA265',
+  order_shipped:      '#876693',
+  admin_notification: '#999',
+  admin_invite:       '#E6883E',
 };
 
 function fmt(dateStr: string) {
-  return new Date(dateStr).toLocaleString('en-GB', {
+  return new Date(dateStr).toLocaleString('es-ES', {
     day: '2-digit', month: '2-digit', year: '2-digit',
     hour: '2-digit', minute: '2-digit',
   });
@@ -53,106 +49,110 @@ function fmt(dateStr: string) {
 
 export default async function EmailsPage() {
   const logs = await getLogs();
-
-  const sentCount   = logs.filter((l) => l.status === 'sent').length;
-  const failedCount = logs.filter((l) => l.status === 'failed').length;
+  const sentCount   = logs.filter(l => l.status === 'sent').length;
+  const failedCount = logs.filter(l => l.status === 'failed').length;
 
   return (
-    <div className="p-6 md:p-8 max-w-[1200px]">
+    <div style={{ padding: 16, maxWidth: 1100, margin: '0 auto' }}>
+
       {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-[22px] font-black text-gray-900 tracking-tight">Email</h1>
-        <p className="text-sm text-gray-400 mt-0.5">Last 200 emails sent</p>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 16, borderBottom: '1px solid #111', marginBottom: 16, flexWrap: 'wrap', gap: 12 }}>
+        <div>
+          <div className="page-title">Emails</div>
+          <div style={{ fontSize: 10, color: '#aaa', marginTop: 3 }}>Last 200 transactional emails</div>
+        </div>
       </div>
 
       {/* Stats */}
-      <div className="flex gap-3 mb-6">
-        <div className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded-lg">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400">Total</span>
-          <span className="text-[15px] font-black text-gray-900">{logs.length}</span>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 16 }}>
+        <div className="card" style={{ borderLeft: '3px solid #111' }}>
+          <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#aaa', marginBottom: 4 }}>Total</div>
+          <div style={{ fontSize: 26, fontWeight: 900, color: '#111', lineHeight: 1 }}>{logs.length}</div>
         </div>
-        <div className="flex items-center gap-2 px-3 py-2 bg-green-50 border border-green-200 rounded-lg">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-green-600">Sent</span>
-          <span className="text-[15px] font-black text-green-700">{sentCount}</span>
+        <div className="card" style={{ borderLeft: '3px solid #0DA265' }}>
+          <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#aaa', marginBottom: 4 }}>Sent</div>
+          <div style={{ fontSize: 26, fontWeight: 900, color: '#0DA265', lineHeight: 1 }}>{sentCount}</div>
         </div>
-        {failedCount > 0 && (
-          <div className="flex items-center gap-2 px-3 py-2 bg-red-50 border border-red-200 rounded-lg">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-red-500">Failed</span>
-            <span className="text-[15px] font-black text-red-600">{failedCount}</span>
-          </div>
-        )}
+        <div className="card" style={{ borderLeft: `3px solid ${failedCount > 0 ? '#D93A35' : '#eee'}` }}>
+          <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#aaa', marginBottom: 4 }}>Failed</div>
+          <div style={{ fontSize: 26, fontWeight: 900, color: failedCount > 0 ? '#D93A35' : '#ccc', lineHeight: 1 }}>{failedCount}</div>
+        </div>
       </div>
 
-      {/* Table */}
+      {/* Email log — cards on mobile, compact list on desktop */}
       {logs.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-gray-400">
-          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="mb-3 opacity-40">
-            <rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 7l10 7 10-7"/>
-          </svg>
-          <p className="text-sm">No emails logged yet</p>
-        </div>
+        <div style={{ padding: '48px 0', textAlign: 'center', fontSize: 12, color: '#aaa' }}>No emails logged yet.</div>
       ) : (
-        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-100">
-                <th className="px-4 py-3 text-left text-[10.5px] font-bold uppercase tracking-wider text-gray-400">Type</th>
-                <th className="px-4 py-3 text-left text-[10.5px] font-bold uppercase tracking-wider text-gray-400">Recipient</th>
-                <th className="px-4 py-3 text-left text-[10.5px] font-bold uppercase tracking-wider text-gray-400 hidden md:table-cell">Subject</th>
-                <th className="px-4 py-3 text-left text-[10.5px] font-bold uppercase tracking-wider text-gray-400 hidden lg:table-cell">Client</th>
-                <th className="px-4 py-3 text-left text-[10.5px] font-bold uppercase tracking-wider text-gray-400 hidden lg:table-cell">Order</th>
-                <th className="px-4 py-3 text-left text-[10.5px] font-bold uppercase tracking-wider text-gray-400">Status</th>
-                <th className="px-4 py-3 text-left text-[10.5px] font-bold uppercase tracking-wider text-gray-400">Date</th>
-              </tr>
-            </thead>
-            <tbody>
-              {logs.map((log, i) => (
-                <tr key={log.id} className={`border-b border-gray-50 hover:bg-gray-50/50 transition-colors ${i === logs.length - 1 ? 'border-b-0' : ''}`}>
-                  <td className="px-4 py-3">
-                    <span className={`inline-flex px-2 py-0.5 text-[10px] font-bold border rounded-md tracking-wide uppercase ${TYPE_STYLES[log.type]}`}>
-                      {TYPE_LABELS[log.type]}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-gray-700 font-mono text-[12px]">{log.recipient}</td>
-                  <td className="px-4 py-3 text-gray-500 text-[12.5px] hidden md:table-cell max-w-[240px] truncate">{log.subject}</td>
-                  <td className="px-4 py-3 text-gray-700 text-[12.5px] hidden lg:table-cell">
-                    {log.customer?.company_name ?? <span className="text-gray-300">—</span>}
-                  </td>
-                  <td className="px-4 py-3 hidden lg:table-cell">
-                    {log.order ? (
-                      <a
-                        href={`/pedidos/${log.order.id}`}
-                        className="font-mono text-[11px] text-[#D93A35] hover:underline"
-                      >
-                        #{log.order.id.slice(0, 8).toUpperCase()}
-                      </a>
-                    ) : (
-                      <span className="text-gray-300">—</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3">
-                    {log.status === 'sent' ? (
-                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-green-600">
-                        <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />
-                        Sent
-                      </span>
-                    ) : (
-                      <div>
-                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-red-500">
-                          <span className="w-1.5 h-1.5 rounded-full bg-red-400 inline-block" />
-                          Error
-                        </span>
-                        {log.error && (
-                          <p className="text-[10px] text-red-400 mt-0.5 max-w-[200px] break-words">{log.error}</p>
-                        )}
-                      </div>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-gray-400 text-[12px] whitespace-nowrap">{fmt(log.sent_at)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+          {/* Desktop header */}
+          <div className="fr-email-hd" style={{ display: 'grid', gridTemplateColumns: '90px 1fr 110px 130px 70px', gap: 8, padding: '8px 14px', background: '#111' }}>
+            <style>{`@media(max-width:600px){.fr-email-hd{display:none!important}}`}</style>
+            {['Type', 'Recipient / Subject', 'Company', 'Date', 'Status'].map(h => (
+              <div key={h} style={{ fontSize: 7, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#fff' }}>{h}</div>
+            ))}
+          </div>
+
+          {logs.map((log, i) => (
+            <div
+              key={log.id}
+              style={{
+                display: 'grid',
+                gridTemplateColumns: '90px 1fr 110px 130px 70px',
+                gap: 8,
+                padding: '10px 14px',
+                background: log.status === 'failed' ? '#fff8f8' : '#fff',
+                borderBottom: i < logs.length - 1 ? '1px solid #f5f5f5' : 'none',
+                alignItems: 'start',
+              }}
+              className="fr-email-row"
+            >
+              <style>{`@media(max-width:600px){.fr-email-row{grid-template-columns:1fr!important}.fr-email-col-hide{display:none!important}}`}</style>
+
+              {/* Type */}
+              <div>
+                <span className="badge" style={{ background: TYPE_COLORS[log.type] ?? '#999' }}>
+                  {TYPE_LABELS[log.type] ?? log.type}
+                </span>
+              </div>
+
+              {/* Recipient + subject */}
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#111', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {log.recipient}
+                </div>
+                <div style={{ fontSize: 10, color: '#aaa', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: 2 }}>
+                  {log.subject}
+                </div>
+                {/* Mobile extra */}
+                <div className="fr-email-mobile" style={{ display: 'none', marginTop: 4, fontSize: 9, color: '#aaa' }}>
+                  <style>{`.fr-email-mobile{display:none!important}@media(max-width:600px){.fr-email-mobile{display:flex!important;gap:8px;flex-wrap:wrap;align-items:center}}`}</style>
+                  {log.customer?.company_name && <span>{log.customer.company_name}</span>}
+                  <span>{fmt(log.sent_at)}</span>
+                  <span className="badge" style={{ background: log.status === 'sent' ? '#0DA265' : '#D93A35' }}>{log.status}</span>
+                </div>
+                {log.status === 'failed' && log.error && (
+                  <div style={{ fontSize: 9, color: '#D93A35', marginTop: 3, fontFamily: 'monospace' }}>⚠ {log.error.slice(0, 80)}</div>
+                )}
+              </div>
+
+              {/* Company */}
+              <div className="fr-email-col-hide" style={{ fontSize: 10, color: '#777', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {log.customer?.company_name ?? '—'}
+              </div>
+
+              {/* Date */}
+              <div className="fr-email-col-hide" style={{ fontSize: 9, color: '#bbb', whiteSpace: 'nowrap' }}>
+                {fmt(log.sent_at)}
+              </div>
+
+              {/* Status */}
+              <div className="fr-email-col-hide">
+                <span className="badge" style={{ background: log.status === 'sent' ? '#0DA265' : '#D93A35' }}>
+                  {log.status}
+                </span>
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </div>

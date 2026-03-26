@@ -5,23 +5,16 @@ import Link from 'next/link';
 
 interface PedidoRef { id: string; status: string; cantidad: number; created_at: string; cliente: string }
 interface SkuFungible { id: string; nombre: string; unidad: string; total: number }
-interface StockItem {
-  sku: string;
-  nombre_producto: string;
-  unidades: number;
-  fungibles: SkuFungible[];
-  pedidos: PedidoRef[];
-}
+interface StockItem { sku: string; nombre_producto: string; unidades: number; fungibles: SkuFungible[]; pedidos: PedidoRef[] }
 interface FungibleTotal { id: string; nombre: string; unidad: string; total: number }
 
-const STATUS_STYLES: Record<string, string> = {
-  confirmado:  'text-[#0087B8] bg-blue-50 border-blue-200',
-  produccion:  'text-[#b85e00] bg-orange-50 border-orange-200',
-  listo_envio: 'text-[#876693] bg-purple-50 border-purple-200',
+const STATUS_COLORS: Record<string, string> = {
+  confirmado: '#0087B8', produccion: '#E6883E', listo_envio: '#876693',
 };
 const STATUS_LABELS: Record<string, string> = {
   confirmado: 'Confirmed', produccion: 'In Production', listo_envio: 'Ready to Ship',
 };
+const SKU_COLORS = ['#D93A35','#E6883E','#0DA265','#0087B8','#876693','#111','#b8a800'];
 
 export default function ProduccionPage() {
   const [stock, setStock]           = useState<StockItem[]>([]);
@@ -50,6 +43,7 @@ export default function ProduccionPage() {
   }, [stock, search]);
 
   const totalUnidades = filtered.reduce((s, i) => s + i.unidades, 0);
+  const maxUnidades = Math.max(...filtered.map(s => s.unidades), 1);
 
   function exportCSV() {
     const rows = [
@@ -69,33 +63,31 @@ export default function ProduccionPage() {
   }
 
   return (
-    <div className="p-6 md:p-7">
-      <div className="mb-6 flex items-start justify-between gap-4">
+    <div style={{ padding: 16, maxWidth: 1100, margin: '0 auto' }}>
+
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', paddingBottom: 16, borderBottom: '1px solid #111', marginBottom: 16, flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <h1 className="text-lg font-black tracking-wider uppercase text-gray-900"
-              style={{ fontFamily: 'var(--font-alexandria)' }}>Production Stock</h1>
-          <p className="text-xs text-gray-400 mt-0.5">Units pending production · fungible totals from active orders</p>
+          <div className="page-title">Production Stock</div>
+          <div style={{ fontSize: 10, color: '#aaa', marginTop: 3 }}>Units pending · fungible totals from active orders</div>
         </div>
-        <button onClick={exportCSV}
-          className="px-3 py-2 border border-gray-200 text-xs font-semibold text-gray-600 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-1.5">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
-          </svg>
-          Export CSV
-        </button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button onClick={load} className="btn-ghost">↻ Refresh</button>
+          <button onClick={exportCSV} className="btn-ghost">↓ Export CSV</button>
+        </div>
       </div>
 
+      {/* Fungible totals */}
       {fungTotals.length > 0 && (
-        <div className="mb-6">
-          <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-gray-400 mb-2">Fungible Totals</div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: '#aaa', marginBottom: 8 }}>Materials needed</div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: 8 }}>
             {fungTotals.map(f => (
-              <div key={f.id} className="bg-white border border-gray-200 rounded-xl p-4">
-                <div className="text-[10px] uppercase tracking-[0.1em] font-bold text-gray-400 mb-1.5 truncate">{f.nombre}</div>
-                <div className="text-xl font-black tracking-tight text-gray-900"
-                     style={{ fontFamily: 'var(--font-alexandria)' }}>
+              <div key={f.id} className="card" style={{ borderLeft: '3px solid #E6883E' }}>
+                <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#aaa', marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.nombre}</div>
+                <div style={{ fontSize: 22, fontWeight: 900, color: '#E6883E', lineHeight: 1 }}>
                   {f.total.toLocaleString()}
-                  <span className="text-xs font-normal text-gray-400 ml-1">{f.unidad}</span>
+                  <span style={{ fontSize: 9, fontWeight: 400, color: '#aaa', marginLeft: 3 }}>{f.unidad}</span>
                 </div>
               </div>
             ))}
@@ -103,115 +95,152 @@ export default function ProduccionPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-3 mb-6">
-        <div className="bg-white border border-gray-200 rounded-xl p-5">
-          <div className="text-[10px] uppercase tracking-[0.12em] font-bold text-gray-400 mb-2">SKUs Pending</div>
-          <div className="text-2xl font-black text-[#D93A35]" style={{ fontFamily: 'var(--font-alexandria)' }}>{filtered.length}</div>
+      {/* Stats */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 16 }}>
+        <div className="card" style={{ borderLeft: '3px solid #D93A35' }}>
+          <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#aaa', marginBottom: 4 }}>SKUs Pending</div>
+          <div style={{ fontSize: 26, fontWeight: 900, color: '#D93A35', lineHeight: 1 }}>{filtered.length}</div>
         </div>
-        <div className="bg-white border border-gray-200 rounded-xl p-5">
-          <div className="text-[10px] uppercase tracking-[0.12em] font-bold text-gray-400 mb-2">Total Units</div>
-          <div className="text-2xl font-black text-[#0087B8]" style={{ fontFamily: 'var(--font-alexandria)' }}>{totalUnidades.toLocaleString()}</div>
+        <div className="card" style={{ borderLeft: '3px solid #0087B8' }}>
+          <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#aaa', marginBottom: 4 }}>Total Units</div>
+          <div style={{ fontSize: 26, fontWeight: 900, color: '#0087B8', lineHeight: 1 }}>{totalUnidades.toLocaleString()}</div>
         </div>
       </div>
 
-      <div className="mb-4">
-        <input value={search} onChange={e => setSearch(e.target.value)}
+      {/* Search */}
+      <div style={{ marginBottom: 12 }}>
+        <input
+          value={search} onChange={e => setSearch(e.target.value)}
           placeholder="Search SKU or product…"
-          className="border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#D93A35] transition-colors w-64" />
+          style={{ maxWidth: 280, width: '100%', fontFamily: 'var(--font-main)', fontSize: 12, border: '1px solid #111', borderRadius: 0, padding: '7px 10px', background: '#fff', color: '#111', outline: 'none' }}
+        />
       </div>
 
-      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-        {loading ? (
-          <div className="flex items-center justify-center py-16 text-sm text-gray-400">Loading…</div>
-        ) : filtered.length === 0 ? (
-          <div className="flex items-center justify-center py-16 text-sm text-gray-400">No pending stock</div>
-        ) : (
-          <table className="w-full border-collapse">
-            <thead>
-              <tr className="bg-gray-50 border-b border-gray-100">
-                <th className="text-left px-4 py-3 text-[10px] font-bold uppercase tracking-[0.1em] text-gray-400">SKU</th>
-                <th className="text-left px-4 py-3 text-[10px] font-bold uppercase tracking-[0.1em] text-gray-400">Product</th>
-                <th className="text-left px-4 py-3 text-[10px] font-bold uppercase tracking-[0.1em] text-gray-400">Units</th>
-                {fungTotals.map(f => (
-                  <th key={f.id} className="text-left px-4 py-3 text-[10px] font-bold uppercase tracking-[0.1em] text-gray-400">
-                    {f.nombre} <span className="font-normal normal-case text-gray-300">({f.unidad})</span>
-                  </th>
-                ))}
-                <th className="px-4 py-3" />
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map(item => {
-                const isOpen = expanded === item.sku;
-                return (
-                  <>
-                    <tr key={item.sku}
-                      className="border-b border-gray-50 hover:bg-gray-50 transition-colors cursor-pointer"
-                      onClick={() => setExpanded(isOpen ? null : item.sku)}>
-                      <td className="px-4 py-3 font-mono text-xs text-gray-500">{item.sku}</td>
-                      <td className="px-4 py-3 text-sm font-semibold text-gray-900">{item.nombre_producto}</td>
-                      <td className="px-4 py-3">
-                        <span className="text-sm font-black text-gray-900" style={{ fontFamily: 'var(--font-alexandria)' }}>
-                          {item.unidades.toLocaleString()}
-                        </span>
-                      </td>
-                      {fungTotals.map(f => {
-                        const match = item.fungibles.find(x => x.id === f.id);
-                        return (
-                          <td key={f.id} className="px-4 py-3 font-mono text-xs text-gray-600">
-                            {match ? match.total.toLocaleString() : <span className="text-gray-200">—</span>}
-                          </td>
-                        );
-                      })}
-                      <td className="px-4 py-3 text-gray-300">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-                          className={`transition-transform ${isOpen ? 'rotate-180' : ''}`}>
-                          <path d="M6 9l6 6 6-6"/>
-                        </svg>
-                      </td>
-                    </tr>
-                    {isOpen && (
-                      <tr key={`${item.sku}-exp`} className="bg-gray-50/70 border-b border-gray-100">
-                        <td colSpan={4 + fungTotals.length} className="px-6 py-4">
-                          <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-gray-400 mb-2">Orders</div>
-                          <div className="space-y-1.5">
-                            {item.pedidos.map(p => (
-                              <div key={p.id} className="flex items-center gap-3">
-                                <Link href={`/pedidos/${p.id}`} className="font-mono text-xs text-[#D93A35] hover:underline">
-                                  #{p.id.slice(0, 8)}
-                                </Link>
-                                <span className={`text-[10px] font-semibold border rounded px-1.5 py-0.5 ${STATUS_STYLES[p.status] ?? 'text-gray-500 bg-gray-100 border-gray-200'}`}>
-                                  {STATUS_LABELS[p.status] ?? p.status}
-                                </span>
-                                <span className="text-xs text-gray-500">{p.cliente}</span>
-                                <span className="ml-auto font-mono text-xs font-bold text-gray-900">×{p.cantidad}</span>
+      {/* SKU list — expandable cards, NO table */}
+      {loading ? (
+        <div style={{ padding: '48px 0', textAlign: 'center', fontSize: 12, color: '#aaa' }}>Loading…</div>
+      ) : filtered.length === 0 ? (
+        <div style={{ padding: '48px 0', textAlign: 'center', fontSize: 12, color: '#aaa' }}>
+          {search ? 'No SKUs match the search.' : 'No pending production.'}
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {filtered.map((item, idx) => {
+            const isOpen = expanded === item.sku;
+            const color = SKU_COLORS[idx % SKU_COLORS.length];
+            const barPct = Math.round((item.unidades / maxUnidades) * 100);
+
+            return (
+              <div key={item.sku} className="card" style={{ padding: 0, overflow: 'hidden' }}>
+
+                {/* Main row — clickable */}
+                <div
+                  onClick={() => setExpanded(isOpen ? null : item.sku)}
+                  style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}
+                >
+                  <div style={{ width: 10, height: 10, background: color, border: '1px solid #111', flexShrink: 0 }} />
+
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: '#111', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {item.nombre_producto}
+                    </div>
+                    <div style={{ fontSize: 9, color: '#aaa', fontFamily: 'monospace', marginTop: 1 }}>{item.sku}</div>
+                  </div>
+
+                  {/* Fungible quick summary */}
+                  {item.fungibles.length > 0 && (
+                    <div style={{ display: 'flex', gap: 6, flexShrink: 0 }} className="fr-fung-summary">
+                      <style>{`@media(max-width:480px){.fr-fung-summary{display:none!important}}`}</style>
+                      {item.fungibles.slice(0, 2).map(f => (
+                        <div key={f.id} style={{ fontSize: 9, color: '#aaa', fontFamily: 'monospace' }}>
+                          <span style={{ fontWeight: 700, color: '#E6883E' }}>{f.total}</span>{f.unidad}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Bar */}
+                  <div style={{ width: 80, flexShrink: 0 }} className="fr-bar">
+                    <style>{`@media(max-width:360px){.fr-bar{display:none!important}}`}</style>
+                    <div style={{ height: 3, background: '#eee' }}>
+                      <div style={{ height: '100%', width: `${barPct}%`, background: color }} />
+                    </div>
+                  </div>
+
+                  <div style={{ flexShrink: 0, textAlign: 'right', minWidth: 44 }}>
+                    <div style={{ fontSize: 20, fontWeight: 900, color, lineHeight: 1 }}>{item.unidades}</div>
+                    <div style={{ fontSize: 7, color: '#aaa', letterSpacing: '0.1em', textTransform: 'uppercase' }}>units</div>
+                  </div>
+
+                  <div style={{ fontSize: 12, color: '#ccc', transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s', flexShrink: 0 }}>↓</div>
+                </div>
+
+                {/* Expanded */}
+                {isOpen && (
+                  <div style={{ borderTop: '1px solid #eee', background: '#fafafa' }}>
+
+                    {/* Fungibles */}
+                    {item.fungibles.length > 0 && (
+                      <div style={{ padding: '10px 16px', borderBottom: '1px solid #f0f0f0' }}>
+                        <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#aaa', marginBottom: 8 }}>Materials</div>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                          {item.fungibles.map(f => (
+                            <div key={f.id} style={{ background: '#fff', border: '1px solid #eee', padding: '6px 10px' }}>
+                              <div style={{ fontSize: 8, color: '#aaa', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>{f.nombre}</div>
+                              <div style={{ fontSize: 16, fontWeight: 900, color: '#E6883E' }}>
+                                {f.total % 1 === 0 ? f.total : f.total.toFixed(1)}
+                                <span style={{ fontSize: 9, fontWeight: 400, color: '#aaa', marginLeft: 2 }}>{f.unidad}</span>
                               </div>
-                            ))}
-                          </div>
-                        </td>
-                      </tr>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
                     )}
-                  </>
-                );
-              })}
-            </tbody>
-            <tfoot>
-              <tr className="bg-gray-50 border-t border-gray-200">
-                <td colSpan={2} className="px-4 py-3 text-[10px] font-bold uppercase tracking-[0.1em] text-gray-400">Total</td>
-                <td className="px-4 py-3 font-black text-sm text-gray-900" style={{ fontFamily: 'var(--font-alexandria)' }}>
-                  {totalUnidades.toLocaleString()}
-                </td>
-                {fungTotals.map(f => (
-                  <td key={f.id} className="px-4 py-3 font-mono text-xs font-bold text-gray-700">
-                    {f.total.toLocaleString()} {f.unidad}
-                  </td>
-                ))}
-                <td />
-              </tr>
-            </tfoot>
-          </table>
-        )}
-      </div>
+
+                    {/* Orders */}
+                    {item.pedidos.length > 0 && (
+                      <div style={{ padding: '10px 16px' }}>
+                        <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#aaa', marginBottom: 8 }}>Orders</div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                          {item.pedidos.map(p => (
+                            <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', background: '#fff', border: '1px solid #eee', flexWrap: 'wrap' }}>
+                              <Link href={`/pedidos/${p.id}`} style={{ fontSize: 10, fontWeight: 700, color: '#D93A35', fontFamily: 'monospace', textDecoration: 'none' }}>
+                                #{p.id.slice(0, 8).toUpperCase()}
+                              </Link>
+                              <span className="badge" style={{ background: STATUS_COLORS[p.status] ?? '#999', fontSize: 7 }}>
+                                {STATUS_LABELS[p.status] ?? p.status}
+                              </span>
+                              <div style={{ fontSize: 11, color: '#555', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.cliente}</div>
+                              <div style={{ fontSize: 12, fontWeight: 900, color: '#111', flexShrink: 0 }}>{p.cantidad}u</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+
+          {/* Totals footer */}
+          <div className="card" style={{ background: '#111', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: '#666' }}>Totals</div>
+            <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+              <div>
+                <span style={{ fontSize: 9, color: '#666', marginRight: 6 }}>Units</span>
+                <span style={{ fontSize: 14, fontWeight: 900, color: '#fff' }}>{totalUnidades.toLocaleString()}</span>
+              </div>
+              {fungTotals.map(f => (
+                <div key={f.id}>
+                  <span style={{ fontSize: 9, color: '#666', marginRight: 4 }}>{f.nombre}</span>
+                  <span style={{ fontSize: 14, fontWeight: 900, color: '#E6883E' }}>{f.total.toLocaleString()}{f.unidad}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

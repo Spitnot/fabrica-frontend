@@ -57,19 +57,21 @@ function SidebarInner({ onClose }: { onClose: () => void }) {
 
   return (
     <>
+      {/* Logo */}
       <div style={{ padding: '16px 16px 12px', borderBottom: '1px solid #111' }}>
         <Link href="/dashboard" onClick={onClose}>
           <FRLogoSVG width={88} />
         </Link>
-        <div style={{ marginTop: 6, fontSize: 8, fontWeight: 700, letterSpacing: '0.3em', textTransform: 'uppercase', color: '#bbb', borderTop: '1px solid #eee', paddingTop: 5 }}>
+        <div style={{ marginTop: 6, fontSize: 8, fontWeight: 700, letterSpacing: '0.3em', textTransform: 'uppercase' as const, color: '#bbb', borderTop: '1px solid #eee', paddingTop: 5 }}>
           B2B Platform
         </div>
       </div>
 
-      <nav style={{ flex: 1, padding: '8px', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
+      {/* Nav */}
+      <nav style={{ flex: 1, padding: '8px', overflowY: 'auto' as const, display: 'flex', flexDirection: 'column' as const }}>
         {GROUPS.map((group) => (
           <div key={group}>
-            <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: '#ccc', padding: '10px 8px 3px' }}>
+            <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase' as const, color: '#ccc', padding: '10px 8px 3px' }}>
               {group}
             </div>
             {NAV_ITEMS.filter((i) => i.group === group).map(({ href, label }) => {
@@ -83,14 +85,18 @@ function SidebarInner({ onClose }: { onClose: () => void }) {
                     display: 'flex', alignItems: 'center', gap: 9,
                     padding: '9px 9px', marginBottom: 1,
                     fontSize: 11, fontWeight: 700,
-                    letterSpacing: '0.07em', textTransform: 'uppercase',
+                    letterSpacing: '0.07em', textTransform: 'uppercase' as const,
                     color: active ? '#fff' : '#666',
                     background: active ? '#111' : 'transparent',
                     border: `1px solid ${active ? '#111' : 'transparent'}`,
                     textDecoration: 'none', minHeight: 44,
                   }}
                 >
-                  <span style={{ width: 7, height: 7, flexShrink: 0, border: `1.5px solid ${active ? '#D93A35' : 'currentColor'}`, background: active ? '#D93A35' : 'transparent' }} />
+                  <span style={{
+                    width: 7, height: 7, flexShrink: 0,
+                    border: `1.5px solid ${active ? '#D93A35' : 'currentColor'}`,
+                    background: active ? '#D93A35' : 'transparent',
+                  }} />
                   {label}
                 </Link>
               );
@@ -99,23 +105,42 @@ function SidebarInner({ onClose }: { onClose: () => void }) {
         ))}
       </nav>
 
-      <button
-        onClick={handleLogout}
-        style={{ padding: '12px 13px', borderTop: '1px solid #111', display: 'flex', alignItems: 'center', gap: 9, background: 'transparent', border: 'none', boxShadow: 'none', cursor: 'pointer', width: '100%', textAlign: 'left', minHeight: 52 }}
-      >
-        <div style={{ width: 28, height: 28, background: '#D93A35', border: '1px solid #111', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 900, color: '#fff', flexShrink: 0 }}>
-          {userInfo ? initials(userInfo.name) : '—'}
-        </div>
-        <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
-          <div style={{ fontSize: 11, fontWeight: 900, color: '#111', letterSpacing: '0.06em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {userInfo?.name ?? '—'}
+      {/* User / logout — borderTop via wrapper div to avoid duplicate border props */}
+      <div style={{ borderTop: '1px solid #111' }}>
+        <button
+          onClick={handleLogout}
+          style={{
+            padding: '12px 13px',
+            display: 'flex', alignItems: 'center', gap: 9,
+            background: 'transparent',
+            border: 'none',
+            boxShadow: 'none',
+            cursor: 'pointer',
+            width: '100%',
+            textAlign: 'left' as const,
+            minHeight: 52,
+            fontFamily: 'var(--font-main)',
+          }}
+        >
+          <div style={{
+            width: 28, height: 28, background: '#D93A35',
+            border: '1px solid #111',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 9, fontWeight: 900, color: '#fff', flexShrink: 0,
+          }}>
+            {userInfo ? initials(userInfo.name) : '—'}
           </div>
-          <div style={{ fontSize: 9, color: '#aaa' }}>{userInfo?.role ?? 'Administrator'}</div>
-        </div>
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#aaa" strokeWidth="2">
-          <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/>
-        </svg>
-      </button>
+          <div style={{ flex: 1, minWidth: 0, textAlign: 'left' as const }}>
+            <div style={{ fontSize: 11, fontWeight: 900, color: '#111', letterSpacing: '0.06em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>
+              {userInfo?.name ?? '—'}
+            </div>
+            <div style={{ fontSize: 9, color: '#aaa' }}>{userInfo?.role ?? 'Administrator'}</div>
+          </div>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#aaa" strokeWidth="2">
+            <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/>
+          </svg>
+        </button>
+      </div>
     </>
   );
 }
@@ -132,9 +157,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           .fr-mobile-topbar { display: none !important; }
         }
       `}</style>
-
-      {/* Sidebar spacer en desktop */}
-      <div className="fr-sidebar-spacer" style={{ width: 210, flexShrink: 0, display: 'none', position: 'fixed', top: 0, left: 0, bottom: 0, pointerEvents: 'none' }} />
 
       {/* Sidebar */}
       <aside className="fr-sidebar" style={{
@@ -157,11 +179,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* Layout wrapper */}
       <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--fr-cream)' }}>
-        {/* Spacer para empujar contenido en desktop */}
-        <div style={{ width: 210, flexShrink: 0, display: 'none' }} className="fr-sidebar-spacer" />
+        {/* Spacer desktop */}
+        <div className="fr-sidebar-spacer" style={{ width: 210, flexShrink: 0, display: 'none' }} />
 
         <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
-          {/* Topbar móvil — sticky, nunca tapa el contenido */}
+          {/* Topbar móvil */}
           <div className="fr-mobile-topbar" style={{
             position: 'sticky', top: 0, zIndex: 30,
             background: '#fff', borderBottom: '1px solid #111',
@@ -170,7 +192,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           }}>
             <button
               onClick={() => setMobileOpen(true)}
-              style={{ background: 'transparent', border: 'none', boxShadow: 'none', padding: '4px', color: '#111', display: 'flex', alignItems: 'center', minHeight: 44, minWidth: 44, justifyContent: 'center' }}
+              style={{
+                background: 'transparent', border: 'none', boxShadow: 'none',
+                padding: 4, color: '#111',
+                display: 'flex', alignItems: 'center',
+                minHeight: 44, minWidth: 44, justifyContent: 'center',
+              }}
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <path d="M3 12h18M3 6h18M3 18h18"/>
@@ -181,7 +208,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </Link>
           </div>
 
-          {/* Contenido */}
           <main style={{ flex: 1, overflowX: 'hidden' }}>
             {children}
           </main>

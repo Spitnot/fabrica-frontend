@@ -9,9 +9,7 @@ type Variant = { sku: string; variante?: string; precio: number; peso_kg: number
 type Product = { id: string; title: string; image?: string; variants: Variant[] };
 
 const fmt = (n: number) =>
-  new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'EUR' }).format(n);
-
-const inputCls = 'border border-gray-200 rounded-lg px-2 py-1 text-xs font-mono outline-none focus:border-[#D93A35] transition-colors bg-white';
+  new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n);
 
 export default function CatalogoPage() {
   const [products, setProducts]           = useState<Product[]>([]);
@@ -118,67 +116,64 @@ export default function CatalogoPage() {
     loadFungibles();
   }
 
+  const inputSt: React.CSSProperties = {
+    fontFamily: 'var(--font-main)', fontSize: 11,
+    border: '1px solid #111', borderRadius: 0,
+    padding: '5px 8px', background: '#fff', color: '#111', outline: 'none',
+  };
+
   return (
-    <div className="p-6 md:p-7">
-      <div className="mb-6 flex items-start justify-between gap-4">
+    <div style={{ padding: 16, maxWidth: 1100, margin: '0 auto' }}>
+
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', paddingBottom: 16, borderBottom: '1px solid #111', marginBottom: 16, flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <h1 className="text-lg font-black tracking-wider uppercase text-gray-900"
-              style={{ fontFamily: 'var(--font-alexandria)' }}>Shopify Catalog</h1>
-          <p className="text-xs text-gray-400 mt-0.5">
-            {loading ? '…' : `${products.length} products`} · Click a SKU row to assign fungibles
-          </p>
+          <div className="page-title">Catalog</div>
+          <div style={{ fontSize: 10, color: '#aaa', marginTop: 3 }}>
+            {loading ? '…' : `${products.length} products`} · Click a variant to assign materials
+          </div>
         </div>
-        <button onClick={() => setShowFungMgr(true)}
-          className="px-3 py-2 border border-gray-200 text-xs font-semibold text-gray-600 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-1.5">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/>
-          </svg>
-          Manage Fungibles
-        </button>
+        <button onClick={() => setShowFungMgr(true)} className="btn-ghost">⚙ Manage Materials</button>
       </div>
 
+      {/* Fungibles modal */}
       {showFungMgr && (
-        <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
-            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-              <span className="text-sm font-black tracking-wide uppercase text-gray-900"
-                    style={{ fontFamily: 'var(--font-alexandria)' }}>Fungibles</span>
-              <button onClick={() => setShowFungMgr(false)} className="text-gray-300 hover:text-gray-600 transition-colors">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M18 6L6 18M6 6l12 12"/>
-                </svg>
-              </button>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <div className="card" style={{ maxWidth: 420, width: '100%', padding: 0, overflow: 'hidden' }}>
+            <div style={{ padding: '12px 16px', borderBottom: '1px solid #111', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span className="section-label">Raw Materials</span>
+              <button onClick={() => setShowFungMgr(false)} style={{ background: 'transparent', border: 'none', boxShadow: 'none', color: '#aaa', fontSize: 16, padding: '0 4px' }}>✕</button>
             </div>
-            <div className="max-h-64 overflow-y-auto divide-y divide-gray-50">
+
+            <div style={{ maxHeight: 220, overflowY: 'auto' }}>
               {fungibles.length === 0 ? (
-                <div className="px-5 py-8 text-center text-sm text-gray-400">No fungibles yet</div>
+                <div style={{ padding: '24px 16px', textAlign: 'center', fontSize: 11, color: '#aaa' }}>No materials yet</div>
               ) : fungibles.map(f => (
-                <div key={f.id} className="px-5 py-3 flex items-center gap-3">
-                  <span className="flex-1 text-sm font-medium text-gray-900">{f.nombre}</span>
-                  <span className="font-mono text-xs text-gray-400 bg-gray-50 border border-gray-200 rounded px-2 py-0.5">{f.unidad}</span>
-                  <button onClick={() => deleteFungible(f.id)}
-                    className="text-gray-300 hover:text-[#D93A35] transition-colors">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>
-                    </svg>
-                  </button>
+                <div key={f.id} style={{ padding: '10px 16px', borderBottom: '1px solid #f5f5f5', display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span style={{ flex: 1, fontSize: 12, fontWeight: 700, color: '#111' }}>{f.nombre}</span>
+                  <span style={{ fontFamily: 'monospace', fontSize: 10, color: '#aaa', background: '#f7f7f2', padding: '2px 6px', border: '1px solid #eee' }}>{f.unidad}</span>
+                  <button
+                    onClick={() => deleteFungible(f.id)}
+                    style={{ background: 'transparent', border: 'none', boxShadow: 'none', color: '#ddd', padding: '2px 4px', minHeight: 'auto', fontSize: 16 }}
+                  >×</button>
                 </div>
               ))}
             </div>
-            <div className="px-5 py-4 border-t border-gray-100 space-y-3">
-              <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-gray-400">Add new fungible</div>
-              <div className="flex gap-2">
-                <input value={newFungNombre} onChange={e => setNewFungNombre(e.target.value)}
+
+            <div style={{ padding: '14px 16px', borderTop: '1px solid #eee', display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#aaa' }}>Add new material</div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <input
+                  value={newFungNombre} onChange={e => setNewFungNombre(e.target.value)}
                   placeholder="Name (e.g. Red Paint)"
-                  className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#D93A35] transition-colors"
-                  onKeyDown={e => e.key === 'Enter' && createFungible()} />
-                <select value={newFungUnidad} onChange={e => setNewFungUnidad(e.target.value)}
-                  className="border border-gray-200 rounded-lg px-2 py-2 text-sm outline-none focus:border-[#D93A35] transition-colors bg-white">
+                  style={{ ...inputSt, flex: 1 }}
+                  onKeyDown={e => e.key === 'Enter' && createFungible()}
+                />
+                <select value={newFungUnidad} onChange={e => setNewFungUnidad(e.target.value)} style={{ ...inputSt, width: 70 }}>
                   {['ml', 'L', 'g', 'kg', 'u'].map(u => <option key={u}>{u}</option>)}
                 </select>
-                <button onClick={createFungible} disabled={fungSaving || !newFungNombre.trim()}
-                  className="px-4 py-2 bg-[#D93A35] text-white text-sm font-bold rounded-lg hover:bg-[#b52e2a] disabled:opacity-40 transition-colors">
-                  Add
+                <button onClick={createFungible} disabled={fungSaving || !newFungNombre.trim()} className="btn-primary">
+                  {fungSaving ? '…' : '+ Add'}
                 </button>
               </div>
             </div>
@@ -186,131 +181,134 @@ export default function CatalogoPage() {
         </div>
       )}
 
+      {/* Products */}
       {loading ? (
-        <div className="bg-white border border-gray-200 rounded-xl px-5 py-16 text-center text-sm text-gray-400">Loading…</div>
+        <div style={{ padding: '48px 0', textAlign: 'center', fontSize: 12, color: '#aaa' }}>Loading catalog…</div>
       ) : products.length === 0 ? (
-        <div className="bg-white border border-gray-200 rounded-xl px-5 py-16 text-center text-sm text-gray-400">
-          No products found. Check Shopify credentials.
-        </div>
+        <div style={{ padding: '48px 0', textAlign: 'center', fontSize: 12, color: '#aaa' }}>No products found. Check Shopify credentials.</div>
       ) : (
-        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse min-w-[780px]">
-              <thead>
-                <tr className="bg-gray-50">
-                  {['Product', 'SKU', 'Color', 'Size', 'Price', 'Weight', 'Fungibles'].map(h => (
-                    <th key={h} className="text-left px-5 py-3 text-[10px] font-bold uppercase tracking-[0.1em] text-gray-400 border-b border-gray-100">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {products.flatMap(product =>
-                  product.variants.map((variant, vi) => {
-                    const { color, size } = parseVariant(variant.variante);
-                    const colorHex = color ? getColorHex(color) : null;
-                    const isOpen = expandedSku === variant.sku;
-                    return (
-                      <>
-                        <tr key={`${product.id}-${variant.sku}`}
-                          className={`border-b border-gray-50 hover:bg-gray-50/70 transition-colors cursor-pointer ${isOpen ? 'bg-red-50/30' : ''}`}
-                          onClick={() => openSku(variant.sku)}>
-                          <td className="px-5 py-3">
-                            {vi === 0 ? (
-                              <div className="flex items-center gap-3">
-                                {product.image ? (
-                                  <img src={product.image} alt={product.title}
-                                    className="w-10 h-10 rounded-lg object-cover flex-shrink-0 border border-gray-100 shadow-sm" />
-                                ) : (
-                                  <div className="w-10 h-10 rounded-lg bg-gray-100 flex-shrink-0" />
-                                )}
-                                <span className="text-sm font-semibold text-gray-900 leading-tight max-w-[180px]">{product.title}</span>
-                              </div>
-                            ) : <div className="pl-[52px]" />}
-                          </td>
-                          <td className="px-5 py-3 font-mono text-xs text-gray-500">{variant.sku}</td>
-                          <td className="px-5 py-3">
-                            {color ? (
-                              <div className="flex items-center gap-2">
-                                {colorHex && <span className="w-3.5 h-3.5 rounded-full flex-shrink-0 border border-black/10" style={{ backgroundColor: colorHex }} />}
-                                <span className="text-xs text-gray-600">{color}</span>
-                              </div>
-                            ) : <span className="text-xs text-gray-300">—</span>}
-                          </td>
-                          <td className="px-5 py-3 text-xs text-gray-500">{size ?? '—'}</td>
-                          <td className="px-5 py-3 text-sm font-semibold text-gray-900">{fmt(variant.precio)}</td>
-                          <td className="px-5 py-3 font-mono text-xs text-gray-400">{variant.peso_kg} kg</td>
-                          <td className="px-5 py-3">
-                            <span className="text-[10px] text-[#D93A35] font-semibold">{isOpen ? 'Close ↑' : 'Edit →'}</span>
-                          </td>
-                        </tr>
-                        {isOpen && (
-                          <tr key={`${variant.sku}-fungibles`} className="bg-gray-50/80 border-b border-gray-100">
-                            <td colSpan={7} className="px-6 py-4">
-                              {skuLoading ? (
-                                <div className="text-xs text-gray-400">Loading…</div>
-                              ) : (
-                                <div className="space-y-3">
-                                  <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-gray-400">
-                                    Fungibles for <span className="font-mono text-gray-600">{variant.sku}</span>
-                                  </div>
-                                  {skuItems.length === 0 && (
-                                    <div className="text-xs text-gray-400">No fungibles assigned yet.</div>
-                                  )}
-                                  <div className="space-y-2">
-                                    {skuItems.map((item, idx) => (
-                                      <div key={idx} className="flex items-center gap-2">
-                                        <select value={item.fungible_id}
-                                          onChange={e => updateLine(idx, 'fungible_id', e.target.value)}
-                                          className={`${inputCls} w-48`}>
-                                          {fungibles.map(f => (
-                                            <option key={f.id} value={f.id}>{f.nombre} ({f.unidad})</option>
-                                          ))}
-                                        </select>
-                                        <input type="number" min="0" step="0.1"
-                                          value={item.cantidad}
-                                          onChange={e => updateLine(idx, 'cantidad', e.target.value)}
-                                          placeholder="qty"
-                                          className={`${inputCls} w-20`} />
-                                        <span className="text-xs text-gray-400 font-mono">{item.unidad} / unit</span>
-                                        <button onClick={() => removeLine(idx)}
-                                          className="text-gray-300 hover:text-[#D93A35] transition-colors ml-1">
-                                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                            <path d="M18 6L6 18M6 6l12 12"/>
-                                          </svg>
-                                        </button>
-                                      </div>
-                                    ))}
-                                  </div>
-                                  <div className="flex items-center gap-3 pt-1">
-                                    {fungibles.length > 0 ? (
-                                      <button onClick={addFungibleLine}
-                                        className="text-xs font-semibold text-[#D93A35] hover:text-[#b52e2a] transition-colors flex items-center gap-1">
-                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                                          <path d="M12 5v14M5 12h14"/>
-                                        </svg>
-                                        Add fungible
-                                      </button>
-                                    ) : (
-                                      <span className="text-xs text-gray-400">Create fungibles first using the button above.</span>
-                                    )}
-                                    <button onClick={() => saveSku(variant.sku)} disabled={skuSaving}
-                                      className="ml-auto px-4 py-1.5 bg-[#D93A35] text-white text-xs font-bold rounded-lg hover:bg-[#b52e2a] disabled:opacity-40 transition-colors">
-                                      {skuSaving ? 'Saving…' : 'Save'}
-                                    </button>
-                                    {skuSaveOk && <span className="text-xs text-[#0DA265] font-semibold">Saved ✓</span>}
-                                  </div>
-                                </div>
-                              )}
-                            </td>
-                          </tr>
-                        )}
-                      </>
-                    );
-                  })
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {products.map(product => (
+            <div key={product.id} className="card" style={{ padding: 0, overflow: 'hidden' }}>
+
+              {/* Product header */}
+              <div style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12, borderBottom: '1px solid #f0f0f0', background: '#fafafa' }}>
+                {product.image ? (
+                  <img src={product.image} alt={product.title} style={{ width: 32, height: 32, objectFit: 'cover', border: '1px solid #eee', flexShrink: 0 }} />
+                ) : (
+                  <div style={{ width: 32, height: 32, background: '#eee', border: '1px solid #ddd', flexShrink: 0 }} />
                 )}
-              </tbody>
-            </table>
-          </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 12, fontWeight: 900, color: '#111', textTransform: 'uppercase', letterSpacing: '0.06em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {product.title}
+                  </div>
+                  <div style={{ fontSize: 9, color: '#aaa', marginTop: 1 }}>{product.variants.length} variant{product.variants.length !== 1 ? 's' : ''}</div>
+                </div>
+              </div>
+
+              {/* Variants */}
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                {product.variants.map((variant) => {
+                  const { color, size } = parseVariant(variant.variante);
+                  const colorHex = color ? getColorHex(color) : null;
+                  const isOpen = expandedSku === variant.sku;
+
+                  return (
+                    <div key={variant.sku}>
+                      {/* Variant row */}
+                      <div
+                        onClick={() => openSku(variant.sku)}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: 10,
+                          padding: '9px 16px', cursor: 'pointer',
+                          borderBottom: '1px solid #f5f5f5',
+                          background: isOpen ? '#f7f7f2' : '#fff',
+                        }}
+                      >
+                        {colorHex ? (
+                          <div style={{ width: 12, height: 12, background: colorHex, border: '1px solid rgba(0,0,0,0.15)', flexShrink: 0 }} />
+                        ) : (
+                          <div style={{ width: 12, height: 12, border: '1px solid #ddd', flexShrink: 0 }} />
+                        )}
+
+                        <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                          <span style={{ fontSize: 11, fontWeight: 700, color: '#111' }}>{variant.variante ?? variant.sku}</span>
+                          <span style={{ fontSize: 9, color: '#aaa', fontFamily: 'monospace' }}>{variant.sku}</span>
+                        </div>
+
+                        <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 12 }}>
+                          <span style={{ fontSize: 12, fontWeight: 900, color: '#D93A35' }}>{fmt(variant.precio)}</span>
+                          <span style={{ fontSize: 9, color: '#aaa', fontFamily: 'monospace' }} className="fr-peso">
+                            <style>{`@media(max-width:400px){.fr-peso{display:none!important}}`}</style>
+                            {variant.peso_kg}kg
+                          </span>
+                          <span style={{ fontSize: 9, fontWeight: 700, color: isOpen ? '#D93A35' : '#aaa', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                            {isOpen ? 'Close' : 'Edit'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* SKU fungibles editor */}
+                      {isOpen && (
+                        <div style={{ borderBottom: '1px solid #eee', background: '#fafafa', padding: '12px 16px' }}>
+                          <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#aaa', marginBottom: 10 }}>
+                            Recipe for <span style={{ fontFamily: 'monospace', color: '#555' }}>{variant.sku}</span>
+                          </div>
+
+                          {skuLoading ? (
+                            <div style={{ fontSize: 11, color: '#aaa' }}>Loading…</div>
+                          ) : (
+                            <>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 10 }}>
+                                {skuItems.length === 0 && (
+                                  <div style={{ fontSize: 11, color: '#aaa' }}>No materials assigned yet.</div>
+                                )}
+                                {skuItems.map((item, idx) => (
+                                  <div key={idx} style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+                                    <select
+                                      value={item.fungible_id}
+                                      onChange={e => updateLine(idx, 'fungible_id', e.target.value)}
+                                      style={{ ...inputSt, flex: 1, minWidth: 100 }}
+                                    >
+                                      {fungibles.map(f => <option key={f.id} value={f.id}>{f.nombre} ({f.unidad})</option>)}
+                                    </select>
+                                    <input
+                                      type="number" min="0" step="0.1"
+                                      value={item.cantidad}
+                                      onChange={e => updateLine(idx, 'cantidad', e.target.value)}
+                                      placeholder="qty"
+                                      style={{ ...inputSt, width: 70 }}
+                                    />
+                                    <span style={{ fontSize: 10, color: '#aaa', minWidth: 24 }}>{item.unidad}/u</span>
+                                    <button
+                                      onClick={() => removeLine(idx)}
+                                      style={{ background: 'transparent', border: 'none', boxShadow: 'none', color: '#D93A35', fontSize: 16, padding: '0 4px', minHeight: 'auto' }}
+                                    >×</button>
+                                  </div>
+                                ))}
+                              </div>
+
+                              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                                {fungibles.length > 0 ? (
+                                  <button onClick={addFungibleLine} className="btn-ghost" style={{ fontSize: 9 }}>+ Add material</button>
+                                ) : (
+                                  <span style={{ fontSize: 10, color: '#aaa' }}>Create materials first.</span>
+                                )}
+                                <button onClick={() => saveSku(variant.sku)} disabled={skuSaving} className="btn-primary" style={{ fontSize: 9 }}>
+                                  {skuSaving ? 'Saving…' : 'Save recipe'}
+                                </button>
+                                {skuSaveOk && <span style={{ fontSize: 10, color: '#0DA265', fontWeight: 700 }}>✓ Saved</span>}
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </div>
