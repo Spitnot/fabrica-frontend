@@ -3,6 +3,7 @@ import { supabaseAdmin } from '@/lib/supabase/server';
 import type { Order, Customer, OrderItem } from '@/types';
 import { ShipmentPanel } from './ShipmentPanel';
 import { OrderActions } from './OrderActions';
+import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,33 +12,33 @@ type OrderFull = Order & { customer: Customer; order_items: OrderItem[] };
 async function getOrder(id: string): Promise<OrderFull | null> {
   const { data, error } = await supabaseAdmin
     .from('orders')
-    .select(`*, customer:customers(*), order_items(*)`)
+    .select('*, customer:customers(*), order_items(*)')
     .eq('id', id)
     .single();
   if (error) return null;
   return data;
 }
 
+const STATUS_COLORS: Record<string, string> = {
+  draft:       '#876693',
+  confirmado:  '#0087B8',
+  produccion:  '#E6883E',
+  listo_envio: '#0DA265',
+  enviado:     '#111111',
+  cancelado:   '#999999',
+};
+
 const STATUS_LABELS: Record<string, string> = {
   draft: 'Draft', confirmado: 'Confirmed', produccion: 'In Production',
   listo_envio: 'Ready to Ship', enviado: 'Shipped', cancelado: 'Cancelled',
 };
-const STATUS_STYLES: Record<string, string> = {
-  draft:       'text-gray-500 bg-gray-100 border-gray-200',
-  confirmado:  'text-[#0087B8] bg-blue-50 border-blue-200',
-  produccion:  'text-[#b85e00] bg-orange-50 border-orange-200',
-  listo_envio: 'text-[#876693] bg-purple-50 border-purple-200',
-  enviado:     'text-[#0DA265] bg-green-50 border-green-200',
-  cancelado:   'text-[#D93A35] bg-red-50 border-red-200',
-};
+
 const STATUS_ORDER = ['draft', 'confirmado', 'produccion', 'listo_envio', 'enviado'];
-const STATUS_COLORS: Record<string, string> = {
-  draft: '#9ca3af', confirmado: '#0087B8', produccion: '#E6883E',
-  listo_envio: '#876693', enviado: '#0DA265',
-};
 
 const fmt = (n: number) =>
-  new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'EUR' }).format(n);
+  new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n);
+
+const S: React.CSSProperties = {}; // shorthand for inline style typing
 
 interface Props { params: Promise<{ id: string }> }
 
@@ -48,162 +49,143 @@ export default async function PedidoDetallePage({ params }: Props) {
 
   const currentIdx = STATUS_ORDER.indexOf(order.status);
   const address = order.customer?.direccion_envio as any;
+  const ref = `#${id.slice(0, 8).toUpperCase()}`;
 
   return (
-    <div className="p-4 md:p-7">
+    <div style={{ padding: '16px', maxWidth: 1100, margin: '0 auto' }}>
+
+      {/* Back */}
+      <Link href="/pedidos" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#aaa', marginBottom: 16, textDecoration: 'none' }}>
+        ← Orders
+      </Link>
+
       {/* Header */}
-      <div className="flex items-start justify-between gap-3 mb-6">
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2 mb-1">
-            <span className="font-mono text-xs text-gray-400 md:hidden">{order.id.slice(0, 8)}…</span>
-            <span className="font-mono text-xs text-gray-400 hidden md:inline">{order.id}</span>
-            <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-[11px] font-semibold border rounded-md ${STATUS_STYLES[order.status]}`}>
-              <span className="w-1.5 h-1.5 rounded-full bg-current opacity-80" />
+      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, paddingBottom: 16, borderBottom: '1px solid #111', marginBottom: 16 }}>
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            <div className="page-title">{ref}</div>
+            <span className="badge" style={{ background: STATUS_COLORS[order.status] ?? '#999' }}>
               {STATUS_LABELS[order.status]}
             </span>
           </div>
-          <div className="text-xs text-gray-400 mt-1 truncate">
-            {order.customer?.contacto_nombre} · {order.customer?.company_name} ·{' '}
-            {new Date(order.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+          <div style={{ fontSize: 11, color: '#aaa', marginTop: 4 }}>
+            {order.customer?.contacto_nombre} · {order.customer?.company_name} · {new Date(order.created_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })}
           </div>
         </div>
-
-        <div className="flex gap-2 flex-wrap flex-shrink-0">
-          <a
-            href={`/api/orders/${id}/packslip`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="px-3 py-1.5 text-xs font-semibold bg-white border border-gray-200 rounded-lg text-gray-500 hover:border-gray-400 hover:text-gray-800 transition-colors"
-          >
-            ↓ Packslip
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+          <a href={`/api/orders/${id}/packslip`} target="_blank" rel="noopener noreferrer">
+            <button className="btn-ghost" style={{ fontSize: 9 }}>↓ Packslip</button>
           </a>
           <OrderActions orderId={id} status={order.status} />
         </div>
       </div>
 
-      {/* Two-column layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_290px] gap-5">
+      {/* Content — stack on mobile, 2col on desktop */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 12 }} className="fr-order-grid">
+        <style>{`@media(min-width:768px){.fr-order-grid{grid-template-columns:1fr 280px!important}}`}</style>
 
         {/* LEFT */}
-        <div className="space-y-5">
-          <section>
-            <div className="flex items-center gap-3 mb-4">
-              <span className="text-[10px] font-black tracking-[0.18em] uppercase text-gray-400 whitespace-nowrap">Commercial Info</span>
-              <div className="flex-1 h-px bg-gray-100" />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+
+          {/* Order items */}
+          <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+            <div style={{ padding: '11px 16px', borderBottom: '1px solid #111' }}>
+              <span className="section-label">Order Items</span>
             </div>
-            <div className="bg-white border border-gray-200 rounded-xl p-4">
-              <div className="grid grid-cols-2 gap-4 mb-5">
-                {[
-                  ['Client',     order.customer?.contacto_nombre ?? '—'],
-                  ['Company',    order.customer?.company_name ?? '—'],
-                  ['Total weight', `${order.peso_total} kg`],
-                  ['Created',    new Date(order.created_at).toLocaleDateString('en-GB')],
-                ].map(([label, value]) => (
-                  <div key={String(label)}>
-                    <div className="text-[10px] font-bold uppercase tracking-[0.1em] text-gray-400 mb-1">{label}</div>
-                    <div className="text-sm font-semibold text-gray-900">{value as string}</div>
-                  </div>
-                ))}
-              </div>
 
-              {/* Mobile: card per item */}
-              <div className="sm:hidden space-y-1">
-                {order.order_items?.map((item) => (
-                  <div key={item.id} className="flex items-center justify-between gap-3 py-2.5 border-b border-gray-50 last:border-0">
-                    <div className="min-w-0">
-                      <div className="text-sm font-medium text-gray-900 leading-snug">{item.nombre_producto}</div>
-                      <div className="font-mono text-[10px] text-gray-400 mt-0.5">{item.sku} · {item.peso_unitario} kg/u</div>
-                    </div>
-                    <div className="text-right flex-shrink-0">
-                      <div className="text-sm font-semibold text-gray-900">{fmt(item.cantidad * item.precio_unitario)}</div>
-                      <div className="text-xs text-gray-400">{item.cantidad} × {fmt(item.precio_unitario)}</div>
-                    </div>
+            {/* Mobile: cards */}
+            <div className="fr-items-mobile" style={{ display: 'flex', flexDirection: 'column' }}>
+              <style>{`@media(min-width:600px){.fr-items-mobile{display:none!important}.fr-items-table{display:block!important}}`}</style>
+              {order.order_items?.map((item, i) => (
+                <div key={item.id} style={{ padding: '12px 16px', borderBottom: i < order.order_items.length - 1 ? '1px solid #f5f5f5' : 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: '#111' }}>{item.nombre_producto}</div>
+                    <div style={{ fontSize: 10, color: '#aaa', fontFamily: 'monospace', marginTop: 2 }}>{item.sku} · {item.peso_unitario} kg/u</div>
                   </div>
-                ))}
-              </div>
-
-              {/* Desktop: full table */}
-              <div className="hidden sm:block overflow-x-auto">
-                <table className="w-full border-collapse min-w-[400px]">
-                  <thead>
-                    <tr className="bg-gray-50">
-                      {['Product', 'SKU', 'Qty', 'Weight', 'Unit Price', 'Subtotal'].map((h) => (
-                        <th key={h} className="text-left py-2 px-3 text-[10px] font-bold uppercase tracking-[0.1em] text-gray-400 border-b border-gray-100">{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {order.order_items?.map((item) => (
-                      <tr key={item.id} className="border-b border-gray-50 last:border-0">
-                        <td className="py-2.5 px-3 text-sm font-medium text-gray-900">{item.nombre_producto}</td>
-                        <td className="py-2.5 px-3 font-mono text-xs text-gray-400">{item.sku}</td>
-                        <td className="py-2.5 px-3 font-mono text-sm text-gray-700 text-center">{item.cantidad}</td>
-                        <td className="py-2.5 px-3 font-mono text-xs text-gray-400">{item.peso_unitario} kg</td>
-                        <td className="py-2.5 px-3 text-sm text-gray-700">{fmt(item.precio_unitario)}</td>
-                        <td className="py-2.5 px-3 text-sm font-semibold text-gray-900 text-right">{fmt(item.cantidad * item.precio_unitario)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              <div className="mt-4 pt-4 border-t border-gray-100 space-y-2">
-                {[
-                  ['Product subtotal', fmt(order.total_productos)],
-                  ['Estimated shipping', order.coste_envio_estimado ? fmt(order.coste_envio_estimado) : '—'],
-                  ...(order.coste_envio_final ? [['Final shipping', fmt(order.coste_envio_final)]] : []),
-                ].map(([label, value]) => (
-                  <div key={String(label)} className="flex justify-between text-sm text-gray-500">
-                    <span>{label}</span><span>{value}</span>
+                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 900, color: '#111' }}>{fmt(item.cantidad * item.precio_unitario)}</div>
+                    <div style={{ fontSize: 10, color: '#aaa' }}>{item.cantidad} × {fmt(item.precio_unitario)}</div>
                   </div>
-                ))}
-                <div className="flex justify-between pt-2 border-t border-gray-100">
-                  <span className="font-semibold text-sm text-gray-900">Total</span>
-                  <span className="text-lg font-black text-[#D93A35]" style={{ fontFamily: 'var(--font-alexandria)' }}>
-                    {fmt(order.total_productos)}
-                  </span>
                 </div>
+              ))}
+            </div>
+
+            {/* Desktop: table */}
+            <div className="fr-items-table" style={{ display: 'none', overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ background: '#f9f9f9', borderBottom: '1px solid #eee' }}>
+                    {['Product', 'SKU', 'Qty', 'Weight', 'Unit price', 'Subtotal'].map((h) => (
+                      <th key={h} style={{ textAlign: 'left', padding: '8px 14px', fontSize: 8, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#aaa' }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {order.order_items?.map((item, i) => (
+                    <tr key={item.id} style={{ borderBottom: i < order.order_items.length - 1 ? '1px solid #f5f5f5' : 'none' }}>
+                      <td style={{ padding: '9px 14px', fontSize: 12, fontWeight: 600, color: '#111' }}>{item.nombre_producto}</td>
+                      <td style={{ padding: '9px 14px', fontSize: 10, color: '#aaa', fontFamily: 'monospace' }}>{item.sku}</td>
+                      <td style={{ padding: '9px 14px', fontSize: 12, fontWeight: 700, color: '#111', textAlign: 'center' }}>{item.cantidad}</td>
+                      <td style={{ padding: '9px 14px', fontSize: 10, color: '#aaa', fontFamily: 'monospace' }}>{item.peso_unitario} kg</td>
+                      <td style={{ padding: '9px 14px', fontSize: 12, color: '#555' }}>{fmt(item.precio_unitario)}</td>
+                      <td style={{ padding: '9px 14px', fontSize: 12, fontWeight: 900, color: '#111', textAlign: 'right' }}>{fmt(item.cantidad * item.precio_unitario)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Totals */}
+            <div style={{ padding: '12px 16px', borderTop: '1px solid #eee', display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {[
+                ['Product subtotal', fmt(order.total_productos)],
+                ['Est. shipping', order.coste_envio_estimado ? fmt(order.coste_envio_estimado) : '—'],
+                ...(order.coste_envio_final ? [['Final shipping', fmt(order.coste_envio_final)]] : []),
+              ].map(([label, value]) => (
+                <div key={String(label)} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#777' }}>
+                  <span>{label}</span><span>{value}</span>
+                </div>
+              ))}
+              <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 8, borderTop: '1px solid #eee' }}>
+                <span style={{ fontSize: 12, fontWeight: 700, color: '#111' }}>Total</span>
+                <span style={{ fontSize: 20, fontWeight: 900, color: '#D93A35' }}>{fmt(order.total_productos)}</span>
               </div>
             </div>
-          </section>
+          </div>
 
+          {/* Shipment panel */}
           {order.status === 'listo_envio' && (
-            <section>
-              <div className="flex items-center gap-3 mb-4">
-                <span className="text-[10px] font-black tracking-[0.18em] uppercase text-gray-400 whitespace-nowrap">Generate Shipment</span>
-                <div className="flex-1 h-px bg-[#D93A35]/20" />
+            <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+              <div style={{ padding: '11px 16px', borderBottom: '1px solid #D93A35' }}>
+                <span className="section-label" style={{ color: '#D93A35' }}>Generate Shipment</span>
               </div>
-              <ShipmentPanel orderId={id} pesoTotal={order.peso_total} destination={address} />
-            </section>
+              <div style={{ padding: 16 }}>
+                <ShipmentPanel orderId={id} pesoTotal={order.peso_total} destination={address} />
+              </div>
+            </div>
           )}
         </div>
 
-        {/* RIGHT */}
-        <div className="space-y-4">
+        {/* RIGHT — sidebar info */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+
           {/* Status timeline */}
-          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-            <div className="px-4 py-3 border-b border-gray-100">
-              <span className="text-[10px] font-black tracking-[0.12em] uppercase text-gray-400"
-                    style={{ fontFamily: 'var(--font-alexandria)' }}>Status</span>
+          <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+            <div style={{ padding: '11px 16px', borderBottom: '1px solid #eee' }}>
+              <span className="section-label">Status</span>
             </div>
-            <div className="p-4">
+            <div style={{ padding: '14px 16px' }}>
               {STATUS_ORDER.map((s, i) => {
                 const isDone = i < currentIdx;
                 const isCurrent = i === currentIdx;
                 const color = STATUS_COLORS[s];
                 return (
-                  <div key={s} className="flex items-start gap-3 pb-4 last:pb-0 relative">
+                  <div key={s} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, paddingBottom: 12, position: 'relative' }}>
                     {i < STATUS_ORDER.length - 1 && (
-                      <div className="absolute left-[4px] top-[10px] w-px h-full"
-                        style={{ background: isDone ? `${color}40` : '#e5e7eb' }} />
+                      <div style={{ position: 'absolute', left: 4, top: 12, width: 1, height: '100%', background: isDone ? `${color}60` : '#e5e5e5' }} />
                     )}
-                    <div className="relative z-10 w-2.5 h-2.5 rounded-full mt-1 flex-shrink-0"
-                         style={{
-                           background: isCurrent ? color : isDone ? color : '#e5e7eb',
-                           boxShadow: isCurrent ? `0 0 0 3px ${color}20` : 'none',
-                         }} />
-                    <div className="text-[13px] font-medium"
-                         style={{ color: isCurrent ? color : isDone ? '#374151' : '#9ca3af' }}>
+                    <div style={{ width: 9, height: 9, flexShrink: 0, marginTop: 3, border: `2px solid ${isCurrent || isDone ? color : '#ddd'}`, background: isCurrent ? color : isDone ? `${color}40` : 'transparent', position: 'relative', zIndex: 1 }} />
+                    <div style={{ fontSize: 12, fontWeight: isCurrent ? 900 : 400, color: isCurrent ? color : isDone ? '#555' : '#bbb', letterSpacing: '0.03em' }}>
                       {STATUS_LABELS[s]}
                     </div>
                   </div>
@@ -213,33 +195,29 @@ export default async function PedidoDetallePage({ params }: Props) {
           </div>
 
           {/* Logistics */}
-          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-            <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
-              <span className="text-[10px] font-black tracking-[0.12em] uppercase text-gray-400"
-                    style={{ fontFamily: 'var(--font-alexandria)' }}>Logistics</span>
+          <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+            <div style={{ padding: '11px 16px', borderBottom: '1px solid #eee', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span className="section-label">Logistics</span>
               {order.status === 'enviado' && order.packlink_shipment_id && (
                 <form action={`/api/orders/${id}/tracking`} method="POST">
-                  <button type="submit" className="text-[10px] font-semibold text-gray-400 hover:text-[#D93A35] transition-colors">
-                    ↻ Update tracking
-                  </button>
+                  <button type="submit" className="btn-ghost" style={{ fontSize: 8, padding: '3px 8px', boxShadow: 'none' }}>↻ Update</button>
                 </form>
               )}
             </div>
-            <div className="p-4 space-y-2">
+            <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
               {[
                 ['Est. shipping', order.coste_envio_estimado ? fmt(order.coste_envio_estimado) : '—'],
                 ['Final shipping', order.coste_envio_final ? fmt(order.coste_envio_final) : '—'],
                 ['Shipment ID', order.packlink_shipment_id ?? '—'],
               ].map(([label, value]) => (
-                <div key={String(label)} className="flex justify-between text-sm">
-                  <span className="text-gray-400">{label}</span>
-                  <span className="font-mono text-xs text-gray-700">{value}</span>
+                <div key={String(label)} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
+                  <span style={{ color: '#aaa' }}>{label}</span>
+                  <span style={{ fontFamily: 'monospace', fontSize: 10, color: '#555', fontWeight: 600 }}>{value}</span>
                 </div>
               ))}
               {order.tracking_url && (
-                <div className="pt-2 border-t border-gray-100">
-                  <a href={order.tracking_url} target="_blank" rel="noopener noreferrer"
-                    className="text-xs text-[#0087B8] underline underline-offset-2">
+                <div style={{ paddingTop: 8, borderTop: '1px solid #f0f0f0' }}>
+                  <a href={order.tracking_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 10, color: '#0087B8', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
                     View tracking →
                   </a>
                 </div>
@@ -248,22 +226,24 @@ export default async function PedidoDetallePage({ params }: Props) {
           </div>
 
           {/* Client */}
-          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-            <div className="px-4 py-3 border-b border-gray-100">
-              <span className="text-[10px] font-black tracking-[0.12em] uppercase text-gray-400"
-                    style={{ fontFamily: 'var(--font-alexandria)' }}>Client</span>
+          <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+            <div style={{ padding: '11px 16px', borderBottom: '1px solid #eee', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span className="section-label">Client</span>
+              <Link href={`/clientes/${order.customer?.id}`} style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#D93A35' }}>
+                View →
+              </Link>
             </div>
-            <div className="p-4 space-y-2">
+            <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 7 }}>
               {[
-                ['Name',    order.customer?.contacto_nombre ?? '—'],
+                ['Name', order.customer?.contacto_nombre ?? '—'],
                 ['Company', order.customer?.company_name ?? '—'],
-                ['Email',   order.customer?.email ?? '—'],
-                ['Phone',   order.customer?.telefono ?? '—'],
+                ['Email', order.customer?.email ?? '—'],
+                ['Phone', order.customer?.telefono ?? '—'],
                 ['Address', address ? `${address.street}, ${address.postal_code} ${address.city}` : '—'],
               ].map(([label, value]) => (
-                <div key={String(label)} className="flex justify-between text-sm gap-2">
-                  <span className="text-gray-400 flex-shrink-0">{label}</span>
-                  <span className="text-gray-700 font-medium text-right text-xs">{value}</span>
+                <div key={String(label)} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, fontSize: 11 }}>
+                  <span style={{ color: '#aaa', flexShrink: 0 }}>{label}</span>
+                  <span style={{ color: '#555', fontWeight: 600, textAlign: 'right', fontSize: 10 }}>{value}</span>
                 </div>
               ))}
             </div>

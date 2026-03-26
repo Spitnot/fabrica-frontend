@@ -4,51 +4,34 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabaseClient } from '@/lib/supabase/client';
 import type { AdminRole } from '@/types';
 
-interface AdminUser {
-  id: string;
-  email: string;
-  full_name: string;
-  role: AdminRole;
-  created_at: string;
-  last_sign_in_at: string | null;
-}
+interface AdminUser { id: string; email: string; full_name: string; role: AdminRole; created_at: string; last_sign_in_at: string | null; }
 
-const ROLE_STYLES: Record<AdminRole, string> = {
-  admin:   'text-[#D93A35] bg-red-50 border-red-200',
-  manager: 'text-[#0087B8] bg-blue-50 border-blue-200',
-  viewer:  'text-gray-600 bg-gray-100 border-gray-200',
-};
-
-const ROLE_LABELS: Record<AdminRole, string> = {
-  admin:   'Admin',
-  manager: 'Manager',
-  viewer:  'Viewer',
-};
-
+const ROLE_COLORS: Record<AdminRole, string> = { admin: '#D93A35', manager: '#0087B8', viewer: '#999' };
+const ROLE_LABELS: Record<AdminRole, string> = { admin: 'Admin', manager: 'Manager', viewer: 'Viewer' };
 const ROLE_DESCRIPTIONS: Record<AdminRole, string> = {
-  admin:   'Full access — can manage team, clients, orders, and pricing',
-  manager: 'Can manage clients, orders, and pricing — cannot manage team',
-  viewer:  'Read-only access to all sections',
+  admin: 'Full access — team, clients, orders, pricing',
+  manager: 'Clients, orders and pricing — no team management',
+  viewer: 'Read-only access to all sections',
 };
+
+const initials = (name: string) => (name || '').split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase() || '—';
 
 export default function UsuariosPage() {
-  const [users, setUsers]           = useState<AdminUser[]>([]);
-  const [loading, setLoading]       = useState(true);
+  const [users, setUsers]             = useState<AdminUser[]>([]);
+  const [loading, setLoading]         = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [currentRole, setCurrentRole]     = useState<AdminRole | null>(null);
-
-  const [showInvite, setShowInvite] = useState(false);
-  const [inviteName, setInviteName] = useState('');
+  const [currentRole, setCurrentRole] = useState<AdminRole | null>(null);
+  const [showInvite, setShowInvite]   = useState(false);
+  const [inviteName, setInviteName]   = useState('');
   const [inviteEmail, setInviteEmail] = useState('');
-  const [inviteRole, setInviteRole] = useState<AdminRole>('manager');
-  const [inviting, setInviting]     = useState(false);
+  const [inviteRole, setInviteRole]   = useState<AdminRole>('manager');
+  const [inviting, setInviting]       = useState(false);
   const [inviteError, setInviteError] = useState('');
-  const [inviteSent, setInviteSent] = useState(false);
-
-  const [editUser, setEditUser]     = useState<AdminUser | null>(null);
-  const [editRole, setEditRole]     = useState<AdminRole>('manager');
-  const [editSaving, setEditSaving] = useState(false);
-  const [editError, setEditError]   = useState('');
+  const [inviteSent, setInviteSent]   = useState(false);
+  const [editUser, setEditUser]       = useState<AdminUser | null>(null);
+  const [editRole, setEditRole]       = useState<AdminRole>('manager');
+  const [editSaving, setEditSaving]   = useState(false);
+  const [editError, setEditError]     = useState('');
 
   const loadUsers = useCallback(async () => {
     setLoading(true);
@@ -61,10 +44,7 @@ export default function UsuariosPage() {
   useEffect(() => {
     async function init() {
       const { data: { user } } = await supabaseClient.auth.getUser();
-      if (user) {
-        setCurrentUserId(user.id);
-        setCurrentRole(user.user_metadata?.role as AdminRole);
-      }
+      if (user) { setCurrentUserId(user.id); setCurrentRole(user.user_metadata?.role as AdminRole); }
       loadUsers();
     }
     init();
@@ -73,25 +53,14 @@ export default function UsuariosPage() {
   async function handleInvite(e: React.FormEvent) {
     e.preventDefault();
     setInviteError(''); setInviting(true); setInviteSent(false);
-
     try {
-      // Crear usuario + enviar email — todo en el servidor
-      const res = await fetch('/api/admin/users', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ full_name: inviteName, email: inviteEmail, role: inviteRole }),
-      });
+      const res = await fetch('/api/admin/users', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ full_name: inviteName, email: inviteEmail, role: inviteRole }) });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? 'Error creating user');
-
-      setInviteSent(true);
-      setInviteName(''); setInviteEmail(''); setInviteRole('manager');
+      setInviteSent(true); setInviteName(''); setInviteEmail(''); setInviteRole('manager');
       loadUsers();
-    } catch (err: any) {
-      setInviteError(err.message);
-    } finally {
-      setInviting(false);
-    }
+    } catch (err: any) { setInviteError(err.message); }
+    finally { setInviting(false); }
   }
 
   async function handleEditRole(e: React.FormEvent) {
@@ -99,122 +68,88 @@ export default function UsuariosPage() {
     if (!editUser) return;
     setEditError(''); setEditSaving(true);
     try {
-      const res = await fetch(`/api/admin/users/${editUser.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ role: editRole }),
-      });
+      const res = await fetch(`/api/admin/users/${editUser.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ role: editRole }) });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? 'Error updating role');
-      setEditUser(null);
-      loadUsers();
-    } catch (err: any) {
-      setEditError(err.message);
-    } finally {
-      setEditSaving(false);
-    }
+      setEditUser(null); loadUsers();
+    } catch (err: any) { setEditError(err.message); }
+    finally { setEditSaving(false); }
   }
 
   async function handleDelete(user: AdminUser) {
-    if (!confirm(`Remove ${user.full_name || user.email} from the team? This cannot be undone.`)) return;
+    if (!confirm(`Remove ${user.full_name || user.email}? This cannot be undone.`)) return;
     const res = await fetch(`/api/admin/users/${user.id}`, { method: 'DELETE' });
     if (res.ok) loadUsers();
   }
 
   const isAdmin = currentRole === 'admin';
-  const inputCls = "w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-[#D93A35] outline-none transition-colors";
+  const inputSt: React.CSSProperties = { fontFamily: 'var(--font-main)', fontSize: 12, border: '1px solid #111', borderRadius: 0, padding: '7px 10px', background: '#fff', color: '#111', outline: 'none', width: '100%' };
 
   return (
-    <div className="p-6 md:p-7 max-w-3xl">
-      <div className="flex items-center justify-between mb-6">
+    <div style={{ padding: 16, maxWidth: 900, margin: '0 auto' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 16, borderBottom: '1px solid #111', marginBottom: 16, flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <h1 className="text-lg font-black tracking-wider uppercase text-gray-900"
-              style={{ fontFamily: 'var(--font-alexandria)' }}>
-            Team
-          </h1>
-          <p className="text-xs text-gray-400 mt-0.5">Admin users and access levels</p>
+          <div className="page-title">Team</div>
+          <div style={{ fontSize: 10, color: '#aaa', marginTop: 3 }}>Admin users and access levels</div>
         </div>
         {isAdmin && !showInvite && (
-          <button
-            onClick={() => { setShowInvite(true); setInviteSent(false); setInviteError(''); }}
-            className="px-4 py-2 bg-[#D93A35] text-white text-sm font-semibold rounded-lg hover:bg-[#b52e2a] transition-colors"
-          >
-            + Invite member
+          <button className="btn-primary" onClick={() => { setShowInvite(true); setInviteSent(false); setInviteError(''); }}>
+            + Invite Member
           </button>
         )}
       </div>
 
       {/* Invite form */}
       {showInvite && (
-        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden mb-5">
-          <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
-            <span className="text-[10px] font-black tracking-[0.12em] uppercase text-gray-400"
-                  style={{ fontFamily: 'var(--font-alexandria)' }}>Invite member</span>
-            <button onClick={() => { setShowInvite(false); setInviteSent(false); setInviteError(''); }}
-                    className="text-gray-400 hover:text-gray-600 text-sm">✕</button>
+        <div className="card" style={{ padding: 0, overflow: 'hidden', marginBottom: 12 }}>
+          <div style={{ padding: '11px 16px', borderBottom: '1px solid #111', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span className="section-label">Invite Member</span>
+            <button onClick={() => { setShowInvite(false); setInviteSent(false); setInviteError(''); }} style={{ background: 'transparent', border: 'none', boxShadow: 'none', color: '#aaa', padding: '2px 6px', fontSize: 14 }}>✕</button>
           </div>
 
           {inviteSent ? (
-            <div className="p-5 space-y-4">
-              <div className="flex items-center gap-2 text-[#0DA265] text-sm font-semibold">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <path d="M20 6L9 17l-5-5"/>
-                </svg>
-                Team member created. Invite email sent successfully.
-              </div>
-              <button onClick={() => { setShowInvite(false); setInviteSent(false); }}
-                      className="text-sm font-semibold text-[#D93A35] hover:underline">
-                Done
-              </button>
+            <div style={{ padding: 20 }}>
+              <div style={{ fontSize: 12, color: '#0DA265', fontWeight: 700, marginBottom: 12 }}>✓ Team member created — invite email sent.</div>
+              <button onClick={() => { setShowInvite(false); setInviteSent(false); }} className="btn-ghost">Done</button>
             </div>
           ) : (
-            <form onSubmit={handleInvite} className="p-5 space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-bold tracking-[0.1em] uppercase text-gray-400">
-                    Full Name <span className="text-[#D93A35]">*</span>
-                  </label>
-                  <input type="text" value={inviteName} onChange={e => setInviteName(e.target.value)}
-                         placeholder="Maria García" className={inputCls} required />
+            <form onSubmit={handleInvite} style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }} className="fr-invite-grid">
+                <style>{`@media(max-width:480px){.fr-invite-grid{grid-template-columns:1fr!important}}`}</style>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                  <label style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#aaa' }}>Full Name *</label>
+                  <input type="text" value={inviteName} onChange={e => setInviteName(e.target.value)} placeholder="Maria García" style={inputSt} required />
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-bold tracking-[0.1em] uppercase text-gray-400">
-                    Email <span className="text-[#D93A35]">*</span>
-                  </label>
-                  <input type="email" value={inviteEmail} onChange={e => setInviteEmail(e.target.value)}
-                         placeholder="maria@firmarollers.com" className={inputCls} required />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                  <label style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#aaa' }}>Email *</label>
+                  <input type="email" value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder="maria@firmarollers.com" style={inputSt} required />
                 </div>
               </div>
-              <div className="space-y-2">
-                <label className="text-[11px] font-bold tracking-[0.1em] uppercase text-gray-400">Role</label>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <label style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#aaa' }}>Role</label>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   {(['admin', 'manager', 'viewer'] as AdminRole[]).map((r) => (
-                    <button key={r} type="button" onClick={() => setInviteRole(r)}
-                            className={`p-3 rounded-lg border text-left transition-colors ${
-                              inviteRole === r
-                                ? 'border-[#D93A35]/50 bg-red-50'
-                                : 'border-gray-200 hover:border-gray-300'
-                            }`}>
-                      <div className="text-sm font-semibold text-gray-900 mb-0.5">{ROLE_LABELS[r]}</div>
-                      <div className="text-[11px] text-gray-400 leading-tight">{ROLE_DESCRIPTIONS[r]}</div>
+                    <button key={r} type="button" onClick={() => setInviteRole(r)} style={{
+                      padding: '8px 14px', background: inviteRole === r ? '#111' : '#fff',
+                      color: inviteRole === r ? '#fff' : '#111', border: '1px solid #111',
+                      boxShadow: inviteRole === r ? 'none' : '2px 2px 0 #111',
+                      transform: inviteRole === r ? 'translate(2px,2px)' : 'none',
+                      fontSize: 10, fontWeight: 900, letterSpacing: '0.12em', textTransform: 'uppercase',
+                    }}>
+                      {ROLE_LABELS[r]}
                     </button>
                   ))}
                 </div>
+                <div style={{ fontSize: 10, color: '#aaa', marginTop: 2 }}>{ROLE_DESCRIPTIONS[inviteRole]}</div>
               </div>
+
               {inviteError && (
-                <div className="px-3 py-2 bg-red-50 border border-red-200 rounded-lg text-xs text-[#D93A35]">
-                  {inviteError}
-                </div>
+                <div style={{ padding: '8px 12px', background: '#fff8f8', border: '1px solid #D93A35', fontSize: 11, color: '#D93A35' }}>{inviteError}</div>
               )}
-              <div className="flex gap-3 pt-1">
-                <button type="submit" disabled={inviting}
-                        className="px-5 py-2 bg-[#D93A35] text-white text-sm font-bold rounded-lg hover:bg-[#b52e2a] disabled:opacity-40 transition-colors">
-                  {inviting ? 'Creating…' : 'Create & Send Invite'}
-                </button>
-                <button type="button" onClick={() => { setShowInvite(false); setInviteError(''); }}
-                        className="px-5 py-2 border border-gray-200 text-sm font-semibold text-gray-600 rounded-lg hover:border-gray-300 transition-colors">
-                  Cancel
-                </button>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button type="submit" disabled={inviting} className="btn-primary">{inviting ? 'Creating…' : 'Create & Send Invite'}</button>
+                <button type="button" onClick={() => { setShowInvite(false); setInviteError(''); }} className="btn-ghost">Cancel</button>
               </div>
             </form>
           )}
@@ -222,142 +157,97 @@ export default function UsuariosPage() {
       )}
 
       {/* Users list */}
-      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse min-w-[500px]">
+      <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 480 }}>
             <thead>
-              <tr className="bg-gray-50">
+              <tr style={{ background: '#111' }}>
                 {['Member', 'Role', 'Last sign in', 'Joined', ...(isAdmin ? [''] : [])].map((h) => (
-                  <th key={h} className="text-left px-5 py-3 text-[10px] font-bold uppercase tracking-[0.1em] text-gray-400 border-b border-gray-100">
-                    {h}
-                  </th>
+                  <th key={h} style={{ textAlign: 'left', padding: '9px 14px', fontSize: 8, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#fff' }}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {loading ? (
-                <tr>
-                  <td colSpan={isAdmin ? 5 : 4} className="px-5 py-12 text-center">
-                    <div className="flex items-center justify-center gap-2 text-gray-400 text-sm">
-                      <div className="w-4 h-4 border border-gray-200 border-t-[#D93A35] rounded-full animate-spin" />
-                      Loading team…
+                <tr><td colSpan={isAdmin ? 5 : 4} style={{ padding: '48px 16px', textAlign: 'center', fontSize: 12, color: '#aaa' }}>Loading…</td></tr>
+              ) : users.length === 0 ? (
+                <tr><td colSpan={isAdmin ? 5 : 4} style={{ padding: '48px 16px', textAlign: 'center', fontSize: 12, color: '#aaa' }}>No team members yet</td></tr>
+              ) : users.map((u, i) => (
+                <tr key={u.id} style={{ borderBottom: i < users.length - 1 ? '1px solid #f5f5f5' : 'none' }}>
+                  <td style={{ padding: '9px 14px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <div style={{ width: 28, height: 28, background: ROLE_COLORS[u.role] ?? '#555', border: '1px solid #111', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 900, color: '#fff', flexShrink: 0 }}>
+                        {initials(u.full_name || u.email)}
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: '#111' }}>
+                          {u.full_name || '—'}
+                          {u.id === currentUserId && <span style={{ marginLeft: 6, fontSize: 9, color: '#aaa', fontWeight: 400 }}>(you)</span>}
+                        </div>
+                        <div style={{ fontSize: 10, color: '#aaa' }}>{u.email}</div>
+                      </div>
                     </div>
                   </td>
-                </tr>
-              ) : users.length === 0 ? (
-                <tr>
-                  <td colSpan={isAdmin ? 5 : 4} className="px-5 py-10 text-center text-sm text-gray-400">
-                    No team members yet
+                  <td style={{ padding: '9px 14px' }}>
+                    <span className="badge" style={{ background: ROLE_COLORS[u.role] ?? '#555' }}>{ROLE_LABELS[u.role]}</span>
                   </td>
+                  <td style={{ padding: '9px 14px', fontSize: 10, color: '#bbb', fontVariantNumeric: 'tabular-nums' }}>
+                    {u.last_sign_in_at ? new Date(u.last_sign_in_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: '2-digit' }) : 'Never'}
+                  </td>
+                  <td style={{ padding: '9px 14px', fontSize: 10, color: '#bbb', fontVariantNumeric: 'tabular-nums' }}>
+                    {new Date(u.created_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: '2-digit' })}
+                  </td>
+                  {isAdmin && (
+                    <td style={{ padding: '9px 14px' }}>
+                      {u.id !== currentUserId && (
+                        <div style={{ display: 'flex', gap: 12 }}>
+                          <button onClick={() => { setEditUser(u); setEditRole(u.role); setEditError(''); }} style={{ background: 'transparent', border: 'none', boxShadow: 'none', fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#aaa', padding: 0, minHeight: 'auto' }}>
+                            Edit
+                          </button>
+                          <button onClick={() => handleDelete(u)} style={{ background: 'transparent', border: 'none', boxShadow: 'none', fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#D93A35', padding: 0, minHeight: 'auto' }}>
+                            Remove
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                  )}
                 </tr>
-              ) : (
-                users.map((u) => (
-                  <tr key={u.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors">
-                    <td className="px-5 py-3">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-7 h-7 rounded-md bg-[#D93A35] flex items-center justify-center text-[11px] font-bold text-white flex-shrink-0">
-                          {(u.full_name || u.email).split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase()}
-                        </div>
-                        <div>
-                          <div className="text-sm font-semibold text-gray-900">
-                            {u.full_name || '—'}
-                            {u.id === currentUserId && (
-                              <span className="ml-1.5 text-[10px] font-bold text-gray-400">(you)</span>
-                            )}
-                          </div>
-                          <div className="text-xs text-gray-400">{u.email}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-5 py-3">
-                      <span className={`inline-flex items-center px-2 py-0.5 text-[11px] font-semibold border rounded-md ${ROLE_STYLES[u.role]}`}>
-                        {ROLE_LABELS[u.role]}
-                      </span>
-                    </td>
-                    <td className="px-5 py-3 font-mono text-xs text-gray-400">
-                      {u.last_sign_in_at
-                        ? new Date(u.last_sign_in_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
-                        : 'Never'}
-                    </td>
-                    <td className="px-5 py-3 font-mono text-xs text-gray-400">
-                      {new Date(u.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
-                    </td>
-                    {isAdmin && (
-                      <td className="px-5 py-3">
-                        {u.id !== currentUserId && (
-                          <div className="flex items-center gap-3">
-                            <button onClick={() => { setEditUser(u); setEditRole(u.role); setEditError(''); }}
-                                    className="text-xs font-semibold text-gray-400 hover:text-[#D93A35] transition-colors">
-                              Edit role
-                            </button>
-                            <button onClick={() => handleDelete(u)}
-                                    className="text-xs font-semibold text-gray-400 hover:text-[#D93A35] transition-colors">
-                              Remove
-                            </button>
-                          </div>
-                        )}
-                      </td>
-                    )}
-                  </tr>
-                ))
-              )}
+              ))}
             </tbody>
           </table>
         </div>
       </div>
 
-      {/* Role descriptions reference */}
-      <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
-        {(['admin', 'manager', 'viewer'] as AdminRole[]).map((r) => (
-          <div key={r} className="px-3 py-2.5 bg-gray-50 border border-gray-100 rounded-lg">
-            <span className={`inline-flex items-center px-1.5 py-0.5 text-[10px] font-bold border rounded mb-1.5 ${ROLE_STYLES[r]}`}>
-              {ROLE_LABELS[r]}
-            </span>
-            <p className="text-[11px] text-gray-400 leading-tight">{ROLE_DESCRIPTIONS[r]}</p>
-          </div>
-        ))}
-      </div>
-
       {/* Edit role modal */}
       {editUser && (
-        <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden">
-            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-              <span className="text-sm font-black uppercase tracking-wider text-gray-900">Edit Role</span>
-              <button onClick={() => setEditUser(null)} className="text-gray-400 hover:text-gray-600">✕</button>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <div className="card" style={{ maxWidth: 360, width: '100%', padding: 0, overflow: 'hidden' }}>
+            <div style={{ padding: '12px 16px', borderBottom: '1px solid #111', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span className="section-label">Edit Role</span>
+              <button onClick={() => setEditUser(null)} style={{ background: 'transparent', border: 'none', boxShadow: 'none', color: '#aaa', padding: '2px 6px', fontSize: 14 }}>✕</button>
             </div>
-            <form onSubmit={handleEditRole} className="p-5 space-y-4">
-              <div>
-                <div className="text-sm font-semibold text-gray-900">{editUser.full_name || editUser.email}</div>
-                <div className="text-xs text-gray-400">{editUser.email}</div>
-              </div>
-              <div className="space-y-2">
+            <form onSubmit={handleEditRole} style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: '#111' }}>{editUser.full_name || editUser.email}</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {(['admin', 'manager', 'viewer'] as AdminRole[]).map((r) => (
-                  <button key={r} type="button" onClick={() => setEditRole(r)}
-                          className={`w-full p-3 rounded-lg border text-left transition-colors ${
-                            editRole === r
-                              ? 'border-[#D93A35]/50 bg-red-50'
-                              : 'border-gray-200 hover:border-gray-300'
-                          }`}>
-                    <div className="text-sm font-semibold text-gray-900">{ROLE_LABELS[r]}</div>
-                    <div className="text-[11px] text-gray-400">{ROLE_DESCRIPTIONS[r]}</div>
+                  <button key={r} type="button" onClick={() => setEditRole(r)} style={{
+                    padding: '10px 14px', background: editRole === r ? '#111' : '#fff',
+                    color: editRole === r ? '#fff' : '#111', border: '1px solid #111',
+                    boxShadow: editRole === r ? 'none' : '2px 2px 0 #111',
+                    transform: editRole === r ? 'translate(2px,2px)' : 'none',
+                    textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 2,
+                  }}>
+                    <span style={{ fontSize: 10, fontWeight: 900, letterSpacing: '0.1em', textTransform: 'uppercase' }}>{ROLE_LABELS[r]}</span>
+                    <span style={{ fontSize: 9, fontWeight: 400, color: editRole === r ? '#ccc' : '#aaa', letterSpacing: 0, textTransform: 'none' }}>{ROLE_DESCRIPTIONS[r]}</span>
                   </button>
                 ))}
               </div>
-              {editError && (
-                <div className="px-3 py-2 bg-red-50 border border-red-200 rounded-lg text-xs text-[#D93A35]">
-                  {editError}
-                </div>
-              )}
-              <div className="flex gap-3">
-                <button type="submit" disabled={editSaving || editRole === editUser.role}
-                        className="flex-1 py-2 bg-[#D93A35] text-white text-sm font-bold rounded-lg hover:bg-[#b52e2a] disabled:opacity-40 transition-colors">
+              {editError && <div style={{ padding: '8px 12px', background: '#fff8f8', border: '1px solid #D93A35', fontSize: 11, color: '#D93A35' }}>{editError}</div>}
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button type="submit" disabled={editSaving || editRole === editUser.role} className="btn-primary" style={{ flex: 1, justifyContent: 'center' }}>
                   {editSaving ? 'Saving…' : 'Save'}
                 </button>
-                <button type="button" onClick={() => setEditUser(null)}
-                        className="flex-1 py-2 border border-gray-200 text-sm font-semibold text-gray-600 rounded-lg hover:border-gray-300 transition-colors">
-                  Cancel
-                </button>
+                <button type="button" onClick={() => setEditUser(null)} className="btn-ghost" style={{ flex: 1, justifyContent: 'center' }}>Cancel</button>
               </div>
             </form>
           </div>

@@ -3,10 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-interface Props {
-  orderId: string;
-  status: string;
-}
+interface Props { orderId: string; status: string; }
 
 export function OrderActions({ orderId, status }: Props) {
   const router = useRouter();
@@ -24,37 +21,36 @@ export function OrderActions({ orderId, status }: Props) {
     setLoading(null);
   }
 
-  const btn = 'px-3 py-1.5 text-xs font-semibold bg-white border border-gray-200 rounded-lg transition-colors disabled:opacity-40';
-
   return (
-    <>
+    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
       {status === 'confirmado' && (
         <button
           onClick={() => advance('produccion')}
           disabled={loading !== null}
-          className={`${btn} text-gray-700 hover:border-orange-300 hover:text-[#b85e00]`}
+          style={{ background: '#E6883E', color: '#fff', borderColor: '#E6883E' }}
         >
-          {loading === 'produccion' ? 'Updating…' : '→ Move to Production'}
+          {loading === 'produccion' ? 'Updating…' : '→ Production'}
         </button>
       )}
       {status === 'produccion' && (
         <button
           onClick={() => advance('listo_envio')}
           disabled={loading !== null}
-          className={`${btn} text-gray-700 hover:border-purple-300 hover:text-[#876693]`}
+          style={{ background: '#876693', color: '#fff', borderColor: '#876693' }}
         >
-          {loading === 'listo_envio' ? 'Updating…' : '→ Mark Ready to Ship'}
+          {loading === 'listo_envio' ? 'Updating…' : '→ Ready to Ship'}
         </button>
       )}
       {status !== 'cancelado' && status !== 'enviado' && status !== 'listo_envio' && (
         <button
           onClick={() => advance('cancelado')}
           disabled={loading !== null}
-          className={`${btn} text-[#D93A35] border-red-200 hover:bg-red-50`}
+          className="btn-ghost"
+          style={{ color: '#D93A35', borderColor: '#D93A35' }}
         >
           {loading === 'cancelado' ? 'Cancelling…' : 'Cancel'}
         </button>
       )}
-    </>
+    </div>
   );
 }

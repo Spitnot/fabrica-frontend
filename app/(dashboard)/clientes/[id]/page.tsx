@@ -4,210 +4,140 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 
+const STATUS_COLORS: Record<string, string> = {
+  draft: '#876693', confirmado: '#0087B8', produccion: '#E6883E',
+  listo_envio: '#0DA265', enviado: '#111', cancelado: '#999',
+};
 const STATUS_LABELS: Record<string, string> = {
   draft: 'Draft', confirmado: 'Confirmed', produccion: 'In Production',
   listo_envio: 'Ready to Ship', enviado: 'Shipped', cancelado: 'Cancelled',
 };
-const STATUS_STYLES: Record<string, string> = {
-  draft:       'text-gray-500 bg-gray-100 border-gray-200',
-  confirmado:  'text-[#0087B8] bg-blue-50 border-blue-200',
-  produccion:  'text-[#b85e00] bg-orange-50 border-orange-200',
-  listo_envio: 'text-[#876693] bg-purple-50 border-purple-200',
-  enviado:     'text-[#0DA265] bg-green-50 border-green-200',
-  cancelado:   'text-[#D93A35] bg-red-50 border-red-200',
-};
-const TARIFA_STYLES: Record<string, string> = {
-  retail:    'text-[#0087B8] bg-blue-50 border-blue-200',
-  wholesale: 'text-[#876693] bg-purple-50 border-purple-200',
-};
+const TARIFA_COLORS: Record<string, string> = { retail: '#0087B8', wholesale: '#876693' };
 
-interface Tarifa { id: string; nombre: string; descripcion?: string; }
+const fmt = (n: number) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n);
+const initials = (name: string) => name.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase();
 
-const fmt = (n: number) => new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'EUR' }).format(n);
-function initials(name: string) { return name.split(' ').map((w) => w[0]).slice(0, 2).join(''); }
+interface Tarifa { id: string; nombre: string; }
 
 export default function ClientePerfilPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const [client, setClient]   = useState<any>(null);
-  const [orders, setOrders]   = useState<any[]>([]);
-  const [tarifas, setTarifas] = useState<Tarifa[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError]     = useState('');
-
-  // Resend invite
-  const [resending, setResending]         = useState(false);
-  const [resendSuccess, setResendSuccess] = useState('');
-
-  // Delete
+  const [client, setClient]     = useState<any>(null);
+  const [orders, setOrders]     = useState<any[]>([]);
+  const [tarifas, setTarifas]   = useState<Tarifa[]>([]);
+  const [loading, setLoading]   = useState(true);
+  const [error, setError]       = useState('');
+  const [resending, setResending] = useState(false);
+  const [resendMsg, setResendMsg] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const [deleting, setDeleting]           = useState(false);
-
-  // Pricing edit
-  const [editingPricing, setEditingPricing] = useState(false);
-  const [pricingForm, setPricingForm]       = useState({ tarifa_id: '', descuento_pct: '0' });
-  const [savingPricing, setSavingPricing]   = useState(false);
-  const [pricingSuccess, setPricingSuccess] = useState('');
+  const [deleting, setDeleting] = useState(false);
+  const [editPricing, setEditPricing] = useState(false);
+  const [pricingForm, setPricingForm] = useState({ tarifa_id: '', descuento_pct: '0' });
+  const [savingPricing, setSavingPricing] = useState(false);
 
   useEffect(() => {
     async function load() {
-      const [clientRes, tarifasRes] = await Promise.all([
-        fetch(`/api/customers/${id}`),
-        fetch('/api/tarifas'),
-      ]);
-      if (!clientRes.ok) { setError('Client not found'); setLoading(false); return; }
-      const clientData  = await clientRes.json();
-      const tarifasData = await tarifasRes.json();
-      setClient(clientData.customer);
-      setOrders(clientData.orders ?? []);
-      setTarifas(tarifasData.data ?? []);
-      setPricingForm({
-        tarifa_id:    clientData.customer.tarifa_id ?? '',
-        descuento_pct: String(clientData.customer.descuento_pct ?? 0),
-      });
+      const [cRes, tRes] = await Promise.all([fetch(`/api/customers/${id}`), fetch('/api/tarifas')]);
+      if (!cRes.ok) { setError('Client not found'); setLoading(false); return; }
+      const cData = await cRes.json();
+      const tData = await tRes.json();
+      setClient(cData.customer);
+      setOrders(cData.orders ?? []);
+      setTarifas(tData.data ?? []);
+      setPricingForm({ tarifa_id: cData.customer.tarifa_id ?? '', descuento_pct: String(cData.customer.descuento_pct ?? 0) });
       setLoading(false);
     }
     load();
   }, [id]);
 
   async function savePricing() {
-    setSavingPricing(true); setPricingSuccess('');
+    setSavingPricing(true);
     const res = await fetch(`/api/customers/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        tarifa_id:    pricingForm.tarifa_id || null,
-        descuento_pct: parseFloat(pricingForm.descuento_pct) || 0,
-      }),
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tarifa_id: pricingForm.tarifa_id || null, descuento_pct: parseFloat(pricingForm.descuento_pct) || 0 }),
     });
     setSavingPricing(false);
     if (res.ok) {
       const tarifa = tarifas.find(t => t.id === pricingForm.tarifa_id);
-      setClient((prev: any) => ({
-        ...prev,
-        tarifa_id:    pricingForm.tarifa_id || null,
-        descuento_pct: parseFloat(pricingForm.descuento_pct) || 0,
-        tarifa,
-      }));
-      setPricingSuccess('Saved');
-      setEditingPricing(false);
-      setTimeout(() => setPricingSuccess(''), 3000);
+      setClient((prev: any) => ({ ...prev, tarifa_id: pricingForm.tarifa_id || null, descuento_pct: parseFloat(pricingForm.descuento_pct) || 0, tarifa }));
+      setEditPricing(false);
     }
   }
 
   async function handleResendInvite() {
-    setResending(true); setResendSuccess(''); setError('');
+    setResending(true); setResendMsg(''); setError('');
     const res = await fetch(`/api/customers/${id}/resend-invite`, { method: 'POST' });
     setResending(false);
-    if (res.ok) {
-      setResendSuccess('Invite sent!');
-      setTimeout(() => setResendSuccess(''), 4000);
-    } else {
-      const d = await res.json().catch(() => ({}));
-      setError(d.error ?? 'Failed to resend invite');
-    }
+    if (res.ok) { setResendMsg('Invite sent!'); setTimeout(() => setResendMsg(''), 4000); }
+    else { const d = await res.json().catch(() => ({})); setError(d.error ?? 'Failed to resend'); }
   }
 
   async function handleDelete() {
     setDeleting(true);
     const res = await fetch(`/api/customers/${id}`, { method: 'DELETE' });
-    if (res.ok) {
-      router.push('/clientes');
-    } else {
-      setDeleting(false);
-      setConfirmDelete(false);
-      setError('Failed to delete client. Try again.');
-    }
+    if (res.ok) router.push('/clientes');
+    else { setDeleting(false); setConfirmDelete(false); setError('Failed to delete.'); }
   }
 
-  if (loading) {
-    return (
-      <div className="p-7 flex items-center gap-2 text-gray-400 text-sm">
-        <div className="w-4 h-4 border border-gray-300 border-t-[#D93A35] rounded-full animate-spin" />
-        Loading…
-      </div>
-    );
-  }
+  const inputSt: React.CSSProperties = { fontFamily: 'var(--font-main)', fontSize: 12, border: '1px solid #111', borderRadius: 0, padding: '7px 10px', background: '#fff', color: '#111', outline: 'none', width: '100%' };
 
-  if (error || !client) {
-    return (
-      <div className="p-7">
-        <div className="text-sm text-[#D93A35]">{error || 'Client not found'}</div>
-        <Link href="/clientes" className="text-xs text-[#D93A35] mt-2 inline-block">← Back</Link>
-      </div>
-    );
-  }
+  if (loading) return <div style={{ padding: 24, fontSize: 12, color: '#aaa' }}>Loading…</div>;
+  if (error || !client) return (
+    <div style={{ padding: 24 }}>
+      <div style={{ fontSize: 12, color: '#D93A35', marginBottom: 8 }}>{error || 'Client not found'}</div>
+      <Link href="/clientes" style={{ fontSize: 10, color: '#D93A35', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 700 }}>← Back</Link>
+    </div>
+  );
 
   const address = client.direccion_envio as any;
   const totalBilled = orders.reduce((s: number, o: any) => s + (o.total_productos ?? 0), 0);
-  const tarifaNombre = client.tarifa?.nombre ?? '—';
-  const tarifaKey    = tarifaNombre.toLowerCase();
-  const tarifaCls    = TARIFA_STYLES[tarifaKey] ?? 'text-gray-600 bg-gray-100 border-gray-200';
-  const inputCls = "w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:border-[#D93A35] outline-none transition-colors";
+  const tarifaColor = client.tarifa ? (TARIFA_COLORS[client.tarifa.nombre.toLowerCase()] ?? '#555') : '#555';
 
   return (
-    <div className="p-6 md:p-7">
-      <Link href="/clientes" className="inline-flex items-center gap-2 text-xs text-gray-400 hover:text-gray-600 mb-6 transition-colors">
-        ← Back to Clients
+    <div style={{ padding: 16, maxWidth: 1100, margin: '0 auto' }}>
+
+      <Link href="/clientes" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#aaa', marginBottom: 16, textDecoration: 'none' }}>
+        ← Clients
       </Link>
 
       {/* Header */}
-      <div className="flex items-center gap-4 mb-8">
-        <div className="w-14 h-14 rounded-xl bg-[#D93A35] flex items-center justify-center text-lg font-bold text-white flex-shrink-0">
-          {initials(client.contacto_nombre)}
+      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, paddingBottom: 16, borderBottom: '1px solid #111', marginBottom: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ width: 44, height: 44, background: '#D93A35', border: '1px solid #111', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 900, color: '#fff', flexShrink: 0 }}>
+            {initials(client.contacto_nombre)}
+          </div>
+          <div>
+            <div className="page-title">{client.contacto_nombre}</div>
+            <div style={{ fontSize: 11, color: '#aaa', marginTop: 2 }}>{client.company_name}</div>
+          </div>
         </div>
-        <div>
-          <h1 className="text-lg font-black tracking-wider uppercase text-gray-900"
-              style={{ fontFamily: 'var(--font-alexandria)' }}>{client.contacto_nombre}</h1>
-          <p className="text-sm text-gray-400 mt-0.5">{client.company_name}</p>
-        </div>
-        <div className="ml-auto flex items-center gap-2">
-          {resendSuccess && (
-            <span className="text-xs font-semibold text-[#0DA265]">{resendSuccess}</span>
-          )}
-          <button
-            onClick={handleResendInvite}
-            disabled={resending}
-            className="px-4 py-2 bg-white border border-gray-200 text-sm font-semibold text-gray-500 rounded-lg hover:border-blue-300 hover:text-blue-600 disabled:opacity-40 transition-colors"
-          >
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+          {resendMsg && <span style={{ fontSize: 10, color: '#0DA265', fontWeight: 700 }}>{resendMsg}</span>}
+          <button onClick={handleResendInvite} disabled={resending} className="btn-ghost">
             {resending ? 'Sending…' : 'Resend Invite'}
           </button>
-          <Link href={`/pedidos/nuevo?cliente=${id}`}
-            className="px-4 py-2 bg-[#D93A35] text-white text-sm font-semibold rounded-lg hover:bg-[#b52e2a] transition-colors">
-            + New Order
+          <Link href={`/pedidos/nuevo?cliente=${id}`}>
+            <button className="btn-primary">+ New Order</button>
           </Link>
-          <button
-            onClick={() => setConfirmDelete(true)}
-            className="px-4 py-2 bg-white border border-gray-200 text-sm font-semibold text-gray-500 rounded-lg hover:border-red-300 hover:text-[#D93A35] transition-colors"
-          >
+          <button onClick={() => setConfirmDelete(true)} style={{ background: 'transparent', border: '1px solid #ddd', boxShadow: 'none', color: '#D93A35', borderColor: '#D93A35' }}>
             Delete
           </button>
         </div>
       </div>
 
-      {/* Delete confirmation dialog */}
+      {/* Delete modal */}
       {confirmDelete && (
-        <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl border border-gray-200 shadow-xl p-6 max-w-sm w-full">
-            <h2 className="text-sm font-black uppercase tracking-wider text-gray-900 mb-2"
-                style={{ fontFamily: 'var(--font-alexandria)' }}>Delete Client</h2>
-            <p className="text-sm text-gray-500 mb-5">
-              This will permanently delete <strong className="text-gray-900">{client?.contacto_nombre}</strong> and
-              all their data. This action cannot be undone.
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <div className="card" style={{ maxWidth: 380, width: '100%', padding: 24 }}>
+            <div style={{ fontSize: 13, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Delete Client</div>
+            <p style={{ fontSize: 12, color: '#666', marginBottom: 20, lineHeight: 1.6 }}>
+              This will permanently delete <strong>{client.contacto_nombre}</strong> and all their data.
             </p>
-            <div className="flex gap-3">
-              <button
-                onClick={handleDelete}
-                disabled={deleting}
-                className="flex-1 py-2 bg-[#D93A35] text-white text-sm font-bold rounded-lg hover:bg-[#b52e2a] disabled:opacity-40 transition-colors"
-              >
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button onClick={handleDelete} disabled={deleting} className="btn-danger" style={{ flex: 1, justifyContent: 'center' }}>
                 {deleting ? 'Deleting…' : 'Yes, delete'}
               </button>
-              <button
-                onClick={() => setConfirmDelete(false)}
-                disabled={deleting}
-                className="flex-1 py-2 bg-white border border-gray-200 text-sm font-semibold text-gray-600 rounded-lg hover:border-gray-300 transition-colors"
-              >
+              <button onClick={() => setConfirmDelete(false)} disabled={deleting} className="btn-ghost" style={{ flex: 1, justifyContent: 'center' }}>
                 Cancel
               </button>
             </div>
@@ -215,49 +145,47 @@ export default function ClientePerfilPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-5">
+      {/* Content grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 12 }} className="fr-cliente-grid">
+        <style>{`@media(min-width:768px){.fr-cliente-grid{grid-template-columns:1fr 260px!important}}`}</style>
 
-        {/* LEFT — order history */}
-        <div>
-          <div className="flex items-center gap-3 mb-4">
-            <span className="text-[10px] font-black tracking-[0.18em] uppercase text-gray-400 whitespace-nowrap">Order History</span>
-            <div className="flex-1 h-px bg-gray-100" />
-          </div>
-          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse min-w-[480px]">
+        {/* LEFT — orders */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+            <div style={{ padding: '11px 16px', borderBottom: '1px solid #111' }}>
+              <span className="section-label">Order History</span>
+            </div>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 480 }}>
                 <thead>
-                  <tr className="bg-gray-50">
-                    {['ID', 'Status', 'Weight', 'Amount', 'Date'].map((h) => (
-                      <th key={h} className="text-left px-5 py-3 text-[10px] font-bold uppercase tracking-[0.1em] text-gray-400 border-b border-gray-100">{h}</th>
+                  <tr style={{ background: '#111' }}>
+                    {['Ref', 'Status', 'Weight', 'Amount', 'Date'].map((h) => (
+                      <th key={h} style={{ textAlign: 'left', padding: '8px 14px', fontSize: 8, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#fff' }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {orders.length === 0 ? (
-                    <tr><td colSpan={5} className="px-5 py-10 text-center text-sm text-gray-400">No orders yet</td></tr>
-                  ) : (
-                    orders.map((o: any) => (
-                      <tr key={o.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors">
-                        <td className="px-5 py-3">
-                          <Link href={`/pedidos/${o.id}`} className="font-mono text-xs text-[#D93A35] hover:text-[#b52e2a] transition-colors">
-                            {o.id.slice(0, 8)}…
-                          </Link>
-                        </td>
-                        <td className="px-5 py-3">
-                          <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-[11px] font-semibold border rounded-md ${STATUS_STYLES[o.status]}`}>
-                            <span className="w-1.5 h-1.5 rounded-full bg-current opacity-80" />
-                            {STATUS_LABELS[o.status]}
-                          </span>
-                        </td>
-                        <td className="px-5 py-3 font-mono text-xs text-gray-400">{o.peso_total} kg</td>
-                        <td className="px-5 py-3 text-sm font-semibold text-gray-900">{fmt(o.total_productos)}</td>
-                        <td className="px-5 py-3 font-mono text-xs text-gray-400">
-                          {new Date(o.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
-                        </td>
-                      </tr>
-                    ))
-                  )}
+                    <tr><td colSpan={5} style={{ padding: '32px 16px', textAlign: 'center', fontSize: 12, color: '#aaa' }}>No orders yet</td></tr>
+                  ) : orders.map((o: any, i: number) => (
+                    <tr key={o.id} style={{ borderBottom: i < orders.length - 1 ? '1px solid #f5f5f5' : 'none' }}>
+                      <td style={{ padding: '9px 14px' }}>
+                        <Link href={`/pedidos/${o.id}`} style={{ fontSize: 10, fontWeight: 700, color: '#D93A35', fontFamily: 'monospace' }}>
+                          #{o.id.slice(0, 8).toUpperCase()}
+                        </Link>
+                      </td>
+                      <td style={{ padding: '9px 14px' }}>
+                        <span className="badge" style={{ background: STATUS_COLORS[o.status] ?? '#999' }}>
+                          {STATUS_LABELS[o.status]}
+                        </span>
+                      </td>
+                      <td style={{ padding: '9px 14px', fontSize: 10, color: '#aaa', fontFamily: 'monospace' }}>{o.peso_total} kg</td>
+                      <td style={{ padding: '9px 14px', fontSize: 12, fontWeight: 900, color: '#111' }}>{fmt(o.total_productos)}</td>
+                      <td style={{ padding: '9px 14px', fontSize: 10, color: '#bbb', fontVariantNumeric: 'tabular-nums' }}>
+                        {new Date(o.created_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: '2-digit' })}
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
@@ -265,73 +193,58 @@ export default function ClientePerfilPage() {
         </div>
 
         {/* RIGHT */}
-        <div className="space-y-4">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+
           {/* Stats */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="bg-white border border-gray-200 rounded-xl p-4">
-              <div className="text-[10px] uppercase tracking-[0.12em] font-bold text-gray-400 mb-1">Orders</div>
-              <div className="text-2xl font-black text-[#0087B8]" style={{ fontFamily: 'var(--font-alexandria)' }}>{orders.length}</div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+            <div className="card" style={{ borderLeft: '3px solid #0087B8' }}>
+              <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#aaa', marginBottom: 4 }}>Orders</div>
+              <div style={{ fontSize: 26, fontWeight: 900, color: '#0087B8', lineHeight: 1 }}>{orders.length}</div>
             </div>
-            <div className="bg-white border border-gray-200 rounded-xl p-4">
-              <div className="text-[10px] uppercase tracking-[0.12em] font-bold text-gray-400 mb-1">Billed</div>
-              <div className="text-lg font-black text-[#D93A35]" style={{ fontFamily: 'var(--font-alexandria)' }}>{fmt(totalBilled)}</div>
+            <div className="card" style={{ borderLeft: '3px solid #D93A35' }}>
+              <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#aaa', marginBottom: 4 }}>Billed</div>
+              <div style={{ fontSize: 16, fontWeight: 900, color: '#D93A35', lineHeight: 1 }}>{fmt(totalBilled)}</div>
             </div>
           </div>
 
-          {/* Pricing card */}
-          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-            <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
-              <span className="text-[10px] font-black tracking-[0.12em] uppercase text-gray-400"
-                    style={{ fontFamily: 'var(--font-alexandria)' }}>Pricing</span>
-              <button onClick={() => setEditingPricing(p => !p)}
-                className="text-[11px] text-[#D93A35] font-semibold hover:text-[#b52e2a] transition-colors">
-                {editingPricing ? 'Cancel' : 'Edit'}
+          {/* Pricing */}
+          <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+            <div style={{ padding: '11px 16px', borderBottom: '1px solid #eee', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span className="section-label">Pricing</span>
+              <button onClick={() => setEditPricing(p => !p)} style={{ background: 'transparent', border: 'none', boxShadow: 'none', fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#D93A35', padding: 0 }}>
+                {editPricing ? 'Cancel' : 'Edit'}
               </button>
             </div>
-            <div className="p-4">
-              {!editingPricing ? (
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs text-gray-400">Tier</span>
+            <div style={{ padding: 14 }}>
+              {!editPricing ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 11 }}>
+                    <span style={{ color: '#aaa' }}>Tier</span>
                     {client.tarifa ? (
-                      <span className={`inline-flex px-2 py-0.5 text-[10px] font-bold border rounded-md tracking-wide uppercase ${tarifaCls}`}>
-                        {tarifaNombre}
-                      </span>
-                    ) : (
-                      <span className="text-xs text-gray-400">—</span>
-                    )}
+                      <span className="badge" style={{ background: tarifaColor }}>{client.tarifa.nombre}</span>
+                    ) : <span style={{ color: '#ccc' }}>—</span>}
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs text-gray-400">Personal discount</span>
-                    <span className={`font-mono text-xs font-bold ${client.descuento_pct > 0 ? 'text-[#D93A35]' : 'text-gray-400'}`}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
+                    <span style={{ color: '#aaa' }}>Discount</span>
+                    <span style={{ fontWeight: 900, color: client.descuento_pct > 0 ? '#D93A35' : '#ccc', fontFamily: 'monospace' }}>
                       {client.descuento_pct > 0 ? `-${client.descuento_pct}%` : '—'}
                     </span>
                   </div>
-                  {pricingSuccess && (
-                    <div className="text-[11px] text-[#0DA265] font-semibold text-center pt-1">{pricingSuccess}</div>
-                  )}
                 </div>
               ) : (
-                <div className="space-y-3">
-                  <div className="space-y-1.5">
-                    <label className="text-[11px] font-bold tracking-[0.1em] uppercase text-gray-400">Tier</label>
-                    <select value={pricingForm.tarifa_id} onChange={e => setPricingForm(p => ({ ...p, tarifa_id: e.target.value }))}
-                      className={inputCls}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                    <label style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#aaa' }}>Tier</label>
+                    <select value={pricingForm.tarifa_id} onChange={e => setPricingForm(p => ({ ...p, tarifa_id: e.target.value }))} style={inputSt}>
                       <option value="">— No tier —</option>
                       {tarifas.map(t => <option key={t.id} value={t.id}>{t.nombre}</option>)}
                     </select>
                   </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[11px] font-bold tracking-[0.1em] uppercase text-gray-400">Personal discount (%)</label>
-                    <input
-                      type="number" min="0" max="100" step="0.5"
-                      value={pricingForm.descuento_pct}
-                      onChange={e => setPricingForm(p => ({ ...p, descuento_pct: e.target.value }))}
-                      className={inputCls}
-                    />
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                    <label style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#aaa' }}>Discount (%)</label>
+                    <input type="number" min="0" max="100" step="0.5" value={pricingForm.descuento_pct} onChange={e => setPricingForm(p => ({ ...p, descuento_pct: e.target.value }))} style={inputSt} />
                   </div>
-                  <button onClick={savePricing} disabled={savingPricing}
-                    className="w-full py-2 bg-[#D93A35] text-white text-sm font-bold rounded-lg hover:bg-[#b52e2a] disabled:opacity-40 transition-colors">
+                  <button onClick={savePricing} disabled={savingPricing} className="btn-primary" style={{ justifyContent: 'center', width: '100%' }}>
                     {savingPricing ? 'Saving…' : 'Save Pricing'}
                   </button>
                 </div>
@@ -340,47 +253,42 @@ export default function ClientePerfilPage() {
           </div>
 
           {/* Contact */}
-          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-            <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
-              <span className="text-[10px] font-black tracking-[0.12em] uppercase text-gray-400"
-                    style={{ fontFamily: 'var(--font-alexandria)' }}>Contact</span>
-              <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-[11px] font-semibold border rounded-md ${
-                client.estado === 'active' ? 'text-[#0DA265] bg-green-50 border-green-200' : 'text-gray-400 bg-gray-100 border-gray-200'
-              }`}>
-                <span className="w-1.5 h-1.5 rounded-full bg-current opacity-80" />
+          <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+            <div style={{ padding: '11px 16px', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span className="section-label">Contact</span>
+              <span className="badge" style={{ background: client.estado === 'active' ? '#0DA265' : '#999' }}>
                 {client.estado === 'active' ? 'Active' : 'Inactive'}
               </span>
             </div>
-            <div className="p-4 space-y-2">
+            <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 7 }}>
               {[
-                ['Email',   client.email],
-                ['Phone',   client.telefono ?? '—'],
-                ['VAT ID',  client.nif_cif],
-                ['Joined',  new Date(client.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })],
+                ['Email', client.email],
+                ['Phone', client.telefono ?? '—'],
+                ['VAT ID', client.nif_cif],
+                ['Joined', new Date(client.created_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })],
               ].map(([label, value]) => (
-                <div key={String(label)} className="flex justify-between text-sm">
-                  <span className="text-gray-400">{label}</span>
-                  <span className="font-mono text-xs text-gray-700 text-right">{value}</span>
+                <div key={String(label)} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, fontSize: 11 }}>
+                  <span style={{ color: '#aaa', flexShrink: 0 }}>{label}</span>
+                  <span style={{ color: '#555', fontWeight: 600, textAlign: 'right', fontSize: 10, fontFamily: 'monospace' }}>{value}</span>
                 </div>
               ))}
             </div>
           </div>
 
           {/* Address */}
-          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-            <div className="px-4 py-3 border-b border-gray-100">
-              <span className="text-[10px] font-black tracking-[0.12em] uppercase text-gray-400"
-                    style={{ fontFamily: 'var(--font-alexandria)' }}>Shipping Address</span>
+          <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+            <div style={{ padding: '11px 16px', borderBottom: '1px solid #eee' }}>
+              <span className="section-label">Shipping Address</span>
             </div>
-            <div className="p-4">
+            <div style={{ padding: '12px 16px' }}>
               {address ? (
                 <>
-                  <div className="text-sm text-gray-700">{address.street}</div>
-                  <div className="text-sm text-gray-500 mt-0.5">{address.postal_code} {address.city}</div>
-                  <div className="font-mono text-xs text-gray-400 mt-0.5">{address.country}</div>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: '#111' }}>{address.street}</div>
+                  <div style={{ fontSize: 11, color: '#777', marginTop: 2 }}>{address.postal_code} {address.city}</div>
+                  <div style={{ fontSize: 10, color: '#aaa', fontFamily: 'monospace', marginTop: 2 }}>{address.country}</div>
                 </>
               ) : (
-                <div className="text-sm text-gray-400">No address on file</div>
+                <div style={{ fontSize: 11, color: '#aaa' }}>No address on file</div>
               )}
             </div>
           </div>
