@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { Eye, EyeOff } from 'lucide-react';
 import { supabaseClient } from '@/lib/supabase/client';
 
 interface CustomerProfile {
@@ -46,6 +47,44 @@ function Feedback({ fb }: { fb: { type: 'success' | 'error'; msg: string } | nul
   );
 }
 
+// ─── Password strength ────────────────────────────────────
+
+function getStrength(password: string) {
+  let score = 0;
+  if (password.length >= 8)  score++;
+  if (password.length >= 12) score++;
+  if (/[A-Z]/.test(password) && /[a-z]/.test(password)) score++;
+  if (/[0-9]/.test(password) && /[^A-Za-z0-9]/.test(password)) score++;
+
+  const levels = [
+    { label: 'Too weak',    color: '#D93A35' },
+    { label: 'Weak',        color: '#E6883E' },
+    { label: 'Fair',        color: '#F6E451' },
+    { label: 'Strong',      color: '#0DA265' },
+    { label: 'Very strong', color: '#0DA265' },
+  ];
+  return { score, ...levels[Math.min(score, levels.length - 1)] };
+}
+
+function PasswordRequirements({ password }: { password: string }) {
+  if (!password.length) return null;
+  const checks = [
+    { label: 'At least 8 characters', pass: password.length >= 8 },
+    { label: 'One uppercase letter',  pass: /[A-Z]/.test(password) },
+    { label: 'One number',            pass: /[0-9]/.test(password) },
+  ];
+  return (
+    <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 3 }}>
+      {checks.map(({ label, pass }) => (
+        <li key={label} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11 }}>
+          <span style={{ fontWeight: 700, color: pass ? '#0DA265' : '#ccc' }}>{pass ? '✓' : '○'}</span>
+          <span style={{ color: pass ? '#0DA265' : '#aaa', fontWeight: pass ? 600 : 400 }}>{label}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 export default function PerfilPage() {
   const [profile, setProfile] = useState<CustomerProfile | null>(null);
   const [editing, setEditing] = useState(false);
@@ -60,8 +99,12 @@ export default function PerfilPage() {
 
   const [newPwd, setNewPwd] = useState('');
   const [confirmPwd, setConfirmPwd] = useState('');
+  const [showNewPwd, setShowNewPwd] = useState(false);
+  const [showConfirmPwd, setShowConfirmPwd] = useState(false);
   const [savingPwd, setSavingPwd] = useState(false);
   const [pwdFeedback, setPwdFeedback] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
+
+  const strength = getStrength(newPwd);
 
   useEffect(() => {
     fetch('/api/portal/profile')
@@ -139,6 +182,8 @@ export default function PerfilPage() {
     e.preventDefault();
     setPwdFeedback(null);
     if (newPwd.length < 8) { setPwdFeedback({ type: 'error', msg: 'Minimum 8 characters.' }); return; }
+    if (!/[A-Z]/.test(newPwd)) { setPwdFeedback({ type: 'error', msg: 'Must contain at least one uppercase letter.' }); return; }
+    if (!/[0-9]/.test(newPwd)) { setPwdFeedback({ type: 'error', msg: 'Must contain at least one number.' }); return; }
     if (newPwd !== confirmPwd) { setPwdFeedback({ type: 'error', msg: 'Passwords do not match.' }); return; }
     setSavingPwd(true);
     const { error } = await supabaseClient.auth.updateUser({ password: newPwd });
@@ -148,6 +193,7 @@ export default function PerfilPage() {
     } else {
       setPwdFeedback({ type: 'success', msg: 'Password updated.' });
       setNewPwd(''); setConfirmPwd('');
+      setShowNewPwd(false); setShowConfirmPwd(false);
       setShowPwd(false);
     }
   }
@@ -195,10 +241,7 @@ export default function PerfilPage() {
   function LinkCard({ href, title, subtitle }: { href: string; title: string; subtitle: string }) {
     return (
       <a href={href} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
-        <div
-          className="card"
-          style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '12px 16px', cursor: 'pointer' }}
-        >
+        <div className="card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '12px 16px', cursor: 'pointer' }}>
           <div>
             <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#111', marginBottom: 2 }}>{title}</div>
             <div style={{ fontSize: 11, color: '#aaa' }}>{subtitle}</div>
@@ -225,7 +268,6 @@ export default function PerfilPage() {
           <InfoRow label="Company" value={profile?.company_name ?? ''} />
           <InfoRow label="Email" value={profile?.email ?? ''} />
           <InfoRow label="Tax ID" value={profile?.nif_cif ?? ''} />
-
           <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid #f0f0f0', display: 'flex', flexDirection: 'column', gap: 0 }}>
             {!editing ? (
               <>
@@ -319,7 +361,7 @@ export default function PerfilPage() {
         <div style={{ padding: '11px 16px', borderBottom: '1px solid #eee', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.22em', textTransform: 'uppercase', color: '#111' }}>Security</span>
           <button
-            onClick={() => { setShowPwd(v => !v); setPwdFeedback(null); }}
+            onClick={() => { setShowPwd(v => !v); setPwdFeedback(null); setNewPwd(''); setConfirmPwd(''); }}
             style={{ background: 'transparent', border: 'none', boxShadow: 'none', fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#D93A35', padding: 0 }}
           >
             {showPwd ? 'Cancel' : 'Change password'}
@@ -330,15 +372,72 @@ export default function PerfilPage() {
           <div style={{ padding: '12px 16px', fontSize: 12, color: '#aaa' }}>Password managed securely.</div>
         ) : (
           <form onSubmit={savePassword} style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+
+            {/* New password */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
               <label style={lbl}>New Password *</label>
-              <input type="password" value={newPwd} onChange={e => setNewPwd(e.target.value)} placeholder="Minimum 8 characters" style={inp} />
+              <div style={{ position: 'relative' }}>
+                <input
+                  type={showNewPwd ? 'text' : 'password'}
+                  value={newPwd}
+                  onChange={e => setNewPwd(e.target.value)}
+                  placeholder="Minimum 8 characters"
+                  autoComplete="new-password"
+                  style={{ ...inp, paddingRight: 36 }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowNewPwd(v => !v)}
+                  style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: '#aaa', display: 'flex', alignItems: 'center' }}
+                >
+                  {showNewPwd ? <EyeOff size={15} /> : <Eye size={15} />}
+                </button>
+              </div>
+
+              {/* Strength bar */}
+              {newPwd.length > 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, paddingTop: 2 }}>
+                  <div style={{ display: 'flex', gap: 3 }}>
+                    {[1, 2, 3, 4].map(i => (
+                      <div key={i} style={{
+                        height: 3, flex: 1,
+                        background: i <= strength.score ? strength.color : '#eee',
+                        transition: 'background 0.2s',
+                      }} />
+                    ))}
+                  </div>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: strength.color }}>{strength.label}</span>
+                </div>
+              )}
             </div>
+
+            {/* Confirm password */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
               <label style={lbl}>Confirm Password *</label>
-              <input type="password" value={confirmPwd} onChange={e => setConfirmPwd(e.target.value)} placeholder="Repeat new password" style={inp} />
+              <div style={{ position: 'relative' }}>
+                <input
+                  type={showConfirmPwd ? 'text' : 'password'}
+                  value={confirmPwd}
+                  onChange={e => setConfirmPwd(e.target.value)}
+                  placeholder="Repeat new password"
+                  autoComplete="new-password"
+                  style={{ ...inp, paddingRight: 36 }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPwd(v => !v)}
+                  style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: '#aaa', display: 'flex', alignItems: 'center' }}
+                >
+                  {showConfirmPwd ? <EyeOff size={15} /> : <Eye size={15} />}
+                </button>
+              </div>
             </div>
+
+            {/* Requirements */}
+            <PasswordRequirements password={newPwd} />
+
             <Feedback fb={pwdFeedback} />
+
             <button type="submit" disabled={savingPwd} className="btn-primary" style={{ justifyContent: 'center', width: '100%' }}>
               {savingPwd ? 'Saving…' : 'Update Password'}
             </button>
