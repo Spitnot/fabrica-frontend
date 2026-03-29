@@ -89,7 +89,12 @@ export default function ClientePerfilPage() {
     </div>
   );
 
-  const address = client.direccion_envio as any;
+  const address = (client as any).ship_street1
+    ? { street: (client as any).ship_street1, city: (client as any).ship_city, postal_code: (client as any).ship_postal_code, country: (client as any).ship_country }
+    : client.direccion_envio as any;
+  const clientName = (client as any).first_name
+    ? `${(client as any).first_name} ${(client as any).last_name ?? ""}`.trim()
+    : client.contacto_nombre ?? "—";
   const totalBilled = orders.reduce((s: number, o: any) => s + (o.total_productos ?? 0), 0);
   const tarifaColor = client.tarifa ? (TARIFA_COLORS[client.tarifa.nombre.toLowerCase()] ?? '#555') : '#555';
 
@@ -104,10 +109,10 @@ export default function ClientePerfilPage() {
       <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, paddingBottom: 16, borderBottom: '1px solid #111', marginBottom: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <div style={{ width: 44, height: 44, background: '#D93A35', border: '1px solid #111', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 900, color: '#fff', flexShrink: 0 }}>
-            {initials(client.contacto_nombre)}
+            {initials(clientName)}
           </div>
           <div>
-            <div className="page-title">{client.contacto_nombre}</div>
+            <div className="page-title">{clientName}</div>
             <div style={{ fontSize: 11, color: '#aaa', marginTop: 2 }}>{client.company_name}</div>
           </div>
         </div>
@@ -131,7 +136,7 @@ export default function ClientePerfilPage() {
           <div className="card" style={{ maxWidth: 380, width: '100%', padding: 24 }}>
             <div style={{ fontSize: 13, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Delete Client</div>
             <p style={{ fontSize: 12, color: '#666', marginBottom: 20, lineHeight: 1.6 }}>
-              This will permanently delete <strong>{client.contacto_nombre}</strong> and all their data.
+              This will permanently delete <strong>{clientName}</strong> and all their data.
             </p>
             <div style={{ display: 'flex', gap: 8 }}>
               <button onClick={handleDelete} disabled={deleting} className="btn-danger" style={{ flex: 1, justifyContent: 'center' }}>
