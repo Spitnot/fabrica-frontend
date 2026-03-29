@@ -14,6 +14,7 @@ const NAV_ITEMS = [
   { href: '/catalogo',   label: 'Catalog',    group: 'Operations' },
   { href: '/emails',     label: 'Emails',     group: 'Admin' },
   { href: '/usuarios',   label: 'Team',       group: 'Admin' },
+  { href: '/company',    label: 'Company',    group: 'Admin' },
 ];
 
 const GROUPS = ['Main', 'Operations', 'Admin'];
