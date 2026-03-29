@@ -5,13 +5,19 @@ import { Eye, EyeOff } from 'lucide-react';
 import { supabaseClient } from '@/lib/supabase/client';
 
 interface CustomerProfile {
-  contacto_nombre: string;
+  contacto_nombre: string | null;
+  first_name: string | null;
+  last_name: string | null;
   company_name: string;
   email: string;
   telefono: string;
   nif_cif: string;
   tipo_cliente: string | null;
   direccion_envio: { street: string; city: string; postal_code: string; country: string } | null;
+  ship_street1: string | null;
+  ship_city: string | null;
+  ship_postal_code: string | null;
+  ship_country: string | null;
 }
 
 const PHONE_PREFIXES = [
@@ -114,12 +120,12 @@ export default function PerfilPage() {
         setProfile(data);
         const { prefix, number } = splitPhone(data.telefono ?? '');
         setDraft({
-          contacto_nombre: data.contacto_nombre ?? '',
+          contacto_nombre: data.first_name ? `${data.first_name} ${data.last_name ?? ""}`.trim() : data.contacto_nombre ?? "",
           telefono_prefix: prefix, telefono_number: number,
-          street: data.direccion_envio?.street ?? '',
-          city: data.direccion_envio?.city ?? '',
-          postal_code: data.direccion_envio?.postal_code ?? '',
-          country: data.direccion_envio?.country ?? '',
+          street: data.ship_street1 ?? data.direccion_envio?.street ?? "",
+          city: data.ship_city ?? data.direccion_envio?.city ?? "",
+          postal_code: data.ship_postal_code ?? data.direccion_envio?.postal_code ?? "",
+          country: data.ship_country ?? data.direccion_envio?.country ?? "",
         });
       });
   }, []);
@@ -130,12 +136,12 @@ export default function PerfilPage() {
     if (!profile) return;
     const { prefix, number } = splitPhone(profile.telefono ?? '');
     setDraft({
-      contacto_nombre: profile.contacto_nombre ?? '',
+      contacto_nombre: profile.first_name ? `${profile.first_name} ${profile.last_name ?? ""}`.trim() : profile.contacto_nombre ?? "",
       telefono_prefix: prefix, telefono_number: number,
-      street: profile.direccion_envio?.street ?? '',
-      city: profile.direccion_envio?.city ?? '',
-      postal_code: profile.direccion_envio?.postal_code ?? '',
-      country: profile.direccion_envio?.country ?? '',
+      street: profile.ship_street1 ?? profile.direccion_envio?.street ?? "",
+      city: profile.ship_city ?? profile.direccion_envio?.city ?? "",
+      postal_code: profile.ship_postal_code ?? profile.direccion_envio?.postal_code ?? "",
+      country: profile.ship_country ?? profile.direccion_envio?.country ?? "",
     });
     setEditing(false);
     setProfileFeedback(null);
@@ -155,11 +161,13 @@ export default function PerfilPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         contacto_nombre: draft.contacto_nombre.trim(),
+        first_name: draft.contacto_nombre.trim().split(' ')[0] ?? null,
+        last_name: draft.contacto_nombre.trim().split(' ').slice(1).join(' ') || null,
         telefono: `${draft.telefono_prefix} ${draft.telefono_number}`.trim(),
-        direccion_envio: {
-          street: draft.street.trim(), city: draft.city.trim(),
-          postal_code: draft.postal_code.trim(), country: draft.country.trim(),
-        },
+        ship_street1: draft.street.trim(),
+        ship_city: draft.city.trim(),
+        ship_postal_code: draft.postal_code.trim(),
+        ship_country: draft.country.trim().toUpperCase(),
       }),
     });
     setSavingProfile(false);
@@ -171,7 +179,13 @@ export default function PerfilPage() {
     setProfile(prev => prev ? {
       ...prev,
       contacto_nombre: draft.contacto_nombre.trim(),
+      first_name: draft.contacto_nombre.trim().split(' ')[0] ?? null,
+      last_name: draft.contacto_nombre.trim().split(' ').slice(1).join(' ') || null,
       telefono: `${draft.telefono_prefix} ${draft.telefono_number}`.trim(),
+      ship_street1: draft.street.trim(),
+      ship_city: draft.city.trim(),
+      ship_postal_code: draft.postal_code.trim(),
+      ship_country: draft.country.trim().toUpperCase(),
       direccion_envio: { street: draft.street.trim(), city: draft.city.trim(), postal_code: draft.postal_code.trim(), country: draft.country.trim() },
     } : prev);
     setEditing(false);
@@ -271,7 +285,7 @@ export default function PerfilPage() {
           <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid #f0f0f0', display: 'flex', flexDirection: 'column', gap: 0 }}>
             {!editing ? (
               <>
-                <InfoRow label="Name" value={profile?.contacto_nombre ?? ''} />
+                <InfoRow label="Name" value={profile?.first_name ? `${profile.first_name} ${profile.last_name ?? ''}`.trim() : profile?.contacto_nombre ?? ''} />
                 <InfoRow label="Phone" value={profile?.telefono ?? ''} />
               </>
             ) : (
@@ -307,12 +321,12 @@ export default function PerfilPage() {
         <CardHeader title="Shipping Address" onEdit={startEdit} />
         <div style={{ padding: '12px 16px' }}>
           {!editing ? (
-            profile?.direccion_envio ? (
+            (profile?.ship_street1 || profile?.direccion_envio) ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-                <InfoRow label="Street" value={profile.direccion_envio.street} />
-                <InfoRow label="City" value={profile.direccion_envio.city} />
-                <InfoRow label="Postal code" value={profile.direccion_envio.postal_code} />
-                <InfoRow label="Country" value={profile.direccion_envio.country} />
+                <InfoRow label="Street" value={profile.ship_street1 ?? profile.direccion_envio?.street ?? ''} />
+                <InfoRow label="City" value={profile.ship_city ?? profile.direccion_envio?.city ?? ''} />
+                <InfoRow label="Postal code" value={profile.ship_postal_code ?? profile.direccion_envio?.postal_code ?? ''} />
+                <InfoRow label="Country" value={profile.ship_country ?? profile.direccion_envio?.country ?? ''} />
               </div>
             ) : (
               <div style={{ fontSize: 12, color: '#aaa' }}>No shipping address on file.</div>
