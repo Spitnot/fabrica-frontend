@@ -6,7 +6,7 @@ export async function GET() {
   try {
     const { data, error } = await supabaseAdmin
       .from('orders')
-      .select('*, customer:customers(contacto_nombre, first_name, last_name, company_name, email)')
+      .select('*, customer:customers(first_name, last_name, company_name, email)')
       .order('created_at', { ascending: false });
 
     if (error) throw error;
@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
         peso_total,
         coste_envio_estimado: coste_envio_estimado ?? null,
       })
-      .select('*, customers(email, contacto_nombre, first_name, last_name)')
+      .select('*, customers(email, first_name, last_name)')
       .single();
 
     if (orderError) throw orderError;

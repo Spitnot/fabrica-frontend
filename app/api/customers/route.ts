@@ -64,20 +64,6 @@ export async function POST(req: NextRequest) {
       condiciones_legales: body.condiciones_legales,
       condiciones_comerciales: body.condiciones_comerciales,
       estado: 'active',
-     direccion_envio: {
-        street:      body.street      ?? '',
-        city:        body.city        ?? '',
-        state:       '',
-        postal_code: body.postal_code ?? '',
-        country:     body.country     ?? '',
-      },
-      direccion_fiscal: {
-        street: body.fiscal_street,
-        city: body.fiscal_city,
-        state: body.fiscal_state,
-        postal_code: body.fiscal_postal_code,
-        country: body.fiscal_country,
-      },
       // Flat columns
       ship_street1:     body.street      ?? null,
       ship_city:        body.city        ?? null,
