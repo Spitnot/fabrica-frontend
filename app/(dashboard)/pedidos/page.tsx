@@ -23,11 +23,11 @@ const fmt = (n: number) =>
 
 interface Order {
   id: string; status: string; peso_total: number; total_productos: number;
-  created_at: string; customer?: { contacto_nombre: string; company_name: string; };
+  created_at: string; customer?: { contacto_nombre?: string; first_name?: string; last_name?: string; company_name: string; };
   customer_id: string;
 }
 
-interface Customer { id: string; contacto_nombre: string; company_name: string; }
+interface Customer { id: string; contacto_nombre?: string; first_name?: string; last_name?: string; company_name: string; }
 
 function PedidosInner() {
   const router = useRouter();
@@ -107,7 +107,7 @@ function PedidosInner() {
           <label style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#aaa' }}>Client</label>
           <select value={customerParam} onChange={e => setParam('customer', e.target.value)} style={{ ...inputSt, maxWidth: 200 }}>
             <option value="">All clients</option>
-            {customers.map(c => <option key={c.id} value={c.id}>{c.contacto_nombre} · {c.company_name}</option>)}
+            {customers.map(c => <option key={c.id} value={c.id}>{`${c.first_name ?? c.contacto_nombre ?? ""} ${c.last_name ?? ""}`.trim()} · {c.company_name}</option>)}
           </select>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -159,7 +159,7 @@ function PedidosInner() {
                   <td style={{ padding: '9px 14px' }}>
                     <Link href={`/pedidos/${o.id}`}>
                       <div style={{ fontSize: 12, fontWeight: 700, color: '#111' }}>
-                        {o.customer?.contacto_nombre ?? '—'}
+                        {`${(o.customer as any)?.first_name ?? o.customer?.contacto_nombre ?? "—"} ${(o.customer as any)?.last_name ?? ""}`.trim()}
                       </div>
                       <div style={{ fontSize: 10, color: '#aaa' }}>{o.customer?.company_name}</div>
                     </Link>

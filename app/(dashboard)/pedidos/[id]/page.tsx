@@ -48,7 +48,13 @@ export default async function PedidoDetallePage({ params }: Props) {
   if (!order) notFound();
 
   const currentIdx = STATUS_ORDER.indexOf(order.status);
-  const address = order.customer?.direccion_envio as any;
+  const customer = order.customer as any;
+  const address = customer?.ship_street1
+    ? { street: customer.ship_street1, city: customer.ship_city, postal_code: customer.ship_postal_code, country: customer.ship_country }
+    : customer?.direccion_envio as any;
+  const contactName = customer?.first_name
+    ? `${customer.first_name} ${customer.last_name ?? ""}`.trim()
+    : customer?.contacto_nombre ?? "—";
   const ref = `#${id.slice(0, 8).toUpperCase()}`;
 
   return (
@@ -69,7 +75,7 @@ export default async function PedidoDetallePage({ params }: Props) {
             </span>
           </div>
           <div style={{ fontSize: 11, color: '#aaa', marginTop: 4 }}>
-            {order.customer?.contacto_nombre} · {order.customer?.company_name} · {new Date(order.created_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })}
+            {contactName} · {order.customer?.company_name} · {new Date(order.created_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })}
           </div>
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
@@ -235,7 +241,7 @@ export default async function PedidoDetallePage({ params }: Props) {
             </div>
             <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 7 }}>
               {[
-                ['Name', order.customer?.contacto_nombre ?? '—'],
+                ['Name', contactName ?? '—'],
                 ['Company', order.customer?.company_name ?? '—'],
                 ['Email', order.customer?.email ?? '—'],
                 ['Phone', order.customer?.telefono ?? '—'],

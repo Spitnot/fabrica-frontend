@@ -8,7 +8,7 @@ interface Product { sku: string; nombre_producto: string; variante?: string; pre
 interface ProductGroup { nombre: string; variantes: Product[]; imagen?: string; }
 interface TarifaPrecio { sku: string; precio: number; pack_size?: number | null; }
 interface Tarifa { id: string; nombre: string; multiplicador: number; precios?: TarifaPrecio[]; pack_size: number; minimum_order_value: number; }
-interface Customer { id: string; contacto_nombre: string; company_name: string; tarifa_id?: string; descuento_pct: number; tarifa?: Tarifa; direccion_envio: { street: string; city: string; postal_code: string; country: string; }; }
+interface Customer { id: string; first_name?: string; last_name?: string; contacto_nombre?: string; company_name: string; tarifa_id?: string; descuento_pct: number; tarifa?: Tarifa; direccion_envio?: { street: string; city: string; postal_code: string; country: string; }; ship_street1?: string; ship_city?: string; ship_postal_code?: string; ship_country?: string; }
 interface LineItem { sku: string; nombre_producto: string; variante?: string; cantidad: number; precio_unitario: number; peso_unitario: number; }
 interface Quote { service_id: string; carrier: string; service_name: string; price: number; estimated_days: number; }
 
@@ -67,7 +67,8 @@ function NuevoPedidoContent() {
   }, [products, search]);
 
   const client = customers.find(c => c.id === clientId);
-  const clientAddressOk = !!(client?.direccion_envio?.country && client?.direccion_envio?.postal_code);
+  const clientAddress = client?.ship_street1 ? { street: client.ship_street1, city: client.ship_city ?? "", postal_code: client.ship_postal_code ?? "", country: client.ship_country ?? "" } : client?.direccion_envio;
+  const clientAddressOk = !!(clientAddress?.country && clientAddress?.postal_code);
   const subtotal = lineItems.reduce((s, i) => s + i.cantidad * i.precio_unitario, 0);
   const totalWeight = lineItems.reduce((s, i) => s + i.peso_unitario * i.cantidad, 0);
   const total = subtotal + (selectedQuote?.price ?? 0);
@@ -114,7 +115,7 @@ function NuevoPedidoContent() {
       const res = await fetch('/api/quotes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ peso: totalWeight, ancho: 30, alto: 20, largo: 30, destination: client.direccion_envio }),
+        body: JSON.stringify({ peso: totalWeight, ancho: 30, alto: 20, largo: 30, destination: clientAddress }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? 'Error quoting');
@@ -169,16 +170,16 @@ function NuevoPedidoContent() {
               <select value={clientId} onChange={e => setClientId(e.target.value)}
                 className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:border-[#D93A35] outline-none">
                 <option value="">— Select a client —</option>
-                {customers.map(c => <option key={c.id} value={c.id}>{c.contacto_nombre} · {c.company_name}</option>)}
+                {customers.map(c => <option key={c.id} value={c.id}>{`${c.first_name ?? c.contacto_nombre ?? ""} ${c.last_name ?? ""}`.trim()} · {c.company_name}</option>)}
               </select>
               {client && (
                 <div className="flex gap-3 p-3 bg-gray-50 border border-gray-200 rounded-lg">
                   <div className="w-8 h-8 rounded-lg bg-[#D93A35] flex items-center justify-center text-xs font-bold text-white flex-shrink-0">
-                    {client.contacto_nombre.split(' ').map((w: string) => w[0]).slice(0, 2).join('')}
+                    (client.first_name ?? client.contacto_nombre ?? "?")[0]
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <div className="text-sm font-semibold text-gray-900">{client.contacto_nombre}</div>
+                      <div className="text-sm font-semibold text-gray-900">{`${client.first_name ?? client.contacto_nombre ?? ""} ${client.last_name ?? ""}`.trim()}</div>
                       {clientTarifa && (
                         <span className="px-1.5 py-0.5 text-[10px] font-bold border rounded uppercase tracking-wide text-[#876693] bg-purple-50 border-purple-200">
                           {clientTarifa.nombre}
@@ -190,7 +191,7 @@ function NuevoPedidoContent() {
                     </div>
                     <div className="text-xs text-gray-400">{client.company_name}</div>
                     <div className="font-mono text-xs text-gray-400 mt-0.5">
-                      {client.direccion_envio?.street} · {client.direccion_envio?.postal_code} {client.direccion_envio?.city}
+                      {clientAddress?.street} · {clientAddress?.postal_code} {clientAddress?.city}
                     </div>
                   </div>
                 </div>
