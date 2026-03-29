@@ -236,9 +236,9 @@ export default function ClientesPage() {
                     <td style={{ padding: '9px 14px' }}>
                       <Link href={`/clientes/${c.id}`} style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
                         <div style={{ width: 28, height: 28, background: '#D93A35', border: '1px solid #111', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 900, color: '#fff', flexShrink: 0 }}>
-                          {initials(c.contacto_nombre ?? c.first_name ?? "")}
+                          {initials(c.first_name ?? "")}
                         </div>
-                        <span style={{ fontSize: 12, fontWeight: 700, color: '#111' }}>{c.contacto_nombre ?? `${c.first_name ?? ""} ${c.last_name ?? ""}`.trim()}</span>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: '#111' }}>{`${c.first_name ?? ""} ${c.last_name ?? ""}`.trim()}</span>
                       </Link>
                     </td>
                     <td style={{ padding: '9px 14px', fontSize: 11, color: '#555' }}>{c.company_name}</td>
