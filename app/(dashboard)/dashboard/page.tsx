@@ -47,7 +47,7 @@ async function getStats() {
 async function getRecentOrders() {
   const { data } = await supabaseAdmin
     .from('orders')
-    .select('id, status, total_productos, created_at, customer:customers(contacto_nombre, company_name)')
+    .select('id, status, total_productos, created_at, customer:customers(contacto_nombre, first_name, last_name, company_name)')
     .order('created_at', { ascending: false })
     .limit(6);
   return data ?? [];
@@ -167,7 +167,7 @@ export default async function DashboardPage() {
                   <td style={{ padding: '9px 14px' }}>
                     <Link href={`/pedidos/${o.id}`}>
                       <div style={{ fontSize: 12, fontWeight: 700, color: '#111' }}>
-                        {o.customer?.contacto_nombre ?? '—'}
+                        {`${(o.customer as any)?.first_name ?? o.customer?.contacto_nombre ?? "—"} ${(o.customer as any)?.last_name ?? ""}`.trim()}
                       </div>
                       <div style={{ fontSize: 10, color: '#aaa' }}>{o.customer?.company_name}</div>
                     </Link>
