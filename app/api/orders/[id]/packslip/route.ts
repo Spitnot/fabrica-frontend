@@ -31,7 +31,11 @@ export async function GET(_req: NextRequest, { params }: Props) {
     return new NextResponse('Order not found', { status: 404 });
   }
 
-  const address = order.customer?.direccion_envio as any;
+  const cust = order.customer as any;
+  const address = cust?.ship_street1
+    ? { street: cust.ship_street1, city: cust.ship_city, postal_code: cust.ship_postal_code, country: cust.ship_country }
+    : cust?.direccion_envio as any;
+  const recipientName = cust?.first_name ? `${cust.first_name} ${cust.last_name ?? ""}`.trim() : cust?.contacto_nombre ?? "—";
   const date = new Date(order.created_at).toLocaleDateString('en-GB', {
     day: '2-digit', month: 'short', year: 'numeric',
   });
@@ -201,7 +205,7 @@ export async function GET(_req: NextRequest, { params }: Props) {
     </div>
     <div class="address-block">
       <h3>Ship To</h3>
-      <p class="name">${order.customer?.contacto_nombre ?? '—'}</p>
+      <p class="name">${recipientName}</p>
       <p>${order.customer?.company_name ?? ''}</p>
       <p>${address?.street ?? '—'}</p>
       <p>${address?.postal_code ?? ''} ${address?.city ?? ''}</p>

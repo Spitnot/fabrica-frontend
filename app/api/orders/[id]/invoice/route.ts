@@ -24,7 +24,10 @@ export async function GET(_req: NextRequest, { params }: Props) {
 
   if (error || !order) return new NextResponse('Order not found', { status: 404 });
 
-  const address = order.customer?.direccion_envio as any;
+  const inv_cust = order.customer as any;
+  const address = inv_cust?.ship_street1
+    ? { street: inv_cust.ship_street1, city: inv_cust.ship_city, postal_code: inv_cust.ship_postal_code, country: inv_cust.ship_country }
+    : inv_cust?.direccion_envio as any;
   const date = new Date(order.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
   const invoiceNumber = `FR-${new Date(order.created_at).getFullYear()}-${id.slice(0, 6).toUpperCase()}`;
   

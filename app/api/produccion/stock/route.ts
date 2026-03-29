@@ -11,7 +11,7 @@ export async function GET() {
         sku,
         nombre_producto,
         cantidad,
-        order:orders!inner(id, status, created_at, customer:customers(contacto_nombre, company_name))
+        order:orders!inner(id, status, created_at, customer:customers(contacto_nombre, first_name, last_name, company_name))
       `)
       .in('orders.status', ['confirmado', 'produccion', 'listo_envio']);
 
@@ -46,7 +46,7 @@ export async function GET() {
       skuMap[item.sku].pedidos.push({
         id: order.id, status: order.status, cantidad: item.cantidad,
         created_at: order.created_at,
-        cliente: order.customer?.company_name || order.customer?.contacto_nombre || '—',
+        cliente: order.customer?.company_name || (order.customer as any)?.first_name ? `${(order.customer as any).first_name} ${(order.customer as any).last_name ?? ""}`.trim() : order.customer?.contacto_nombre || "—",
       });
     });
 
