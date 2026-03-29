@@ -26,12 +26,22 @@ export async function POST(req: NextRequest, { params }: Props) {
       .eq('id', id)
       .single()
 
-    if (fetchError || !order) {
+    if (fetchError || !order)
       return NextResponse.json({ error: 'Pedido no encontrado' }, { status: 404 })
-    }
 
     const customer = Array.isArray(order.customer) ? order.customer[0] : order.customer
-    const address = customer?.direccion_envio as any
+
+    // Use new flat columns, fallback to legacy JSON for backwards compat
+    const shipStreet  = customer?.ship_street1     ?? (customer?.direccion_envio as any)?.street      ?? ''
+    const shipCity    = customer?.ship_city        ?? (customer?.direccion_envio as any)?.city        ?? ''
+    const shipPostal  = customer?.ship_postal_code ?? (customer?.direccion_envio as any)?.postal_code ?? ''
+    const shipCountry = customer?.ship_country     ?? (customer?.direccion_envio as any)?.country     ?? 'ES'
+    const shipPhone   = customer?.telefono_e164    ?? customer?.telefono ?? FROM_PHONE
+
+    // Recipient name: prefer first+last, fallback to contacto_nombre, fallback to company
+    const recipientName = customer?.first_name
+      ? `${customer.first_name} ${customer.last_name ?? ''}`.trim()
+      : customer?.contacto_nombre ?? customer?.company_name
 
     let shipmentRef: string | null = null
     let trackingUrl: string | null = null
@@ -49,13 +59,13 @@ export async function POST(req: NextRequest, { params }: Props) {
           email:    FROM_EMAIL,
         },
         to: {
-          name:     customer?.contacto_nombre ?? customer?.company_name,
+          name:     recipientName,
           company:  customer?.company_name,
-          street1:  address?.street,
-          city:     address?.city,
-          zip_code: address?.postal_code,
-          country:  address?.country ?? 'ES',
-          phone:    customer?.telefono ?? FROM_PHONE,
+          street1:  shipStreet,
+          city:     shipCity,
+          zip_code: shipPostal,
+          country:  shipCountry,
+          phone:    shipPhone,
           email:    customer?.email,
         },
         packages: [{
@@ -106,7 +116,7 @@ export async function POST(req: NextRequest, { params }: Props) {
     if (customer?.email) {
       sendShippingEmail(
         customer.email,
-        customer.contacto_nombre ?? customer.company_name,
+        recipientName ?? customer.company_name,
         `#${id.slice(0, 8).toUpperCase()}`,
         trackingUrl ?? undefined,
         undefined,
