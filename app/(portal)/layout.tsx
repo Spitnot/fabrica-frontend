@@ -60,6 +60,20 @@ function useActiveNav(pathname: string) {
   };
 }
 
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+function displayName(data: any): string {
+  if (data?.first_name) return `${data.first_name} ${data.last_name ?? ''}`.trim()
+  return data?.contacto_nombre ?? '—'
+}
+
+function initials(name: string): string {
+  if (!name || !name.trim()) return '?'
+  return name.split(' ').map(w => w[0]).filter(Boolean).slice(0, 2).join('').toUpperCase()
+}
+
+// ─── Sidebar ─────────────────────────────────────────────────────────────────
+
 function SidebarContent({ onClose }: { onClose: () => void }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -70,7 +84,7 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
     fetch('/api/portal/profile')
       .then(r => r.json())
       .then(({ data }) => {
-        if (data) setUserInfo({ name: data.contacto_nombre, company: data.company_name });
+        if (data) setUserInfo({ name: displayName(data), company: data.company_name });
       });
   }, []);
 
@@ -79,12 +93,8 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
     router.push('/login');
   }
 
-  const initials = (name: string) =>
-    name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
-
   return (
     <>
-      {/* Logo */}
       <div style={{ padding: '20px 20px 14px', borderBottom: '1px solid #111' }}>
         <Link href="/portal" onClick={onClose}>
           <FirmaLogo width={110} />
@@ -94,7 +104,6 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
         </div>
       </div>
 
-      {/* Nav */}
       <nav style={{ flex: 1, padding: '12px 8px', display: 'flex', flexDirection: 'column', gap: 2 }}>
         <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: '#ccc', padding: '4px 8px 8px' }}>
           My Account
@@ -102,21 +111,16 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
         {NAV.map(({ href, label, icon }) => {
           const active = isActive(href);
           return (
-            <Link
-              key={href}
-              href={href}
-              onClick={onClose}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 10,
-                padding: '10px 10px', minHeight: 48,
-                fontSize: 12, fontWeight: 700,
-                letterSpacing: '0.07em', textTransform: 'uppercase',
-                color: active ? '#fff' : '#666',
-                background: active ? '#111' : 'transparent',
-                border: `1px solid ${active ? '#111' : 'transparent'}`,
-                textDecoration: 'none',
-              }}
-            >
+            <Link key={href} href={href} onClick={onClose} style={{
+              display: 'flex', alignItems: 'center', gap: 10,
+              padding: '10px 10px', minHeight: 48,
+              fontSize: 12, fontWeight: 700,
+              letterSpacing: '0.07em', textTransform: 'uppercase',
+              color: active ? '#fff' : '#666',
+              background: active ? '#111' : 'transparent',
+              border: `1px solid ${active ? '#111' : 'transparent'}`,
+              textDecoration: 'none',
+            }}>
               <span style={{ color: active ? '#D93A35' : '#aaa', flexShrink: 0 }}>
                 {icon(active)}
               </span>
@@ -126,19 +130,15 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
         })}
       </nav>
 
-      {/* User */}
       <div style={{ borderTop: '1px solid #111' }}>
-        <button
-          onClick={handleLogout}
-          style={{
-            padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10,
-            background: 'transparent', border: 'none', boxShadow: 'none',
-            cursor: 'pointer', width: '100%', textAlign: 'left', minHeight: 56,
-            fontFamily: 'var(--font-main)',
-          }}
-        >
+        <button onClick={handleLogout} style={{
+          padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10,
+          background: 'transparent', border: 'none', boxShadow: 'none',
+          cursor: 'pointer', width: '100%', textAlign: 'left', minHeight: 56,
+          fontFamily: 'var(--font-main)',
+        }}>
           <div style={{ width: 30, height: 30, background: '#D93A35', border: '1px solid #111', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 900, color: '#fff', flexShrink: 0 }}>
-            {userInfo ? initials(userInfo.name) : 'C'}
+            {userInfo ? initials(userInfo.name) : '?'}
           </div>
           <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
             <div style={{ fontSize: 12, fontWeight: 700, color: '#111', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -168,19 +168,15 @@ function BottomNav() {
       {NAV.map(({ href, label, icon }) => {
         const active = isActive(href);
         return (
-          <Link
-            key={href}
-            href={href}
-            style={{
-              flex: 1, display: 'flex', flexDirection: 'column',
-              alignItems: 'center', justifyContent: 'center', gap: 3,
-              textDecoration: 'none',
-              color: active ? '#D93A35' : '#aaa',
-              background: active ? '#f7f7f2' : 'transparent',
-              borderRight: '1px solid #f0f0f0',
-              minHeight: 60,
-            }}
-          >
+          <Link key={href} href={href} style={{
+            flex: 1, display: 'flex', flexDirection: 'column',
+            alignItems: 'center', justifyContent: 'center', gap: 3,
+            textDecoration: 'none',
+            color: active ? '#D93A35' : '#aaa',
+            background: active ? '#f7f7f2' : 'transparent',
+            borderRight: '1px solid #f0f0f0',
+            minHeight: 60,
+          }}>
             {icon(active)}
             <span style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
               {label}
@@ -206,7 +202,6 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
         }
       `}</style>
 
-      {/* Sidebar */}
       <aside className="fr-portal-sidebar" style={{
         width: 220, background: '#fff', borderRight: '1px solid #111',
         display: 'flex', flexDirection: 'column',
@@ -217,32 +212,22 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
         <SidebarContent onClose={() => setSidebarOpen(false)} />
       </aside>
 
-      {/* Overlay móvil */}
       {sidebarOpen && (
-        <div
-          onClick={() => setSidebarOpen(false)}
-          style={{ position: 'fixed', inset: 0, zIndex: 40, background: 'rgba(0,0,0,0.4)' }}
-        />
+        <div onClick={() => setSidebarOpen(false)}
+          style={{ position: 'fixed', inset: 0, zIndex: 40, background: 'rgba(0,0,0,0.4)' }} />
       )}
 
-      {/* Layout */}
       <div style={{ display: 'flex', minHeight: '100vh', background: '#fff' }}>
         <div className="fr-portal-spacer" style={{ width: 220, flexShrink: 0, display: 'none' }} />
-
         <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
-          {/* Topbar móvil — fina, solo logo + menú */}
           <div className="fr-portal-bottomnav" style={{
             position: 'sticky', top: 0, zIndex: 30,
             background: '#fff', borderBottom: '1px solid #111',
             padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           }}>
-            <Link href="/portal">
-              <FirmaLogo width={80} />
-            </Link>
-            <button
-              onClick={() => setSidebarOpen(true)}
-              style={{ background: 'transparent', border: 'none', boxShadow: 'none', padding: 6, color: '#111', display: 'flex', alignItems: 'center' }}
-            >
+            <Link href="/portal"><FirmaLogo width={80} /></Link>
+            <button onClick={() => setSidebarOpen(true)}
+              style={{ background: 'transparent', border: 'none', boxShadow: 'none', padding: 6, color: '#111', display: 'flex', alignItems: 'center' }}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <path d="M3 12h18M3 6h18M3 18h18"/>
               </svg>
@@ -253,7 +238,6 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
             {children}
           </main>
 
-          {/* Bottom nav móvil */}
           <div className="fr-portal-bottomnav">
             <BottomNav />
           </div>
