@@ -5,7 +5,7 @@ import Link from 'next/link';
 
 interface Tarifa { id: string; nombre: string; }
 interface Customer {
-  id: string; contacto_nombre: string; company_name: string; email: string;
+  id: string; contacto_nombre: string | null; first_name: string | null; last_name: string | null; company_name: string; email: string;
   telefono?: string; estado: string; tarifa_id?: string; tarifa?: Tarifa;
   descuento_pct: number; direccion_envio?: { city?: string };
   created_at: string; onboarding_completed?: boolean;
