@@ -43,6 +43,8 @@ export async function POST(req: NextRequest) {
       id: userId,
       auth_user_id: userId,
       contacto_nombre: body.contacto_nombre,
+      first_name:      body.contacto_nombre?.trim().split(' ')[0] ?? null,
+      last_name:       body.contacto_nombre?.trim().split(' ').slice(1).join(' ') || null,
       company_name: body.company_name || body.contacto_nombre,
       email: body.email,
       telefono: body.telefono,
@@ -76,6 +78,17 @@ export async function POST(req: NextRequest) {
         postal_code: body.fiscal_postal_code,
         country: body.fiscal_country,
       },
+      // Flat columns
+      ship_street1:     body.street      ?? null,
+      ship_city:        body.city        ?? null,
+      ship_postal_code: body.postal_code ?? null,
+      ship_country:     (body.country     ?? '').toUpperCase() || null,
+      fiscal_street1:     body.fiscal_street      ?? null,
+      fiscal_city:        body.fiscal_city        ?? null,
+      fiscal_state:       body.fiscal_state       ?? null,
+      fiscal_postal_code: body.fiscal_postal_code ?? null,
+      fiscal_country:     (body.fiscal_country    ?? '').toUpperCase() || null,
+      telefono_e164:    body.telefono?.replace(/\s+/g, '') ?? null,
     };
 
     const { data, error: dbError } = await supabaseAdmin

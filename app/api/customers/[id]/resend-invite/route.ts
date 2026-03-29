@@ -10,7 +10,7 @@ export async function POST(req: NextRequest, { params }: Props) {
 
     const { data: customer, error: dbError } = await supabaseAdmin
       .from('customers')
-      .select('email, contacto_nombre')
+      .select('email, contacto_nombre, first_name, last_name')
       .eq('id', id)
       .single()
 
@@ -33,7 +33,8 @@ export async function POST(req: NextRequest, { params }: Props) {
       return NextResponse.json({ error: 'Could not generate link' }, { status: 500 })
     }
 
-    await sendCustomerInviteEmail(customer.email, customer.contacto_nombre, setupLink, id)
+    const recipientName = (customer as any).first_name ? `${(customer as any).first_name} ${(customer as any).last_name ?? ""}`.trim() : customer.contacto_nombre
+    await sendCustomerInviteEmail(customer.email, recipientName, setupLink, id)
 
     return NextResponse.json({ success: true })
 
