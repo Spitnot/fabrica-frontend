@@ -52,12 +52,13 @@ export default function OnboardingPage() {
       .then(({ data }) => {
         if (!data) return
         if (data.onboarding_completed) { router.replace('/portal'); return }
-        setName(data.contacto_nombre ?? '')
-        const addr   = data.direccion_envio  ?? {}
-        const fiscal = data.direccion_fiscal ?? {}
+        const displayName = data.first_name ? `${data.first_name} ${data.last_name ?? ""}`.trim() : data.contacto_nombre ?? ""
+        setName(displayName)
+        const addr   = data.ship_street1 ? { street: data.ship_street1, city: data.ship_city, postal_code: data.ship_postal_code, country: data.ship_country } : data.direccion_envio ?? {}
+        const fiscal = data.fiscal_street1 ? { street: data.fiscal_street1, city: data.fiscal_city, state: data.fiscal_state, postal_code: data.fiscal_postal_code, country: data.fiscal_country } : data.direccion_fiscal ?? {}
         setForm(p => ({
           ...p,
-          contacto_nombre:    data.contacto_nombre    ?? '',
+          contacto_nombre:    displayName,
           company_name:       data.company_name       ?? '',
           nombre_comercial:   data.nombre_comercial   ?? '',
           tipo_empresa:       data.tipo_empresa       ?? '',
