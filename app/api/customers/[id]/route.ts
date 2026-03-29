@@ -18,8 +18,8 @@ export async function GET(_req: NextRequest, { params }: Props) {
   // Normalize legacy fields for frontend compatibility
   const normalized = {
     ...customer,
-    contacto_nombre: customer.contacto_nombre
-      ?? `${customer.first_name ?? ''} ${customer.last_name ?? ''}`.trim() || null,
+    contacto_nombre: (customer.contacto_nombre ?? `${customer.first_name ?? ''} ${customer.last_name ?? ''}`.trim()) || null,
+
     direccion_envio: {
       street:      customer.ship_street1     ?? '',
       street2:     customer.ship_street2     ?? '',

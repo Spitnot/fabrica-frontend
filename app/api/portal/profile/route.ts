@@ -33,7 +33,7 @@ export async function GET() {
   const normalized = {
     ...data,
     // Legacy shape so existing UI doesn't break during migration
-    contacto_nombre: data.contacto_nombre ?? `${data.first_name ?? ''} ${data.last_name ?? ''}`.trim() || null,
+    contacto_nombre: (data.contacto_nombre ?? `${data.first_name ?? ''} ${data.last_name ?? ''}`.trim()) || null,
     direccion_envio: {
       street:      data.ship_street1 ?? '',
       street2:     data.ship_street2 ?? '',
