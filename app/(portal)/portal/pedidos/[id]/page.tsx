@@ -46,7 +46,11 @@ export default async function PedidoDetallePage({ params }: Props) {
   if (!order) notFound();
 
   const currentIdx = STATUS_ORDER.indexOf(order.status);
-  const address = order.customer?.direccion_envio as any;
+  const c = order.customer as any;
+  const address = c?.ship_street1
+    ? { street: c.ship_street1, city: c.ship_city, postal_code: c.ship_postal_code, country: c.ship_country }
+    : c?.direccion_envio as any;
+  const contactName = c?.first_name ? `${c.first_name} ${c.last_name ?? ""}`.trim() : c?.contacto_nombre ?? "—";
 
   return (
     <div className="p-4 md:p-7">
@@ -66,7 +70,7 @@ export default async function PedidoDetallePage({ params }: Props) {
             </span>
           </div>
           <div className="text-xs text-gray-400 mt-1 truncate">
-            {order.customer?.contacto_nombre} · {order.customer?.company_name} ·{' '}
+            {contactName} · {order.customer?.company_name} ·{' '}
             {new Date(order.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
           </div>
         </div>
@@ -95,7 +99,7 @@ export default async function PedidoDetallePage({ params }: Props) {
             <div className="bg-white border border-gray-200 rounded-xl p-4">
               <div className="grid grid-cols-2 gap-4 mb-5">
                 {[
-                  ['Client',     order.customer?.contacto_nombre ?? '—'],
+                  ['Client',     contactName ?? '—'],
                   ['Company',    order.customer?.company_name ?? '—'],
                   ['Total weight', `${order.peso_total} kg`],
                   ['Created',    new Date(order.created_at).toLocaleDateString('en-GB')],
@@ -247,7 +251,7 @@ export default async function PedidoDetallePage({ params }: Props) {
             </div>
             <div className="p-4 space-y-2">
               {[
-                ['Name',    order.customer?.contacto_nombre ?? '—'],
+                ['Name',    contactName ?? '—'],
                 ['Company', order.customer?.company_name ?? '—'],
                 ['Email',   order.customer?.email ?? '—'],
                 ['Phone',   order.customer?.telefono ?? '—'],

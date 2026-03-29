@@ -9,7 +9,7 @@ interface Product { sku: string; nombre_producto: string; variante?: string; pre
 interface ProductGroup { nombre: string; variantes: Product[]; imagen?: string; }
 interface TarifaPrecioPortal { sku: string; pack_size?: number | null; }
 interface Tarifa { pack_size: number; minimum_order_value: number; hidden_products: string[]; precios?: TarifaPrecioPortal[]; }
-interface Customer { id: string; contacto_nombre: string; company_name: string; tarifa?: Tarifa | null; direccion_envio: { street: string; city: string; postal_code: string; country: string; }; }
+interface Customer { id: string; contacto_nombre?: string; first_name?: string; last_name?: string; company_name: string; tarifa?: Tarifa | null; ship_street1?: string; ship_city?: string; ship_postal_code?: string; ship_country?: string; direccion_envio?: { street: string; city: string; postal_code: string; country: string; }; }
 interface LineItem { sku: string; nombre_producto: string; variante?: string; cantidad: number; precio_unitario: number; peso_unitario: number; }
 interface Quote { service_id: string; carrier: string; service_name: string; price: number; estimated_days: number; }
 
@@ -34,7 +34,7 @@ export default function NuevoPedidoPortalPage() {
       if (!session?.user) return;
       const { data: cust } = await supabaseClient
         .from('customers')
-        .select('id, contacto_nombre, company_name, direccion_envio, tarifa:tarifa_id(pack_size, minimum_order_value, hidden_products, precios:tarifas_precios(sku, pack_size))')
+        .select('id, contacto_nombre, first_name, last_name, company_name, ship_street1, ship_city, ship_postal_code, ship_country, direccion_envio, tarifa:tarifa_id(pack_size, minimum_order_value, hidden_products, precios:tarifas_precios(sku, pack_size))')
         .eq('auth_user_id', session.user.id)
         .single();
       if (cust) setCustomer(cust as unknown as Customer);
@@ -102,7 +102,7 @@ export default function NuevoPedidoPortalPage() {
       const res = await fetch('/api/quotes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ peso: totalWeight, ancho: 30, alto: 20, largo: 30, destination: customer.direccion_envio }),
+        body: JSON.stringify({ peso: totalWeight, ancho: 30, alto: 20, largo: 30, destination: customer.ship_street1 ? { street: customer.ship_street1, city: customer.ship_city, postal_code: customer.ship_postal_code, country: customer.ship_country } : customer.direccion_envio }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? 'Error quoting');
@@ -156,13 +156,13 @@ export default function NuevoPedidoPortalPage() {
               <div className="bg-white border border-gray-200 rounded-xl p-4">
                 <div className="flex gap-3 p-3 bg-gray-50 border border-gray-200 rounded-lg">
                   <div className="w-8 h-8 rounded-lg bg-[#D93A35] flex items-center justify-center text-xs font-bold text-white flex-shrink-0">
-                    {customer.contacto_nombre.split(' ').map((w: string) => w[0]).slice(0, 2).join('')}
+                    {(`${customer.first_name ?? customer.contacto_nombre ?? "?"}`)}
                   </div>
                   <div>
-                    <div className="text-sm font-semibold text-gray-900">{customer.contacto_nombre}</div>
+                    <div className="text-sm font-semibold text-gray-900">{`${customer.first_name ?? customer.contacto_nombre ?? ""} ${customer.last_name ?? ""}`.trim()}</div>
                     <div className="text-xs text-gray-400">{customer.company_name}</div>
                     <div className="font-mono text-xs text-gray-400 mt-0.5 truncate">
-                      {customer.direccion_envio?.street} · {customer.direccion_envio?.postal_code} {customer.direccion_envio?.city}
+                      {(customer.ship_street1 ?? customer.direccion_envio?.street)} · {(customer.ship_postal_code ?? customer.direccion_envio?.postal_code)} {(customer.ship_city ?? customer.direccion_envio?.city)}
                     </div>
                   </div>
                 </div>
