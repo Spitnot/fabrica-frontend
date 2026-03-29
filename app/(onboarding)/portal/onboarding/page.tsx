@@ -282,7 +282,7 @@ export default function OnboardingPage() {
                         {PHONE_PREFIXES.map(p => <option key={p.code} value={p.code}>{p.flag} {p.code}</option>)}
                       </select>
                       <input type="tel" value={form.telefono_number} onChange={e => set('telefono_number', e.target.value)}
-                        placeholder="612 345 678" className={inputCls} />
+                        placeholder="612 345 678" className={`${inputCls} flex-1`} />
                     </div>
                   </div>
                 </div>
