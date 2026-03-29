@@ -5,7 +5,7 @@ import { supabaseAdmin } from '@/lib/supabase/server';
 export async function GET() {
   const { data, error } = await supabaseAdmin
     .from('customers')
-    .select('id, contacto_nombre, company_name, tarifa_id, descuento_pct, direccion_envio')
+    .select('id, contacto_nombre, first_name, last_name, company_name, tarifa_id, descuento_pct, direccion_envio')
     .eq('estado', 'active')
     .order('company_name');
 
