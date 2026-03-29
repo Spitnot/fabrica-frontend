@@ -274,16 +274,15 @@ export default function OnboardingPage() {
                     <input type="text" value={form.contacto_nombre} onChange={e => set('contacto_nombre', e.target.value)}
                       placeholder="Carlos Mendez" className={inputCls} />
                   </div>
-                  <div className="sm:col-span-2">
+                  <div>
+                    <label className={labelCls}>Prefix</label>
+                    <select value={form.telefono_prefix} onChange={e => set('telefono_prefix', e.target.value)} className={selectCls}>
+                      {PHONE_PREFIXES.map(p => <option key={p.code} value={p.code}>{p.flag} {p.code}</option>)}
+                    </select>
+                  </div>
+                  <div>
                     <label className={labelCls}>Phone</label>
-                    <div className="flex gap-2 overflow-hidden">
-                      <select value={form.telefono_prefix} onChange={e => set('telefono_prefix', e.target.value)}
-                        className="bg-white border border-gray-200 rounded-lg px-2 py-2.5 text-sm text-gray-900 focus:border-[#D93A35] outline-none w-[120px] flex-shrink-0">
-                        {PHONE_PREFIXES.map(p => <option key={p.code} value={p.code}>{p.flag} {p.code}</option>)}
-                      </select>
-                      <input type="tel" value={form.telefono_number} onChange={e => set('telefono_number', e.target.value)}
-                        placeholder="612 345 678" className="min-w-0 flex-1 bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-[#D93A35] outline-none transition-all" />
-                    </div>
+                    <input type="tel" value={form.telefono_number} onChange={e => set('telefono_number', e.target.value)} placeholder="612 345 678" className={inputCls} />
                   </div>
                 </div>
               </div>
