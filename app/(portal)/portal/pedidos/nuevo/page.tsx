@@ -327,7 +327,15 @@ export default function NuevoPedidoPortalPage() {
                     <div className="text-xs text-gray-400">{q.service_name}</div>
                     {q.estimated_days && <div className="text-xs text-gray-400">{q.estimated_days} days</div>}
                   </div>
-                  <div className="text-sm font-black text-[#D93A35]" style={{ fontFamily: 'var(--font-alexandria)' }}>{fmt(q.price)}</div>
+                  <div className="flex flex-col items-end gap-1">
+                    <div className="text-sm font-black text-[#D93A35]" style={{ fontFamily: 'var(--font-alexandria)' }}>{fmt(q.price)}</div>
+                    {selectedQuote?.service_id === q.service_id && (
+                      <span className="text-[10px] font-bold text-[#0DA265] flex items-center gap-1">
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M5 13l4 4L19 7"/></svg>
+                        Selected
+                      </span>
+                    )}
+                  </div>
                 </button>
               ))}
             </div>
