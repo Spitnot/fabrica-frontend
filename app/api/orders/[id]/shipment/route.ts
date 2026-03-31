@@ -59,9 +59,8 @@ export async function POST(req: NextRequest, { params }: Props) {
           email:    FROM_EMAIL,
         },
         to: {
-          first_name: customer?.first_name ?? recipientName,
-          last_name:  customer?.last_name  ?? '',
-          company:    customer?.company_name,
+          name:    recipientName,
+          company: customer?.company_name,
           street1:    shipStreet,
           city:       shipCity,
           zip_code:   shipPostal,
