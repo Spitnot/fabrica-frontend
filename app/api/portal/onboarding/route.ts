@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
   const first_name = nameParts[0] ?? null
   const last_name  = nameParts.slice(1).join(' ') || null
 
-  const rawPhone = body.telefono?.trim() ?? null
+  const rawPhone = body.telefono?.trim() ?? body.telefono_e164?.trim() ?? null
   const telefono_e164 = rawPhone?.replace(/\s+/g, '') ?? null
 
   const shipStreet  = (body.same_address ? body.fiscal_street      : body.street)?.trim()      ?? ''
@@ -39,7 +39,6 @@ export async function POST(req: NextRequest) {
   const updates: Record<string, unknown> = {
     first_name,
     last_name,
-    telefono:        rawPhone,
     telefono_e164,
     company_name:       body.company_name.trim(),
     nombre_comercial:   body.nombre_comercial?.trim()  ?? null,
@@ -53,11 +52,11 @@ export async function POST(req: NextRequest) {
     fiscal_state:       body.fiscal_state?.trim()       ?? null,
     fiscal_postal_code: body.fiscal_postal_code.trim(),
     fiscal_country:     body.fiscal_country.trim().toUpperCase(),
-    ship_street1:     shipStreet,
-    ship_city:        shipCity,
-    ship_state:       shipState  || null,
-    ship_postal_code: shipPostal,
-    ship_country:     shipCountry.toUpperCase(),
+    ship_street1:       shipStreet,
+    ship_city:          shipCity,
+    ship_state:         shipState  || null,
+    ship_postal_code:   shipPostal,
+    ship_country:       shipCountry.toUpperCase(),
     tipo_cliente:           body.tipo_cliente           ?? null,
     zona_distribucion:      body.zona_distribucion      ?? null,
     marcas_comercializadas: body.marcas_comercializadas ?? null,
