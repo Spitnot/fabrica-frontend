@@ -8,7 +8,6 @@ export async function GET() {
     .select('id, first_name, last_name, company_name, tarifa_id, descuento_pct, ship_street1, ship_city, ship_postal_code, ship_country, estado, created_at, onboarding_completed')
     .eq('estado', 'active')
     .order('company_name');
-
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ data });
 }
@@ -17,14 +16,13 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
 
-    // 1. Create user in Supabase Auth
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email: body.email,
       password: crypto.randomUUID(),
       email_confirm: true,
       user_metadata: {
         role: 'customer',
-        full_name: body.contacto_nombre,
+        full_name: body.contacto_nombre ?? `${body.first_name ?? ''} ${body.last_name ?? ''}`.trim(),
       },
     });
 
@@ -38,13 +36,11 @@ export async function POST(req: NextRequest) {
 
     const userId = authData.user?.id;
 
-    // 2. Insert into customers table
     const insertData: Record<string, any> = {
       id: userId,
       auth_user_id: userId,
-      contacto_nombre: body.contacto_nombre,
-      first_name:      body.contacto_nombre?.trim().split(' ')[0] ?? null,
-      last_name:       body.contacto_nombre?.trim().split(' ').slice(1).join(' ') || null,
+      first_name:   body.contacto_nombre?.trim().split(' ')[0] ?? body.first_name ?? null,
+      last_name:    body.contacto_nombre?.trim().split(' ').slice(1).join(' ') || body.last_name || null,
       company_name: body.company_name || body.contacto_nombre,
       email: body.email,
       telefono: body.telefono,
@@ -56,7 +52,7 @@ export async function POST(req: NextRequest) {
       fecha_constitucion: body.fecha_constitucion ?? null,
       tarifa_id: body.tarifa_id,
       descuento_pct: body.descuento_pct,
-     tipo_cliente:           body.tipo_cliente            ?? null,
+      tipo_cliente:           body.tipo_cliente            ?? null,
       zona_distribucion:      body.zona_distribucion       ?? null,
       marcas_comercializadas: body.marcas_comercializadas  ?? null,
       volumen_estimado:       body.volumen_estimado        ?? null,
@@ -64,7 +60,6 @@ export async function POST(req: NextRequest) {
       condiciones_legales: body.condiciones_legales,
       condiciones_comerciales: body.condiciones_comerciales,
       estado: 'active',
-      // Flat columns
       ship_street1:     body.street      ?? null,
       ship_city:        body.city        ?? null,
       ship_postal_code: body.postal_code ?? null,
@@ -89,7 +84,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: `DB Error: ${dbError.message}` }, { status: 500 });
     }
 
-    // 3. Generar invite link y enviar email
     const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
       type: 'recovery',
       email: body.email,
@@ -101,7 +95,7 @@ export async function POST(req: NextRequest) {
     if (!linkError && linkData.properties?.action_link) {
       await sendCustomerInviteEmail(
         body.email,
-        body.contacto_nombre,
+        body.contacto_nombre ?? `${body.first_name ?? ''} ${body.last_name ?? ''}`.trim(),
         linkData.properties.action_link,
         userId,
       );
