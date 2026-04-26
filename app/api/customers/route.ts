@@ -43,7 +43,6 @@ export async function POST(req: NextRequest) {
       last_name:    body.contacto_nombre?.trim().split(' ').slice(1).join(' ') || body.last_name || null,
       company_name: body.company_name || body.contacto_nombre,
       email: body.email,
-      telefono: body.telefono,
       nif_cif: body.nif_cif || '',
       tipo_fiscal: body.tipo_fiscal,
       nombre_comercial: body.nombre_comercial ?? null,

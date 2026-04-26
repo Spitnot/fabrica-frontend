@@ -16,7 +16,7 @@ export async function GET() {
     .from('customers')
     .select(`
       first_name, last_name,
-      company_name, email, telefono, telefono_e164, nif_cif, tipo_fiscal,
+      company_name, email, telefono_e164, nif_cif, tipo_fiscal,
       nombre_comercial, tipo_empresa, numero_eori, fecha_constitucion,
       tipo_cliente, zona_distribucion, marcas_comercializadas,
       volumen_estimado, num_puntos_venta,
