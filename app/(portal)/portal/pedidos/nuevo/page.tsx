@@ -30,12 +30,12 @@ export default function NuevoPedidoPortalPage() {
 
   useEffect(() => {
     async function loadData() {
-      const { data: { session } } = await supabaseClient.auth.getSession();
-      if (!session?.user) return;
+      const { data: { user } } = await supabaseClient.auth.getUser();
+      if (!user) return;
       const { data: cust } = await supabaseClient
         .from('customers')
         .select('id, contacto_nombre, first_name, last_name, company_name, ship_street1, ship_city, ship_postal_code, ship_country, direccion_envio, tarifa:tarifa_id(pack_size, minimum_order_value, hidden_products, precios:tarifas_precios(sku, pack_size))')
-        .eq('auth_user_id', session.user.id)
+        .eq('auth_user_id', user.id)
         .single();
       if (cust) setCustomer(cust as unknown as Customer);
     }

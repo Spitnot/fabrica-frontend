@@ -4,14 +4,14 @@ import { supabaseAdmin } from '@/lib/supabase/server';
 
 export async function GET() {
   const supabase = await createSupabaseServerClient();
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   // Resolve customer id from auth user
   const { data: customer } = await supabase
     .from('customers')
     .select('id')
-    .eq('auth_user_id', session.user.id)
+    .eq('auth_user_id', user.id)
     .single();
 
   if (!customer) return NextResponse.json({ error: 'Not found' }, { status: 404 });
