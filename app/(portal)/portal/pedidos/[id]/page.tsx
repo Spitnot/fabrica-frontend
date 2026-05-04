@@ -74,7 +74,7 @@ function StatusChip({ status }: { status: string }) {
       textTransform: 'uppercase',
     }}>
       <span style={{
-        width: 6, height: 6, borderRadius: '50%',
+        width: 6, height: 6, borderRadius: 0,
         background: STATUS_FG[status], opacity: 0.9,
       }} />
       {STATUS_LABELS[status]}
