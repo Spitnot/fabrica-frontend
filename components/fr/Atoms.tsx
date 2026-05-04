@@ -47,7 +47,7 @@ export function Block({ children, bg = FR.white, style = {} }:
   { children: ReactNode; bg?: string; style?: CSSProperties }) {
   return (
     <div style={{
-      background: bg, border: '2px solid #111', ...style,
+      background: bg, border: 'var(--border-dash)', ...style,
     }}>{children}</div>
   );
 }
@@ -60,7 +60,7 @@ export function Rule({ thick = false, color = FR.ink }: { thick?: boolean; color
 export function KPI({ label, value, accent = FR.ink, sub, bg = FR.white }:
   { label: string; value: ReactNode; accent?: string; sub?: ReactNode; bg?: string }) {
   return (
-    <div style={{ background: bg, border: '2px solid #111', padding: 18 }}>
+    <div style={{ background: bg, border: 'var(--border-dash)', padding: 16 }}>
       <div style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontWeight: 700, fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase' }}>{label}</div>
       <div style={{
         fontFamily: 'var(--font-alexandria), Alexandria, sans-serif',
@@ -94,7 +94,7 @@ export function PageHeader({ eyebrow, title, count, actions }:
 export function FilterTabs<T extends string>({ tabs, value, onChange }:
   { tabs: { id: T; label: string; count?: number }[]; value: T; onChange: (v: T) => void }) {
   return (
-    <div style={{ display: 'flex', border: '2px solid #111', marginBottom: 16, background: FR.white }}>
+    <div style={{ display: 'flex', border: 'var(--border-dash)', marginBottom: 16, background: FR.white }}>
       {tabs.map((t, i) => {
         const active = t.id === value;
         return (
@@ -103,7 +103,7 @@ export function FilterTabs<T extends string>({ tabs, value, onChange }:
             onClick={() => onChange(t.id)}
             style={{
               flex: '0 0 auto', padding: '12px 20px',
-              borderLeft: i === 0 ? 'none' : '2px solid #111',
+              borderLeft: i === 0 ? 'none' : 'var(--border-dash)',
               background: active ? FR.ink : FR.white,
               color: active ? FR.white : FR.ink,
               boxShadow: 'none', border: 'none',
