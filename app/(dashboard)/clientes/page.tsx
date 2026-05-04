@@ -95,7 +95,7 @@ export default function ClientesPage() {
           <div className="fr-section-head">
             <span>Invite client</span>
             <button onClick={() => { setShowInvite(false); setInviteSent(false); setInviteError(''); }}
-              style={{ border: 'none', boxShadow: 'none', background: 'transparent', fontSize: 16, padding: '0 4px', color: '#666' }}>
+              style={{ border: 'none', boxShadow: 'none', background: 'transparent', fontSize: 16, padding: '0 4px', color: '#111' }}>
               ✕
             </button>
           </div>
@@ -180,9 +180,9 @@ export default function ClientesPage() {
         </div>
 
         {loading ? (
-          <div style={{ padding: '60px 16px', textAlign: 'center', fontSize: 12, color: '#999' }}>Loading…</div>
+          <div style={{ padding: '60px 16px', textAlign: 'center', fontSize: 12, color: '#111' }}>Loading…</div>
         ) : clients.length === 0 ? (
-          <div style={{ padding: '60px 16px', textAlign: 'center', fontSize: 12, color: '#999' }}>No clients registered yet.</div>
+          <div style={{ padding: '60px 16px', textAlign: 'center', fontSize: 12, color: '#111' }}>No clients registered yet.</div>
         ) : (
           <>
             <div className="fr-table-head fr-clients-head" style={{ gridTemplateColumns: cols }}>
@@ -202,8 +202,8 @@ export default function ClientesPage() {
                   <div>
                     <div style={{ fontSize: 13, fontWeight: 600 }}>{fullName}</div>
                   </div>
-                  <div style={{ fontSize: 12, color: '#666' }}>{c.company_name}</div>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: '#666' }}>{c.email}</div>
+                  <div style={{ fontSize: 12, color: '#111' }}>{c.company_name}</div>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: '#111' }}>{c.email}</div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     {c.tarifa && (
                       <span style={{ padding: '2px 8px', border: '1px solid #111', fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 9, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
@@ -215,7 +215,7 @@ export default function ClientesPage() {
                     )}
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                    <span style={{ padding: '2px 6px', background: c.estado === 'active' ? '#0DA265' : '#999', color: '#fff', fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 9, letterSpacing: '0.1em', textTransform: 'uppercase', width: 'fit-content' }}>
+                    <span style={{ padding: '2px 6px', background: c.estado === 'active' ? '#0DA265' : '#111', color: '#fff', fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 9, letterSpacing: '0.1em', textTransform: 'uppercase', width: 'fit-content' }}>
                       {c.estado === 'active' ? 'Active' : 'Inactive'}
                     </span>
                     {!c.onboarding_completed && (
@@ -224,7 +224,7 @@ export default function ClientesPage() {
                       </span>
                     )}
                   </div>
-                  <div className="fr-label" style={{ color: '#999' }}>
+                  <div className="fr-label" style={{ color: '#111' }}>
                     {new Date(c.created_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: '2-digit' }).toUpperCase()}
                   </div>
                 </Link>

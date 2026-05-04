@@ -103,7 +103,7 @@ export default async function DashboardPage() {
             <Link href="/pedidos" className="fr-label" style={{ color: '#D93A35' }}>View all →</Link>
           </div>
           {orders.length === 0 ? (
-            <div style={{ padding: '40px 16px', textAlign: 'center', fontSize: 12, color: '#999' }}>No orders yet</div>
+            <div style={{ padding: '40px 16px', textAlign: 'center', fontSize: 12, color: '#111' }}>No orders yet</div>
           ) : orders.map((o: any, i: number) => {
             const first = o.customer?.first_name ?? o.customer?.contacto_nombre ?? '—';
             const last = o.customer?.last_name ?? '';
@@ -111,13 +111,13 @@ export default async function DashboardPage() {
               <Link key={o.id} href={`/pedidos/${o.id}`} className="fr-row" style={{ gridTemplateColumns: '1fr 130px 110px 70px' }}>
                 <div>
                   <div style={{ fontSize: 13, fontWeight: 600 }}>{`${first} ${last}`.trim()}</div>
-                  <div className="fr-label" style={{ color: '#999' }}>{o.customer?.company_name}</div>
+                  <div className="fr-label" style={{ color: '#111' }}>{o.customer?.company_name}</div>
                 </div>
                 <StatusChip status={o.status} size="sm" />
                 <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 16, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
                   {fmt(o.total_productos)}
                 </div>
-                <div className="fr-label" style={{ color: '#999', textAlign: 'right' }}>
+                <div className="fr-label" style={{ color: '#111', textAlign: 'right' }}>
                   {new Date(o.created_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }).toUpperCase()}
                 </div>
               </Link>
@@ -148,12 +148,12 @@ export default async function DashboardPage() {
           </div>
 
           {stock.top.length === 0 ? (
-            <div style={{ padding: '24px 16px', textAlign: 'center', fontSize: 12, color: '#999' }}>No pending stock</div>
+            <div style={{ padding: '24px 16px', textAlign: 'center', fontSize: 12, color: '#111' }}>No pending stock</div>
           ) : stock.top.map((s, i) => (
             <div key={s.sku} className="fr-row" style={{ gridTemplateColumns: '1fr auto' }}>
               <div>
                 <div style={{ fontSize: 12, fontWeight: 600 }}>{s.nombre}</div>
-                <div className="fr-label" style={{ color: '#999' }}>{s.sku}{s.alerta && ' · LOW'}</div>
+                <div className="fr-label" style={{ color: '#111' }}>{s.sku}{s.alerta && ' · LOW'}</div>
               </div>
               <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 20, color: s.alerta ? '#D93A35' : '#111', fontVariantNumeric: 'tabular-nums' }}>
                 {s.unidades.toLocaleString()}

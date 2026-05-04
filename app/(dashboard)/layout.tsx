@@ -63,7 +63,7 @@ function SidebarInner({ onClose }: { onClose: () => void }) {
         <Link href="/dashboard" onClick={onClose}>
           <FRLogoSVG width={88} />
         </Link>
-        <div style={{ marginTop: 8, fontFamily: 'var(--font-mono)', fontSize: 8, fontWeight: 700, letterSpacing: '0.3em', textTransform: 'uppercase', color: '#999', borderTop: '1px solid #111', paddingTop: 6 }}>
+        <div style={{ marginTop: 8, fontFamily: 'var(--font-mono)', fontSize: 8, fontWeight: 700, letterSpacing: '0.3em', textTransform: 'uppercase', color: '#111', borderTop: '1px solid #111', paddingTop: 6 }}>
           B2B Platform
         </div>
       </div>
@@ -72,7 +72,7 @@ function SidebarInner({ onClose }: { onClose: () => void }) {
       <nav style={{ flex: 1, padding: '12px 12px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 4 }}>
         {GROUPS.map(group => (
           <div key={group} style={{ marginBottom: 8 }}>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 8, fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: '#999', padding: '4px 8px 6px' }}>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 8, fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: '#111', padding: '4px 8px 6px' }}>
               {group}
             </div>
             {NAV_ITEMS.filter(i => i.group === group).map(({ href, label }) => {
@@ -87,7 +87,7 @@ function SidebarInner({ onClose }: { onClose: () => void }) {
                     padding: '8px 10px', marginBottom: 1,
                     fontSize: 12, fontWeight: active ? 700 : 500,
                     letterSpacing: '0.03em',
-                    color: active ? '#111' : '#666',
+                    color: '#111',
                     background: active ? '#F7F7F2' : 'transparent',
                     borderLeft: active ? '2px solid #D93A35' : '2px solid transparent',
                     textDecoration: 'none',
@@ -125,9 +125,9 @@ function SidebarInner({ onClose }: { onClose: () => void }) {
             <div style={{ fontSize: 12, fontWeight: 700, color: '#111', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {userInfo?.name ?? '—'}
             </div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: '#999' }}>{userInfo?.role ?? 'Administrator'}</div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: '#111' }}>{userInfo?.role ?? 'Administrator'}</div>
           </div>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#999" strokeWidth="2">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="2">
             <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/>
           </svg>
         </button>

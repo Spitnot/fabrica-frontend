@@ -103,7 +103,7 @@ function PedidosInner() {
                 padding: '10px 16px', border: 'none', boxShadow: 'none',
                 borderBottom: active ? '2px solid #111' : '2px solid transparent',
                 background: 'transparent',
-                color: active ? '#111' : '#666',
+                color: '#111',
                 fontWeight: active ? 700 : 500,
                 fontSize: 12, letterSpacing: '0.03em',
                 display: 'flex', gap: 6, alignItems: 'baseline',
@@ -111,7 +111,7 @@ function PedidosInner() {
               }}
             >
               {t.label}
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: active ? '#111' : '#999' }}>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: '#111' }}>
                 {t.count}
               </span>
             </button>
@@ -157,9 +157,9 @@ function PedidosInner() {
               ))}
             </div>
             {loading ? (
-              <div style={{ padding: '48px 16px', textAlign: 'center', fontSize: 12, color: '#999' }}>Loading…</div>
+              <div style={{ padding: '48px 16px', textAlign: 'center', fontSize: 12, color: '#111' }}>Loading…</div>
             ) : filtered.length === 0 ? (
-              <div style={{ padding: '48px 16px', textAlign: 'center', fontSize: 12, color: '#999' }}>
+              <div style={{ padding: '48px 16px', textAlign: 'center', fontSize: 12, color: '#111' }}>
                 {hasFilters ? 'No orders match the filters.' : 'No orders yet.'}
               </div>
             ) : filtered.map((o, i) => {
@@ -172,16 +172,16 @@ function PedidosInner() {
                   </div>
                   <div>
                     <div style={{ fontSize: 13, fontWeight: 600 }}>{`${first} ${last}`.trim()}</div>
-                    <div className="fr-label" style={{ color: '#999' }}>{o.customer?.company_name}</div>
+                    <div className="fr-label" style={{ color: '#111' }}>{o.customer?.company_name}</div>
                   </div>
                   <StatusChip status={o.status as FRStatus} size="sm" />
                   <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}>
-                    {o.peso_total}<span style={{ fontSize: 9, color: '#999', marginLeft: 2 }}>kg</span>
+                    {o.peso_total}<span style={{ fontSize: 9, color: '#111', marginLeft: 2 }}>kg</span>
                   </div>
                   <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 18, fontVariantNumeric: 'tabular-nums' }}>
                     {fmt(o.total_productos)}
                   </div>
-                  <div className="fr-label" style={{ color: '#999' }}>
+                  <div className="fr-label" style={{ color: '#111' }}>
                     {new Date(o.created_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }).toUpperCase()}
                   </div>
                 </Link>
@@ -196,7 +196,7 @@ function PedidosInner() {
 
 export default function PedidosPage() {
   return (
-    <Suspense fallback={<div style={{ padding: 32, color: '#999', fontSize: 12 }}>Loading…</div>}>
+    <Suspense fallback={<div style={{ padding: 32, color: '#111', fontSize: 12 }}>Loading…</div>}>
       <PedidosInner />
     </Suspense>
   );
