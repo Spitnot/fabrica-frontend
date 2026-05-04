@@ -29,16 +29,16 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 const STATUS_COLOR: Record<string, string> = {
-  draft:       '#000000',
+  draft:       '#E6883E',
   confirmado:  '#0087B8',
-  produccion:  '#F6E451',
-  listo_envio: '#876693',
+  produccion:  '#876693',
+  listo_envio: '#F6E451',
   enviado:     '#0DA265',
   cancelado:   '#D93A35',
 };
 const STATUS_FG: Record<string, string> = {
-  draft: '#fff', confirmado: '#fff', produccion: '#000',
-  listo_envio: '#fff', enviado: '#fff', cancelado: '#fff',
+  draft: '#fff', confirmado: '#fff', produccion: '#fff',
+  listo_envio: '#000', enviado: '#fff', cancelado: '#fff',
 };
 
 const STATUS_ORDER = ['draft', 'confirmado', 'produccion', 'listo_envio', 'enviado'];

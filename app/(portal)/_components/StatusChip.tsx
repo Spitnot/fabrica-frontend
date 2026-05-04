@@ -16,11 +16,11 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 const STATUS_DOT: Record<string, string> = {
-  draft:       '#9ca3af',
+  draft:       '#E6883E',
   confirmado:  '#0087B8',
-  produccion:  '#E07B3A',
-  listo_envio: '#6B5BD5',
-  enviado:     '#5BB85A',
+  produccion:  '#876693',
+  listo_envio: '#F6E451',
+  enviado:     '#0DA265',
   cancelado:   '#D93A35',
 };
 

@@ -267,7 +267,7 @@ export default function ProduccionPage() {
                               <span style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 11, color: FR.red, fontWeight: 700 }}>
                                 #{p.id.slice(0, 8).toUpperCase()}
                               </span>
-                              <StatusChip status={p.status as FRStatus} size="sm" inverted />
+                              <StatusChip status={p.status as FRStatus} size="sm" />
                               <div style={{ fontSize: 12, color: '#ddd', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.cliente}</div>
                               <div style={{
                                 fontFamily: 'var(--font-alexandria), Alexandria, sans-serif',
