@@ -1,70 +1,41 @@
-// app/(dashboard)/clientes/page.tsx
-// Client component — invite form, fetches, state, and submit logic preserved 1:1.
-// JSX restructured to match Foundry mockup: dark header, tier as TweakRadio-style
-// strip, grid of avatar rows.
-
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { PageHeader, FR } from '@/components/fr/Atoms';
 
 interface Tarifa { id: string; nombre: string; }
 interface Customer {
   id: string; first_name: string | null; last_name: string | null; company_name: string; email?: string;
-  telefono?: string; estado: string; tarifa_id?: string; tarifa?: Tarifa;
-  descuento_pct: number; ship_city?: string; ship_country?: string;
-  created_at: string; onboarding_completed?: boolean;
+  estado: string; tarifa_id?: string; tarifa?: Tarifa;
+  descuento_pct: number; created_at: string; onboarding_completed?: boolean;
 }
-
-const TARIFA_BG: Record<string, string> = {
-  retail:    FR.yellow,   // warm
-  wholesale: '#111',      // muted
-};
 
 function initials(first: string | null, last: string | null) {
   const a = (first ?? '').trim()[0] ?? '';
   const b = (last  ?? '').trim()[0] ?? '';
-  const out = (a + b).toUpperCase();
-  return out || '··';
+  return (a + b).toUpperCase() || '··';
 }
 
-const monoLabel: React.CSSProperties = {
-  fontFamily: 'JetBrains Mono, ui-monospace, monospace',
-  fontWeight: 700, fontSize: 9, letterSpacing: '0.18em',
-  textTransform: 'uppercase', color: '#888',
-};
-
-const sectionHeader: React.CSSProperties = {
-  padding: '12px 16px', background: '#111', color: '#fff',
-  fontFamily: 'JetBrains Mono, ui-monospace, monospace',
-  fontWeight: 700, fontSize: 10, letterSpacing: '0.18em',
-  textTransform: 'uppercase',
-  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-};
-
 export default function ClientesPage() {
-  const [clients, setClients]         = useState<Customer[]>([]);
-  const [tarifas, setTarifas]         = useState<Tarifa[]>([]);
-  const [loading, setLoading]         = useState(true);
-  const [showInvite, setShowInvite]   = useState(false);
-  const [inviteName, setInviteName]   = useState('');
-  const [inviteEmail, setInviteEmail] = useState('');
+  const [clients, setClients]           = useState<Customer[]>([]);
+  const [tarifas, setTarifas]           = useState<Tarifa[]>([]);
+  const [loading, setLoading]           = useState(true);
+  const [showInvite, setShowInvite]     = useState(false);
+  const [inviteName, setInviteName]     = useState('');
+  const [inviteEmail, setInviteEmail]   = useState('');
   const [inviteTarifa, setInviteTarifa] = useState('');
   const [inviteDescuento, setInviteDescuento] = useState('0');
-  const [inviteNotas, setInviteNotas] = useState('');
-  const [inviting, setInviting]       = useState(false);
-  const [inviteError, setInviteError] = useState('');
-  const [inviteSent, setInviteSent]   = useState(false);
+  const [inviteNotas, setInviteNotas]   = useState('');
+  const [inviting, setInviting]         = useState(false);
+  const [inviteError, setInviteError]   = useState('');
+  const [inviteSent, setInviteSent]     = useState(false);
 
   const loadClients = useCallback(async () => {
     setLoading(true);
     const [cRes, tRes] = await Promise.all([fetch('/api/customers'), fetch('/api/tarifas')]);
-    const cData = await cRes.json();
-    const tData = await tRes.json();
-    const tList: Tarifa[] = tData.data ?? [];
-    const tMap = Object.fromEntries(tList.map((t) => [t.id, t]));
-    setClients((cData.data ?? []).map((c: Customer) => ({ ...c, tarifa: c.tarifa_id ? tMap[c.tarifa_id] : undefined })));
+    const tList: Tarifa[] = (await tRes.json()).data ?? [];
+    const tMap = Object.fromEntries(tList.map(t => [t.id, t]));
+    setClients(((await cRes.json()).data ?? []).map((c: Customer) => ({ ...c, tarifa: c.tarifa_id ? tMap[c.tarifa_id] : undefined })));
     setTarifas(tList);
     const wholesale = tList.find(t => t.nombre.toLowerCase() === 'wholesale');
     if (wholesale && !inviteTarifa) setInviteTarifa(wholesale.id);
@@ -100,83 +71,70 @@ export default function ClientesPage() {
     }
   }
 
-  const inputSt: React.CSSProperties = {
-    fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 12, fontWeight: 500,
-    border: 'var(--border-dash)', borderRadius: 0, padding: '8px 12px',
-    background: '#fff', color: '#111', outline: 'none', width: '100%',
-  };
+  const cols = '48px 1.4fr 1.4fr 1fr 120px 100px 80px';
 
   return (
-    <div style={{ padding: '24px 28px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+    <div className="fr-page">
 
-      <PageHeader
-        title="CLIENTS"
-        count={`${clients.length} REGISTERED`}
-        actions={!showInvite && (
-          <button className="btn-primary"
-            onClick={() => { setShowInvite(true); setInviteSent(false); setInviteError(''); }}>
-            + INVITE CLIENT
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+        <div>
+          <div className="fr-label">{clients.length} registered</div>
+          <h1 style={{ fontSize: 28, fontWeight: 700, marginTop: 4 }}>Clients</h1>
+        </div>
+        {!showInvite && (
+          <button className="btn-primary" onClick={() => { setShowInvite(true); setInviteSent(false); setInviteError(''); }}>
+            + Invite client
           </button>
         )}
-      />
+      </div>
 
       {/* Invite form */}
       {showInvite && (
-        <div style={{ border: 'var(--border-dash)', background: '#fff' }}>
-          <div style={sectionHeader}>
-            <span>+ INVITE CLIENT</span>
-            <button
-              onClick={() => { setShowInvite(false); setInviteSent(false); setInviteError(''); }}
-              style={{ background: 'transparent', border: 'none', boxShadow: 'none', color: '#fff', fontSize: 16, padding: '0 4px', lineHeight: 1 }}
-            >
+        <div className="fr-card">
+          <div className="fr-section-head">
+            <span>Invite client</span>
+            <button onClick={() => { setShowInvite(false); setInviteSent(false); setInviteError(''); }}
+              style={{ border: 'none', boxShadow: 'none', background: 'transparent', fontSize: 16, padding: '0 4px', color: '#666' }}>
               ✕
             </button>
           </div>
 
           {inviteSent ? (
             <div style={{ padding: 24 }}>
-              <div style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 12, color: FR.green, fontWeight: 700, marginBottom: 14, letterSpacing: '0.1em' }}>
-                ✓ CLIENT CREATED — INVITE EMAIL SENT
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: '#0DA265', fontWeight: 700, marginBottom: 16 }}>
+                ✓ Client created — invite email sent
               </div>
-              <button onClick={() => { setShowInvite(false); setInviteSent(false); }} className="btn-ghost">DONE</button>
+              <button onClick={() => { setShowInvite(false); setInviteSent(false); }} className="btn-ghost">Done</button>
             </div>
           ) : (
-            <form onSubmit={handleInvite} style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 18 }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+            <form onSubmit={handleInvite} style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  <label style={monoLabel}>FULL NAME *</label>
-                  <input type="text" value={inviteName} onChange={e => setInviteName(e.target.value)}
-                    placeholder="Carlos Mendez" style={inputSt} required />
+                  <label className="fr-label">Full name *</label>
+                  <input type="text" value={inviteName} onChange={e => setInviteName(e.target.value)} placeholder="Carlos Mendez" required />
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  <label style={monoLabel}>EMAIL *</label>
-                  <input type="email" value={inviteEmail} onChange={e => setInviteEmail(e.target.value)}
-                    placeholder="carlos@empresa.com" style={inputSt} required />
+                  <label className="fr-label">Email *</label>
+                  <input type="email" value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder="carlos@empresa.com" required />
                 </div>
               </div>
 
-              {/* Tier — segmented */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <label style={monoLabel}>PRICING TIER</label>
-                <div style={{ display: 'flex', border: 'var(--border-dash)', width: 'fit-content' }}>
+                <label className="fr-label">Pricing tier</label>
+                <div style={{ display: 'flex', border: '1px solid #111', width: 'fit-content' }}>
                   {tarifas.map((t, i) => {
                     const active = inviteTarifa === t.id;
                     return (
-                      <button
-                        key={t.id}
-                        type="button"
-                        onClick={() => setInviteTarifa(t.id)}
+                      <button key={t.id} type="button" onClick={() => setInviteTarifa(t.id)}
                         style={{
-                          padding: '10px 22px',
-                          borderLeft: i === 0 ? 'none' : 'var(--border-dash)',
+                          padding: '8px 20px',
+                          borderLeft: i === 0 ? 'none' : '1px solid #111',
                           background: active ? '#111' : '#fff',
                           color: active ? '#fff' : '#111',
                           boxShadow: 'none', border: 'none',
-                          fontFamily: 'var(--font-alexandria), Alexandria, sans-serif',
-                          fontWeight: 900, fontSize: 12, letterSpacing: '0.14em',
-                          textTransform: 'uppercase',
-                        }}
-                      >
+                          fontSize: 12, fontWeight: 700, letterSpacing: '0.05em',
+                        }}>
                         {t.nombre}
                       </button>
                     );
@@ -184,31 +142,29 @@ export default function ClientesPage() {
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  <label style={monoLabel}>DISCOUNT (%)</label>
-                  <input type="number" min="0" max="100" step="0.5" value={inviteDescuento}
-                    onChange={e => setInviteDescuento(e.target.value)} placeholder="0" style={inputSt} />
+                  <label className="fr-label">Discount (%)</label>
+                  <input type="number" min="0" max="100" step="0.5" value={inviteDescuento} onChange={e => setInviteDescuento(e.target.value)} placeholder="0" />
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  <label style={monoLabel}>INTERNAL NOTES</label>
-                  <input type="text" value={inviteNotas} onChange={e => setInviteNotas(e.target.value)}
-                    placeholder="Special conditions…" style={inputSt} />
+                  <label className="fr-label">Internal notes</label>
+                  <input type="text" value={inviteNotas} onChange={e => setInviteNotas(e.target.value)} placeholder="Special conditions…" />
                 </div>
               </div>
 
               {inviteError && (
-                <div style={{ padding: '10px 14px', background: '#fff', border: '2px solid', borderColor: FR.red, fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 11, color: FR.red }}>
+                <div style={{ padding: '10px 14px', border: '1px solid #D93A35', fontFamily: 'var(--font-mono)', fontSize: 11, color: '#D93A35' }}>
                   {inviteError}
                 </div>
               )}
 
-              <div style={{ display: 'flex', gap: 10 }}>
+              <div style={{ display: 'flex', gap: 8 }}>
                 <button type="submit" disabled={inviting} className="btn-primary">
-                  {inviting ? 'CREATING…' : 'CREATE & SEND INVITE'}
+                  {inviting ? 'Creating…' : 'Create & send invite'}
                 </button>
                 <button type="button" onClick={() => { setShowInvite(false); setInviteError(''); }} className="btn-ghost">
-                  CANCEL
+                  Cancel
                 </button>
               </div>
             </form>
@@ -216,115 +172,65 @@ export default function ClientesPage() {
         </div>
       )}
 
-      {/* Client grid */}
-      <div style={{ border: 'var(--border-dash)', background: '#fff' }}>
-        <div style={sectionHeader}>
-          <span>◉ CLIENT REGISTRY</span>
-          <span style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 10, color: FR.yellow }}>
-            {loading ? 'LOADING…' : `${clients.length} TOTAL`}
-          </span>
+      {/* Table */}
+      <div className="fr-card" style={{ overflow: 'hidden' }}>
+        <div className="fr-section-head">
+          <span>Client registry</span>
+          <span className="fr-label">{loading ? '—' : `${clients.length} total`}</span>
         </div>
 
         {loading ? (
-          <div style={{ padding: '60px 16px', textAlign: 'center', fontSize: 12, color: '#888' }}>Loading…</div>
+          <div style={{ padding: '60px 16px', textAlign: 'center', fontSize: 12, color: '#999' }}>Loading…</div>
         ) : clients.length === 0 ? (
-          <div style={{ padding: '60px 16px', textAlign: 'center', fontSize: 12, color: '#888' }}>No clients registered yet.</div>
+          <div style={{ padding: '60px 16px', textAlign: 'center', fontSize: 12, color: '#999' }}>No clients registered yet.</div>
         ) : (
-          <div>
-            {/* Desktop column header */}
-            <div className="fr-clients-head" style={{
-              display: 'none',
-              gridTemplateColumns: '60px 1.4fr 1.4fr 1fr 130px 110px 90px',
-              padding: '10px 18px', gap: 12, alignItems: 'center',
-              borderBottom: 'var(--border-dash)', background: '#f6efdf',
-            }}>
-              <style>{`@media(min-width:768px){.fr-clients-head{display:grid!important}.fr-client-row{display:grid!important;grid-template-columns:60px 1.4fr 1.4fr 1fr 130px 110px 90px!important}.fr-client-row > *{display:block!important}}`}</style>
-              {['', 'CLIENT', 'COMPANY', 'EMAIL', 'TIER', 'STATUS', 'JOINED'].map(h => (
-                <div key={h || 'avatar'} style={{ ...monoLabel, color: '#111' }}>{h}</div>
+          <>
+            <div className="fr-table-head fr-clients-head" style={{ gridTemplateColumns: cols }}>
+              <style>{`@media(min-width:768px){.fr-clients-head{display:grid!important}.fr-client-row{display:grid!important}}`}</style>
+              {['', 'Client', 'Company', 'Email', 'Tier', 'Status', 'Joined'].map(h => (
+                <div key={h || 'av'} className="fr-label">{h}</div>
               ))}
             </div>
-
-            {clients.map((c, i) => {
-              const tarifaBg = c.tarifa ? (TARIFA_BG[c.tarifa.nombre.toLowerCase()] ?? '#888') : '#888';
-              const tarifaFg = tarifaBg === FR.yellow ? '#111' : '#fff';
+            {clients.map(c => {
               const fullName = `${c.first_name ?? ''} ${c.last_name ?? ''}`.trim() || '—';
               return (
-                <Link
-                  key={c.id}
-                  href={`/clientes/${c.id}`}
-                  className="fr-client-row"
-                  style={{
-                    display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'center',
-                    padding: '14px 18px',
-                    borderBottom: i < clients.length - 1 ? 'var(--border-light)' : 'none',
-                    color: '#111', textDecoration: 'none',
-                  }}
-                >
-                  <div style={{
-                    width: 44, height: 44, flexShrink: 0,
-                    background: '#111', color: FR.yellow,
-                    border: 'var(--border-dash)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontFamily: 'var(--font-alexandria), Alexandria, sans-serif',
-                    fontWeight: 900, fontSize: 16, letterSpacing: '-0.02em',
-                  }}>
+                <Link key={c.id} href={`/clientes/${c.id}`} className="fr-row fr-client-row"
+                  style={{ gridTemplateColumns: cols, display: 'flex', flexWrap: 'wrap' }}>
+                  <div style={{ width: 36, height: 36, background: '#111', color: '#F6E451', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 13, flexShrink: 0 }}>
                     {initials(c.first_name, c.last_name)}
                   </div>
                   <div>
-                    <div style={{ fontSize: 14, fontWeight: 700 }}>{fullName}</div>
-                    <div style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 10, color: '#888' }}>
-                      {c.telefono ?? '—'}
-                    </div>
+                    <div style={{ fontSize: 13, fontWeight: 600 }}>{fullName}</div>
                   </div>
-                  <div style={{ fontSize: 12, color: '#555' }}>{c.company_name}</div>
-                  <div style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 11, color: '#555' }}>{c.email}</div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div style={{ fontSize: 12, color: '#666' }}>{c.company_name}</div>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: '#666' }}>{c.email}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     {c.tarifa && (
-                      <span style={{
-                        background: tarifaBg, color: tarifaFg,
-                        padding: '4px 10px', border: 'var(--border-dash)',
-                        fontFamily: 'JetBrains Mono, ui-monospace, monospace',
-                        fontWeight: 700, fontSize: 10, letterSpacing: '0.14em',
-                        textTransform: 'uppercase',
-                      }}>
+                      <span style={{ padding: '2px 8px', border: '1px solid #111', fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 9, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
                         {c.tarifa.nombre}
                       </span>
                     )}
                     {c.descuento_pct > 0 && (
-                      <span style={{
-                        fontFamily: 'JetBrains Mono, ui-monospace, monospace',
-                        fontSize: 10, color: FR.red, fontWeight: 700,
-                      }}>
-                        −{c.descuento_pct}%
-                      </span>
+                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: '#D93A35', fontWeight: 700 }}>−{c.descuento_pct}%</span>
                     )}
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                    <span style={{
-                      width: 'fit-content', padding: '2px 8px',
-                      background: c.estado === 'active' ? FR.green : '#888', color: '#fff',
-                      fontFamily: 'JetBrains Mono, ui-monospace, monospace',
-                      fontWeight: 700, fontSize: 9, letterSpacing: '0.14em', textTransform: 'uppercase',
-                    }}>
-                      {c.estado === 'active' ? 'ACTIVE' : 'INACTIVE'}
+                    <span style={{ padding: '2px 6px', background: c.estado === 'active' ? '#0DA265' : '#999', color: '#fff', fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 9, letterSpacing: '0.1em', textTransform: 'uppercase', width: 'fit-content' }}>
+                      {c.estado === 'active' ? 'Active' : 'Inactive'}
                     </span>
-                    <span style={{
-                      width: 'fit-content', padding: '2px 8px',
-                      background: c.onboarding_completed ? '#111' : FR.yellow,
-                      color: c.onboarding_completed ? FR.yellow : '#111',
-                      fontFamily: 'JetBrains Mono, ui-monospace, monospace',
-                      fontWeight: 700, fontSize: 9, letterSpacing: '0.14em', textTransform: 'uppercase',
-                    }}>
-                      {c.onboarding_completed ? 'ONBOARDED' : 'PENDING'}
-                    </span>
+                    {!c.onboarding_completed && (
+                      <span style={{ padding: '2px 6px', background: '#E6883E', color: '#fff', fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 9, letterSpacing: '0.1em', textTransform: 'uppercase', width: 'fit-content' }}>
+                        Pending
+                      </span>
+                    )}
                   </div>
-                  <div style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 10, color: '#888' }}>
+                  <div className="fr-label" style={{ color: '#999' }}>
                     {new Date(c.created_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: '2-digit' }).toUpperCase()}
                   </div>
                 </Link>
               );
             })}
-          </div>
+          </>
         )}
       </div>
     </div>
