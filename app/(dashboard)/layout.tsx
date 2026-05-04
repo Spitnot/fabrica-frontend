@@ -59,7 +59,7 @@ function SidebarInner({ onClose }: { onClose: () => void }) {
   return (
     <>
       {/* Logo */}
-      <div style={{ padding: '16px 16px 12px', borderBottom: '1px solid #111' }}>
+      <div style={{ padding: '16px 16px 12px', borderBottom: 'var(--border-dash)' }}>
         <Link href="/dashboard" onClick={onClose}>
           <FRLogoSVG width={88} />
         </Link>
@@ -107,7 +107,7 @@ function SidebarInner({ onClose }: { onClose: () => void }) {
       </nav>
 
       {/* User / logout — borderTop via wrapper div to avoid duplicate border props */}
-      <div style={{ borderTop: '1px solid #111' }}>
+      <div style={{ borderTop: 'var(--border-dash)' }}>
         <button
           onClick={handleLogout}
           style={{
@@ -161,7 +161,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* Sidebar */}
       <aside className="fr-sidebar" style={{
-        width: 210, background: '#fff', borderRight: '1px solid #111',
+        width: 210, background: '#fff', borderRight: 'var(--border-dash)',
         display: 'flex', flexDirection: 'column',
         position: 'fixed', top: 0, left: 0, bottom: 0, zIndex: 50,
         transform: mobileOpen ? 'translateX(0)' : 'translateX(-100%)',
@@ -187,7 +187,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {/* Topbar móvil */}
           <div className="fr-mobile-topbar" style={{
             position: 'sticky', top: 0, zIndex: 30,
-            background: '#fff', borderBottom: '1px solid #111',
+            background: '#fff', borderBottom: 'var(--border-dash)',
             padding: '10px 16px',
             display: 'flex', alignItems: 'center', gap: 14,
           }}>
