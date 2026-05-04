@@ -198,8 +198,8 @@ El `StatusChip` del dashboard (`components/fr/StatusChip.tsx`) usa una interpret
 
 ## PENDIENTE DE DECISIÓN
 
-- [ ] **C2** — 4 sistemas de status colors distintos. Requiere que el equipo defina la tabla canónica y actualice los 3 StatusChip components.
-- [ ] **M6** — Portal layout `background: '#fff'` vs `var(--fr-cream)`. Confirmar si el portal debe ser cream o white.
+- [x] **C2** — Resuelto. Mapping canónico: draft=orange, confirmado=blue, produccion=purple, listo_envio=yellow, enviado=green, cancelado=red. Aplicado en globals.css, fr/StatusChip, portal/StatusChip, portal order detail.
+- [x] **M6** — Confirmado: portal mantiene `background: '#fff'` (intencional, storefront feel).
 
 ## VERIFICACIÓN
 
