@@ -8,10 +8,7 @@ export default function NuevaTarifaPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState('');
-
-  const [form, setForm] = useState({
-    nombre: '', descripcion: '', multiplicador: '1',
-  });
+  const [form, setForm] = useState({ nombre: '', descripcion: '', multiplicador: '1' });
 
   function set(key: string, value: string) { setForm(p => ({ ...p, [key]: value })); }
 
@@ -21,11 +18,7 @@ export default function NuevaTarifaPage() {
       const res = await fetch('/api/tarifas', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          nombre:       form.nombre,
-          descripcion:  form.descripcion || null,
-          multiplicador: parseFloat(form.multiplicador) || 1,
-        }),
+        body: JSON.stringify({ nombre: form.nombre, descripcion: form.descripcion || null, multiplicador: parseFloat(form.multiplicador) || 1 }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? 'Error creating tier');
@@ -33,57 +26,39 @@ export default function NuevaTarifaPage() {
     } catch (err: any) { setError(err.message); setLoading(false); }
   }
 
-  const inputCls = "w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-[#D93A35] outline-none transition-colors";
-
   return (
-    <div className="p-6 md:p-7 max-w-lg">
-      <div className="flex items-center gap-2 mb-6 text-xs text-gray-400">
-        <Link href="/tarifas" className="hover:text-gray-600 transition-colors">← Pricing Tiers</Link>
-        <span>/</span>
-        <h1 className="text-lg font-black tracking-wider uppercase text-gray-900"
-            style={{ fontFamily: 'var(--font-alexandria)' }}>New Tier</h1>
+    <div className="fr-page" style={{ maxWidth: 520 }}>
+      <div>
+        <Link href="/tarifas" className="fr-label" style={{ color: '#111', textDecoration: 'none' }}>← Pricing Tiers</Link>
+        <h1 style={{ fontSize: 28, fontWeight: 700, marginTop: 4 }}>New Tier</h1>
       </div>
 
-      <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
-        <div className="space-y-1.5">
-          <label className="text-[11px] font-bold tracking-[0.1em] uppercase text-gray-400">
-            Name <span className="text-[#D93A35]">*</span>
-          </label>
-          <input type="text" value={form.nombre} onChange={e => set('nombre', e.target.value)}
-            placeholder="e.g. Wholesale" className={inputCls} />
+      <div className="fr-card" style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <label className="fr-label">Name <span style={{ color: '#D93A35' }}>*</span></label>
+          <input type="text" value={form.nombre} onChange={e => set('nombre', e.target.value)} placeholder="e.g. Wholesale" />
         </div>
 
-        <div className="space-y-1.5">
-          <label className="text-[11px] font-bold tracking-[0.1em] uppercase text-gray-400">Description</label>
-          <input type="text" value={form.descripcion} onChange={e => set('descripcion', e.target.value)}
-            placeholder="Optional description" className={inputCls} />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <label className="fr-label">Description</label>
+          <input type="text" value={form.descripcion} onChange={e => set('descripcion', e.target.value)} placeholder="Optional description" />
         </div>
 
-        <div className="space-y-1.5">
-          <label className="text-[11px] font-bold tracking-[0.1em] uppercase text-gray-400">
-            Price multiplier <span className="text-[#D93A35]">*</span>
-          </label>
-          <input type="number" min="0" step="0.01" value={form.multiplicador}
-            onChange={e => set('multiplicador', e.target.value)} className={inputCls} />
-          <p className="text-[10px] text-gray-400">
-            Applied to the base catalogue price. 1 = 100% (no change), 0.8 = 80%, 1.2 = 120%.
-            Per-SKU overrides can be set after creation.
-          </p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <label className="fr-label">Price multiplier <span style={{ color: '#D93A35' }}>*</span></label>
+          <input type="number" min="0" step="0.01" value={form.multiplicador} onChange={e => set('multiplicador', e.target.value)} style={{ width: 160 }} />
+          <p style={{ fontSize: 11, color: '#111' }}>Applied to base price. 1 = 100%, 0.8 = 80%, 1.2 = 120%. Per-SKU overrides after creation.</p>
         </div>
 
         {error && (
-          <div className="px-3 py-2 bg-red-50 border border-red-200 rounded-lg text-xs text-[#D93A35]">{error}</div>
+          <div style={{ padding: '8px 12px', border: '1px solid #D93A35', fontFamily: 'var(--font-mono)', fontSize: 11, color: '#D93A35' }}>{error}</div>
         )}
 
-        <div className="flex gap-3 pt-1">
-          <button onClick={handleSubmit} disabled={!form.nombre || loading}
-            className="px-5 py-2.5 bg-[#D93A35] text-white text-sm font-bold rounded-lg hover:bg-[#b52e2a] disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button onClick={handleSubmit} disabled={!form.nombre || loading} className="btn-primary">
             {loading ? 'Creating…' : 'Create Tier'}
           </button>
-          <Link href="/tarifas"
-            className="px-5 py-2.5 bg-white border border-gray-200 text-sm font-semibold text-gray-600 rounded-lg hover:border-gray-300 transition-colors">
-            Cancel
-          </Link>
+          <Link href="/tarifas"><button type="button" className="btn-ghost">Cancel</button></Link>
         </div>
       </div>
     </div>

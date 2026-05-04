@@ -129,7 +129,7 @@ export default function CatalogoPage() {
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', paddingBottom: 16, borderBottom: '1px solid #111', marginBottom: 16, flexWrap: 'wrap', gap: 12 }}>
         <div>
           <div className="page-title">Catalog</div>
-          <div style={{ fontSize: 10, color: '#aaa', marginTop: 3 }}>
+          <div style={{ fontSize: 10, color: '#111', marginTop: 3 }}>
             {loading ? '…' : `${products.length} products`} · Click a variant to assign materials
           </div>
         </div>
@@ -142,16 +142,16 @@ export default function CatalogoPage() {
           <div className="card" style={{ maxWidth: 420, width: '100%', padding: 0, overflow: 'hidden' }}>
             <div style={{ padding: '12px 16px', borderBottom: '1px solid #111', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <span className="section-label">Raw Materials</span>
-              <button onClick={() => setShowFungMgr(false)} style={{ background: 'transparent', border: 'none', boxShadow: 'none', color: '#aaa', fontSize: 16, padding: '0 4px' }}>✕</button>
+              <button onClick={() => setShowFungMgr(false)} style={{ background: 'transparent', border: 'none', boxShadow: 'none', color: '#111', fontSize: 16, padding: '0 4px' }}>✕</button>
             </div>
 
             <div style={{ maxHeight: 220, overflowY: 'auto' }}>
               {fungibles.length === 0 ? (
-                <div style={{ padding: '24px 16px', textAlign: 'center', fontSize: 11, color: '#aaa' }}>No materials yet</div>
+                <div style={{ padding: '24px 16px', textAlign: 'center', fontSize: 11, color: '#111' }}>No materials yet</div>
               ) : fungibles.map(f => (
                 <div key={f.id} style={{ padding: '10px 16px', borderBottom: '1px solid #f5f5f5', display: 'flex', alignItems: 'center', gap: 10 }}>
                   <span style={{ flex: 1, fontSize: 12, fontWeight: 700, color: '#111' }}>{f.nombre}</span>
-                  <span style={{ fontFamily: 'monospace', fontSize: 10, color: '#aaa', background: '#f7f7f2', padding: '2px 6px', border: '1px solid #eee' }}>{f.unidad}</span>
+                  <span style={{ fontFamily: 'monospace', fontSize: 10, color: '#111', background: '#f7f7f2', padding: '2px 6px', border: '1px solid #eee' }}>{f.unidad}</span>
                   <button
                     onClick={() => deleteFungible(f.id)}
                     style={{ background: 'transparent', border: 'none', boxShadow: 'none', color: '#ddd', padding: '2px 4px', minHeight: 'auto', fontSize: 16 }}
@@ -161,7 +161,7 @@ export default function CatalogoPage() {
             </div>
 
             <div style={{ padding: '14px 16px', borderTop: '1px solid #eee', display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#aaa' }}>Add new material</div>
+              <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#111' }}>Add new material</div>
               <div style={{ display: 'flex', gap: 8 }}>
                 <input
                   value={newFungNombre} onChange={e => setNewFungNombre(e.target.value)}
@@ -183,9 +183,9 @@ export default function CatalogoPage() {
 
       {/* Products */}
       {loading ? (
-        <div style={{ padding: '48px 0', textAlign: 'center', fontSize: 12, color: '#aaa' }}>Loading catalog…</div>
+        <div style={{ padding: '48px 0', textAlign: 'center', fontSize: 12, color: '#111' }}>Loading catalog…</div>
       ) : products.length === 0 ? (
-        <div style={{ padding: '48px 0', textAlign: 'center', fontSize: 12, color: '#aaa' }}>No products found. Check Shopify credentials.</div>
+        <div style={{ padding: '48px 0', textAlign: 'center', fontSize: 12, color: '#111' }}>No products found. Check Shopify credentials.</div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {products.map(product => (
@@ -202,7 +202,7 @@ export default function CatalogoPage() {
                   <div style={{ fontSize: 12, fontWeight: 900, color: '#111', textTransform: 'uppercase', letterSpacing: '0.06em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {product.title}
                   </div>
-                  <div style={{ fontSize: 9, color: '#aaa', marginTop: 1 }}>{product.variants.length} variant{product.variants.length !== 1 ? 's' : ''}</div>
+                  <div style={{ fontSize: 9, color: '#111', marginTop: 1 }}>{product.variants.length} variant{product.variants.length !== 1 ? 's' : ''}</div>
                 </div>
               </div>
 
@@ -233,16 +233,16 @@ export default function CatalogoPage() {
 
                         <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                           <span style={{ fontSize: 11, fontWeight: 700, color: '#111' }}>{variant.variante ?? variant.sku}</span>
-                          <span style={{ fontSize: 9, color: '#aaa', fontFamily: 'monospace' }}>{variant.sku}</span>
+                          <span style={{ fontSize: 9, color: '#111', fontFamily: 'monospace' }}>{variant.sku}</span>
                         </div>
 
                         <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 12 }}>
                           <span style={{ fontSize: 12, fontWeight: 900, color: '#D93A35' }}>{fmt(variant.precio)}</span>
-                          <span style={{ fontSize: 9, color: '#aaa', fontFamily: 'monospace' }} className="fr-peso">
+                          <span style={{ fontSize: 9, color: '#111', fontFamily: 'monospace' }} className="fr-peso">
                             <style>{`@media(max-width:400px){.fr-peso{display:none!important}}`}</style>
                             {variant.peso_kg}kg
                           </span>
-                          <span style={{ fontSize: 9, fontWeight: 700, color: isOpen ? '#D93A35' : '#aaa', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                          <span style={{ fontSize: 9, fontWeight: 700, color: isOpen ? '#D93A35' : '#111', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
                             {isOpen ? 'Close' : 'Edit'}
                           </span>
                         </div>
@@ -251,17 +251,17 @@ export default function CatalogoPage() {
                       {/* SKU fungibles editor */}
                       {isOpen && (
                         <div style={{ borderBottom: '1px solid #eee', background: '#fafafa', padding: '12px 16px' }}>
-                          <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#aaa', marginBottom: 10 }}>
+                          <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#111', marginBottom: 10 }}>
                             Recipe for <span style={{ fontFamily: 'monospace', color: '#555' }}>{variant.sku}</span>
                           </div>
 
                           {skuLoading ? (
-                            <div style={{ fontSize: 11, color: '#aaa' }}>Loading…</div>
+                            <div style={{ fontSize: 11, color: '#111' }}>Loading…</div>
                           ) : (
                             <>
                               <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 10 }}>
                                 {skuItems.length === 0 && (
-                                  <div style={{ fontSize: 11, color: '#aaa' }}>No materials assigned yet.</div>
+                                  <div style={{ fontSize: 11, color: '#111' }}>No materials assigned yet.</div>
                                 )}
                                 {skuItems.map((item, idx) => (
                                   <div key={idx} style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -279,7 +279,7 @@ export default function CatalogoPage() {
                                       placeholder="qty"
                                       style={{ ...inputSt, width: 70 }}
                                     />
-                                    <span style={{ fontSize: 10, color: '#aaa', minWidth: 24 }}>{item.unidad}/u</span>
+                                    <span style={{ fontSize: 10, color: '#111', minWidth: 24 }}>{item.unidad}/u</span>
                                     <button
                                       onClick={() => removeLine(idx)}
                                       style={{ background: 'transparent', border: 'none', boxShadow: 'none', color: '#D93A35', fontSize: 16, padding: '0 4px', minHeight: 'auto' }}
@@ -292,7 +292,7 @@ export default function CatalogoPage() {
                                 {fungibles.length > 0 ? (
                                   <button onClick={addFungibleLine} className="btn-ghost" style={{ fontSize: 9 }}>+ Add material</button>
                                 ) : (
-                                  <span style={{ fontSize: 10, color: '#aaa' }}>Create materials first.</span>
+                                  <span style={{ fontSize: 10, color: '#111' }}>Create materials first.</span>
                                 )}
                                 <button onClick={() => saveSku(variant.sku)} disabled={skuSaving} className="btn-primary" style={{ fontSize: 9 }}>
                                   {skuSaving ? 'Saving…' : 'Save recipe'}

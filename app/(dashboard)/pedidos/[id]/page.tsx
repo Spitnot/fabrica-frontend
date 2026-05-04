@@ -92,7 +92,7 @@ export default async function PedidoDetallePage({ params }: Props) {
             </div>
             <StatusChip status={order.status as FRStatus} size="lg" />
           </div>
-          <div style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 11, color: '#aaa', letterSpacing: '0.06em' }}>
+          <div style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 11, color: '#111', letterSpacing: '0.06em' }}>
             {contactName.toUpperCase()} · {(order.customer?.company_name ?? '').toUpperCase()}
           </div>
         </div>

@@ -64,68 +64,60 @@ export function ShipmentPanel({ orderId, pesoTotal, destination }: Props) {
   }
 
   return (
-    <div className="bg-white border border-[#D93A35]/20 rounded-xl p-4 space-y-4">
+    <div className="fr-card" style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 16 }}>
       {/* Dimensions */}
       <div>
-        <div className="text-[11px] font-bold tracking-[0.1em] uppercase text-gray-400 mb-3">Package dimensions (cm)</div>
-        <div className="grid grid-cols-3 gap-3">
+        <div className="fr-label" style={{ marginBottom: 12 }}>Package dimensions (cm)</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
           {[['Width', ancho, setAncho], ['Height', alto, setAlto], ['Length', largo, setLargo]].map(([label, value, setter]: any) => (
-            <div key={label} className="space-y-1">
-              <label className="text-[11px] text-gray-400">{label}</label>
-              <input type="number" min="1" value={value} onChange={(e) => setter(e.target.value)} placeholder="0"
-                className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:border-[#D93A35] outline-none transition-colors" />
+            <div key={label} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <label className="fr-label">{label}</label>
+              <input type="number" min="1" value={value} onChange={(e) => setter(e.target.value)} placeholder="0" />
             </div>
           ))}
         </div>
-        <div className="mt-3 space-y-1">
-          <label className="text-[11px] text-gray-400">Weight (kg)</label>
-          <div className="flex items-center gap-2">
-            <input type="number" min="0.01" step="0.01" value={pesoAjustado} onChange={(e) => setPesoAjustado(e.target.value)}
-              className="w-32 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:border-[#D93A35] outline-none transition-colors" />
+        <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <label className="fr-label">Weight (kg)</label>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <input type="number" min="0.01" step="0.01" value={pesoAjustado} onChange={(e) => setPesoAjustado(e.target.value)} style={{ width: 120 }} />
             {parseFloat(pesoAjustado) !== pesoTotal && (
-              <span className="text-[11px] text-gray-400">
-                (order: {pesoTotal} kg)
-              </span>
+              <span className="fr-label">(order: {pesoTotal} kg)</span>
             )}
           </div>
         </div>
       </div>
 
       {error && (
-        <div className="px-3 py-2 bg-red-50 border border-red-200 rounded-lg text-xs text-[#D93A35]">{error}</div>
+        <div style={{ padding: '8px 12px', border: '1px solid #D93A35', fontFamily: 'var(--font-mono)', fontSize: 11, color: '#D93A35' }}>{error}</div>
       )}
 
-      <button onClick={requestQuotes} disabled={loading}
-        className="w-full py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm font-semibold text-gray-700 hover:border-[#D93A35]/40 disabled:opacity-40 transition-colors">
-        {loading ? (
-          <span className="flex items-center justify-center gap-2">
-            <span className="w-3 h-3 border border-gray-300 border-t-[#D93A35] rounded-full animate-spin" />
-            Querying Packlink…
-          </span>
-        ) : 'Get quotes'}
+      <button onClick={requestQuotes} disabled={loading} className="btn-ghost" style={{ width: '100%', justifyContent: 'center' }}>
+        {loading ? 'Querying Packlink…' : 'Get quotes'}
       </button>
 
       {quotes.length > 0 && (
-        <div className="space-y-2">
-          <div className="text-[11px] font-bold tracking-[0.1em] uppercase text-gray-400">Shipping options</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div className="fr-label">Shipping options</div>
           {quotes.map((q) => (
             <button key={q.service_id} onClick={() => setSelectedQuote(q)}
-              className={`w-full flex items-center justify-between p-3 rounded-lg border transition-colors text-left ${
-                selectedQuote?.service_id === q.service_id
-                  ? 'border-[#D93A35]/40 bg-red-50'
-                  : 'border-gray-200 hover:border-gray-300'
-              }`}>
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: 12, border: '1px solid #111',
+                boxShadow: selectedQuote?.service_id === q.service_id ? 'none' : '2px 2px 0 #111',
+                background: selectedQuote?.service_id === q.service_id ? '#F7F7F2' : '#fff',
+                textAlign: 'left', width: '100%',
+                transform: selectedQuote?.service_id === q.service_id ? 'translate(2px,2px)' : 'none',
+              }}>
               <div>
-                <div className="text-sm font-semibold text-gray-900">{q.carrier}</div>
-                <div className="text-xs text-gray-400">{q.service_name}</div>
-                <div className="text-xs text-gray-400 mt-0.5">{q.estimated_days} days</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#111' }}>{q.carrier}</div>
+                <div className="fr-label">{q.service_name}</div>
+                <div className="fr-label">{q.estimated_days} days</div>
               </div>
-              <div className="flex flex-col items-end gap-1">
-                <div className="text-sm font-black text-[#D93A35]" style={{ fontFamily: 'var(--font-alexandria)' }}>{fmt(q.price)}</div>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+                <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 900, fontSize: 18, color: '#D93A35', fontVariantNumeric: 'tabular-nums' }}>{fmt(q.price)}</div>
                 {selectedQuote?.service_id === q.service_id && (
-                  <span className="text-[10px] font-bold text-[#0DA265] flex items-center gap-1">
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M5 13l4 4L19 7"/></svg>
-                    Selected
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, fontWeight: 700, color: '#0DA265', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                    ✓ Selected
                   </span>
                 )}
               </div>
@@ -135,8 +127,7 @@ export function ShipmentPanel({ orderId, pesoTotal, destination }: Props) {
       )}
 
       {selectedQuote && (
-        <button onClick={generateShipment} disabled={generating}
-          className="w-full py-2.5 bg-[#D93A35] text-white text-sm font-bold rounded-lg hover:bg-[#b52e2a] disabled:opacity-40 transition-colors">
+        <button onClick={generateShipment} disabled={generating} className="btn-primary" style={{ width: '100%', justifyContent: 'center' }}>
           {generating ? 'Generating shipment…' : `Generate Shipment · ${fmt(selectedQuote.price)}`}
         </button>
       )}

@@ -6,7 +6,7 @@ import type { AdminRole } from '@/types';
 
 interface AdminUser { id: string; email: string; full_name: string; role: AdminRole; created_at: string; last_sign_in_at: string | null; }
 
-const ROLE_COLORS: Record<AdminRole, string> = { admin: '#D93A35', manager: '#0087B8', viewer: '#999' };
+const ROLE_COLORS: Record<AdminRole, string> = { admin: '#D93A35', manager: '#0087B8', viewer: '#111' };
 const ROLE_LABELS: Record<AdminRole, string> = { admin: 'Admin', manager: 'Manager', viewer: 'Viewer' };
 const ROLE_DESCRIPTIONS: Record<AdminRole, string> = {
   admin: 'Full access — team, clients, orders, pricing',
@@ -90,7 +90,7 @@ export default function UsuariosPage() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 16, borderBottom: '1px solid #111', marginBottom: 16, flexWrap: 'wrap', gap: 12 }}>
         <div>
           <div className="page-title">Team</div>
-          <div style={{ fontSize: 10, color: '#aaa', marginTop: 3 }}>Admin users and access levels</div>
+          <div style={{ fontSize: 10, color: '#111', marginTop: 3 }}>Admin users and access levels</div>
         </div>
         {isAdmin && !showInvite && (
           <button className="btn-primary" onClick={() => { setShowInvite(true); setInviteSent(false); setInviteError(''); }}>
@@ -104,7 +104,7 @@ export default function UsuariosPage() {
         <div className="card" style={{ padding: 0, overflow: 'hidden', marginBottom: 12 }}>
           <div style={{ padding: '11px 16px', borderBottom: '1px solid #111', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <span className="section-label">Invite Member</span>
-            <button onClick={() => { setShowInvite(false); setInviteSent(false); setInviteError(''); }} style={{ background: 'transparent', border: 'none', boxShadow: 'none', color: '#aaa', padding: '2px 6px', fontSize: 14 }}>✕</button>
+            <button onClick={() => { setShowInvite(false); setInviteSent(false); setInviteError(''); }} style={{ background: 'transparent', border: 'none', boxShadow: 'none', color: '#111', padding: '2px 6px', fontSize: 14 }}>✕</button>
           </div>
 
           {inviteSent ? (
@@ -117,17 +117,17 @@ export default function UsuariosPage() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }} className="fr-invite-grid">
                 <style>{`@media(max-width:480px){.fr-invite-grid{grid-template-columns:1fr!important}}`}</style>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-                  <label style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#aaa' }}>Full Name *</label>
+                  <label style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#111' }}>Full Name *</label>
                   <input type="text" value={inviteName} onChange={e => setInviteName(e.target.value)} placeholder="Maria García" style={inputSt} required />
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-                  <label style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#aaa' }}>Email *</label>
+                  <label style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#111' }}>Email *</label>
                   <input type="email" value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder="maria@firmarollers.com" style={inputSt} required />
                 </div>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <label style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#aaa' }}>Role</label>
+                <label style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#111' }}>Role</label>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   {(['admin', 'manager', 'viewer'] as AdminRole[]).map((r) => (
                     <button key={r} type="button" onClick={() => setInviteRole(r)} style={{
@@ -141,7 +141,7 @@ export default function UsuariosPage() {
                     </button>
                   ))}
                 </div>
-                <div style={{ fontSize: 10, color: '#aaa', marginTop: 2 }}>{ROLE_DESCRIPTIONS[inviteRole]}</div>
+                <div style={{ fontSize: 10, color: '#111', marginTop: 2 }}>{ROLE_DESCRIPTIONS[inviteRole]}</div>
               </div>
 
               {inviteError && (
@@ -169,9 +169,9 @@ export default function UsuariosPage() {
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={isAdmin ? 5 : 4} style={{ padding: '48px 16px', textAlign: 'center', fontSize: 12, color: '#aaa' }}>Loading…</td></tr>
+                <tr><td colSpan={isAdmin ? 5 : 4} style={{ padding: '48px 16px', textAlign: 'center', fontSize: 12, color: '#111' }}>Loading…</td></tr>
               ) : users.length === 0 ? (
-                <tr><td colSpan={isAdmin ? 5 : 4} style={{ padding: '48px 16px', textAlign: 'center', fontSize: 12, color: '#aaa' }}>No team members yet</td></tr>
+                <tr><td colSpan={isAdmin ? 5 : 4} style={{ padding: '48px 16px', textAlign: 'center', fontSize: 12, color: '#111' }}>No team members yet</td></tr>
               ) : users.map((u, i) => (
                 <tr key={u.id} style={{ borderBottom: i < users.length - 1 ? '1px solid #f5f5f5' : 'none' }}>
                   <td style={{ padding: '9px 14px' }}>
@@ -182,9 +182,9 @@ export default function UsuariosPage() {
                       <div>
                         <div style={{ fontSize: 12, fontWeight: 700, color: '#111' }}>
                           {u.full_name || '—'}
-                          {u.id === currentUserId && <span style={{ marginLeft: 6, fontSize: 9, color: '#aaa', fontWeight: 400 }}>(you)</span>}
+                          {u.id === currentUserId && <span style={{ marginLeft: 6, fontSize: 9, color: '#111', fontWeight: 400 }}>(you)</span>}
                         </div>
-                        <div style={{ fontSize: 10, color: '#aaa' }}>{u.email}</div>
+                        <div style={{ fontSize: 10, color: '#111' }}>{u.email}</div>
                       </div>
                     </div>
                   </td>
@@ -201,7 +201,7 @@ export default function UsuariosPage() {
                     <td style={{ padding: '9px 14px' }}>
                       {u.id !== currentUserId && (
                         <div style={{ display: 'flex', gap: 12 }}>
-                          <button onClick={() => { setEditUser(u); setEditRole(u.role); setEditError(''); }} style={{ background: 'transparent', border: 'none', boxShadow: 'none', fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#aaa', padding: 0, minHeight: 'auto' }}>
+                          <button onClick={() => { setEditUser(u); setEditRole(u.role); setEditError(''); }} style={{ background: 'transparent', border: 'none', boxShadow: 'none', fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#111', padding: 0, minHeight: 'auto' }}>
                             Edit
                           </button>
                           <button onClick={() => handleDelete(u)} style={{ background: 'transparent', border: 'none', boxShadow: 'none', fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#D93A35', padding: 0, minHeight: 'auto' }}>
@@ -224,7 +224,7 @@ export default function UsuariosPage() {
           <div className="card" style={{ maxWidth: 360, width: '100%', padding: 0, overflow: 'hidden' }}>
             <div style={{ padding: '12px 16px', borderBottom: '1px solid #111', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span className="section-label">Edit Role</span>
-              <button onClick={() => setEditUser(null)} style={{ background: 'transparent', border: 'none', boxShadow: 'none', color: '#aaa', padding: '2px 6px', fontSize: 14 }}>✕</button>
+              <button onClick={() => setEditUser(null)} style={{ background: 'transparent', border: 'none', boxShadow: 'none', color: '#111', padding: '2px 6px', fontSize: 14 }}>✕</button>
             </div>
             <form onSubmit={handleEditRole} style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div style={{ fontSize: 12, fontWeight: 700, color: '#111' }}>{editUser.full_name || editUser.email}</div>
@@ -238,7 +238,7 @@ export default function UsuariosPage() {
                     textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 2,
                   }}>
                     <span style={{ fontSize: 10, fontWeight: 900, letterSpacing: '0.1em', textTransform: 'uppercase' }}>{ROLE_LABELS[r]}</span>
-                    <span style={{ fontSize: 9, fontWeight: 400, color: editRole === r ? '#ccc' : '#aaa', letterSpacing: 0, textTransform: 'none' }}>{ROLE_DESCRIPTIONS[r]}</span>
+                    <span style={{ fontSize: 9, fontWeight: 400, color: editRole === r ? '#ccc' : '#111', letterSpacing: 0, textTransform: 'none' }}>{ROLE_DESCRIPTIONS[r]}</span>
                   </button>
                 ))}
               </div>

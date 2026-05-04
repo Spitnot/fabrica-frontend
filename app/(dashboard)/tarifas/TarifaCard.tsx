@@ -23,7 +23,7 @@ export function TarifaCard({ tarifa: t, count }: TarifaCardProps) {
           <div style={{ fontSize: 14, fontWeight: 900, letterSpacing: '0.1em', textTransform: 'uppercase', color }}>
             {t.nombre}
           </div>
-          <span className="badge" style={{ background: t.activo ? '#0DA265' : '#999', fontSize: 7 }}>
+          <span className="badge" style={{ background: t.activo ? '#0DA265' : '#111', fontSize: 7 }}>
             {t.activo ? 'Active' : 'Inactive'}
           </span>
         </div>
@@ -32,11 +32,11 @@ export function TarifaCard({ tarifa: t, count }: TarifaCardProps) {
         )}
         <div style={{ borderTop: '1px solid #eee', paddingTop: 10, display: 'flex', flexDirection: 'column', gap: 6 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
-            <span style={{ color: '#aaa' }}>Multiplier</span>
+            <span style={{ color: '#111' }}>Multiplier</span>
             <span style={{ fontFamily: 'monospace', fontWeight: 900, color: '#111' }}>{(t.multiplicador * 100).toFixed(0)}%</span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
-            <span style={{ color: '#aaa' }}>Clients</span>
+            <span style={{ color: '#111' }}>Clients</span>
             <span style={{ fontFamily: 'monospace', fontWeight: 900, color }}>{count}</span>
           </div>
         </div>

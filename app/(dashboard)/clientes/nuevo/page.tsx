@@ -180,72 +180,72 @@ export default function NuevoClientePage() {
     }
   }
 
-  const inputCls = "w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-[#D93A35] outline-none transition-colors";
-  const selectCls = inputCls;
-  const labelCls  = "text-[11px] font-bold tracking-[0.1em] uppercase text-gray-400";
-  const req       = <span className="text-[#D93A35]">*</span>;
+
+
+
+  const req       = <span >*</span>;
 
   function Section({ n, title }: { n: number; title: string }) {
     return (
-      <div className="flex items-center gap-3 mb-4">
-        <span className="text-[10px] font-black tracking-[0.18em] uppercase text-gray-400 whitespace-nowrap">{n} · {title}</span>
-        <div className="flex-1 h-px bg-gray-100" />
+      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+        <span className="fr-label" style={{ whiteSpace: "nowrap" }}>{n} · {title}</span>
+        <div style={{ flex: 1, height: 1, background: "#111" }} />
       </div>
     );
   }
 
   return (
-    <div className="p-6 md:p-7 max-w-3xl">
-      <div className="flex items-center gap-2 mb-6 text-xs text-gray-400">
-        <Link href="/clientes" className="hover:text-gray-600 transition-colors">← Clientes</Link>
+    <div className="fr-page" style={{ maxWidth: 760 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 24 }}>
+        <Link href="/clientes" href="/clientes" className="fr-label">← Clientes</Link>
         <span>/</span>
-        <h1 className="text-lg font-black tracking-wider uppercase text-gray-900"
+        <h1 style={{ fontSize: 20, fontWeight: 900 }}
             style={{ fontFamily: 'var(--font-alexandria)' }}>Nuevo Cliente</h1>
       </div>
 
-      <div className="space-y-6">
+      <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
 
         {/* ── 1. Datos Jurídicos ─────────────────────────────────────────── */}
         <section>
           <Section n={1} title="Datos Jurídicos" />
-          <div className="bg-white border border-gray-200 rounded-xl p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="sm:col-span-2 space-y-1.5">
-              <label className={labelCls}>Razón social {req}</label>
+          <div className="fr-card" style={{ padding: 16, display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
+            <div style={{ gridColumn: "1 / -1", display: "flex", flexDirection: "column", gap: 6 }}>
+              <labelclassName="fr-label">Razón social {req}</label>
               <input type="text" value={form.company_name} onChange={e => set('company_name', e.target.value)}
-                placeholder="Distribuciones Fashion SL" className={inputCls} />
+                placeholder="Distribuciones Fashion SL" />
             </div>
-            <div className="space-y-1.5">
-              <label className={labelCls}>Nombre comercial</label>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <labelclassName="fr-label">Nombre comercial</label>
               <input type="text" value={form.nombre_comercial} onChange={e => set('nombre_comercial', e.target.value)}
-                placeholder="Fashion Dist." className={inputCls} />
+                placeholder="Fashion Dist." />
             </div>
-            <div className="space-y-1.5">
-              <label className={labelCls}>Tipo de empresa</label>
-              <select value={form.tipo_empresa} onChange={e => set('tipo_empresa', e.target.value)} className={selectCls}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <labelclassName="fr-label">Tipo de empresa</label>
+              <select value={form.tipo_empresa} onChange={e => set('tipo_empresa', e.target.value)}>
                 <option value="">— Seleccionar —</option>
                 {TIPOS_EMPRESA.map(t => <option key={t} value={t}>{t}</option>)}
               </select>
             </div>
-            <div className="space-y-1.5">
-              <label className={labelCls}>Tipo de identificación fiscal {req}</label>
-              <select value={form.tipo_fiscal} onChange={e => set('tipo_fiscal', e.target.value)} className={selectCls}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <labelclassName="fr-label">Tipo de identificación fiscal {req}</label>
+              <select value={form.tipo_fiscal} onChange={e => set('tipo_fiscal', e.target.value)}>
                 {TIPOS_FISCAL.map(t => <option key={t} value={t}>{t}</option>)}
               </select>
             </div>
-            <div className="space-y-1.5">
-              <label className={labelCls}>Número de identificación fiscal {req}</label>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <labelclassName="fr-label">Número de identificación fiscal {req}</label>
               <input type="text" value={form.nif_cif} onChange={e => set('nif_cif', e.target.value)}
-                placeholder="B12345678" className={inputCls} />
+                placeholder="B12345678" />
             </div>
-            <div className="space-y-1.5">
-              <label className={labelCls}>Número EORI</label>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <labelclassName="fr-label">Número EORI</label>
               <input type="text" value={form.numero_eori} onChange={e => set('numero_eori', e.target.value)}
-                placeholder="ES12345678" className={inputCls} />
+                placeholder="ES12345678" />
             </div>
-            <div className="space-y-1.5">
-              <label className={labelCls}>Fecha de constitución</label>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <labelclassName="fr-label">Fecha de constitución</label>
               <input type="date" value={form.fecha_constitucion} onChange={e => set('fecha_constitucion', e.target.value)}
-                className={inputCls} />
+                />
             </div>
           </div>
         </section>
@@ -253,31 +253,31 @@ export default function NuevoClientePage() {
         {/* ── 2. Dirección Fiscal ────────────────────────────────────────── */}
         <section>
           <Section n={2} title="Dirección Fiscal" />
-          <div className="bg-white border border-gray-200 rounded-xl p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="sm:col-span-2 space-y-1.5">
-              <label className={labelCls}>Calle y número {req}</label>
+          <div className="fr-card" style={{ padding: 16, display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
+            <div style={{ gridColumn: "1 / -1", display: "flex", flexDirection: "column", gap: 6 }}>
+              <labelclassName="fr-label">Calle y número {req}</label>
               <input type="text" value={form.fiscal_street} onChange={e => set('fiscal_street', e.target.value)}
-                placeholder="Gran Vía 14, 3º" className={inputCls} />
+                placeholder="Gran Vía 14, 3º" />
             </div>
-            <div className="space-y-1.5">
-              <label className={labelCls}>Ciudad {req}</label>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <labelclassName="fr-label">Ciudad {req}</label>
               <input type="text" value={form.fiscal_city} onChange={e => set('fiscal_city', e.target.value)}
-                placeholder="Madrid" className={inputCls} />
+                placeholder="Madrid" />
             </div>
-            <div className="space-y-1.5">
-              <label className={labelCls}>Estado / Provincia</label>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <labelclassName="fr-label">Estado / Provincia</label>
               <input type="text" value={form.fiscal_state} onChange={e => set('fiscal_state', e.target.value)}
-                placeholder="Madrid" className={inputCls} />
+                placeholder="Madrid" />
             </div>
-            <div className="space-y-1.5">
-              <label className={labelCls}>Código postal {req}</label>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <labelclassName="fr-label">Código postal {req}</label>
               <input type="text" value={form.fiscal_postal_code} onChange={e => set('fiscal_postal_code', e.target.value)}
-                placeholder="28013" className={inputCls} />
+                placeholder="28013" />
             </div>
-            <div className="space-y-1.5">
-              <label className={labelCls}>País {req}</label>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <labelclassName="fr-label">País {req}</label>
               <input type="text" value={form.fiscal_country} onChange={e => set('fiscal_country', e.target.value)}
-                placeholder="ES" className={inputCls} />
+                placeholder="ES" />
             </div>
           </div>
         </section>
@@ -285,35 +285,35 @@ export default function NuevoClientePage() {
         {/* ── 3. Dirección de Envío ──────────────────────────────────────── */}
         <section>
           <Section n={3} title="Dirección de Envío" />
-          <div className="bg-white border border-gray-200 rounded-xl p-4">
+          <div className="fr-card" style={{ padding: 16 }}>
             <label className="flex items-center gap-2.5 mb-4 cursor-pointer select-none">
               <input
                 type="checkbox" checked={sameAddress} onChange={e => setSameAddress(e.target.checked)}
-                className="w-4 h-4 rounded border-gray-300 text-[#D93A35] cursor-pointer"
+                
               />
-              <span className="text-sm text-gray-600">Igual a la dirección fiscal</span>
+              <span style={{ fontSize: 13 }}>Igual a la dirección fiscal</span>
             </label>
             {!sameAddress && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="sm:col-span-2 space-y-1.5">
-                  <label className={labelCls}>Calle y número {req}</label>
+                <div style={{ gridColumn: "1 / -1", display: "flex", flexDirection: "column", gap: 6 }}>
+                  <labelclassName="fr-label">Calle y número {req}</label>
                   <input type="text" value={form.street} onChange={e => set('street', e.target.value)}
-                    placeholder="Calle Ejemplo 1" className={inputCls} />
+                    placeholder="Calle Ejemplo 1" />
                 </div>
-                <div className="space-y-1.5">
-                  <label className={labelCls}>Ciudad {req}</label>
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  <labelclassName="fr-label">Ciudad {req}</label>
                   <input type="text" value={form.city} onChange={e => set('city', e.target.value)}
-                    placeholder="Barcelona" className={inputCls} />
+                    placeholder="Barcelona" />
                 </div>
-                <div className="space-y-1.5">
-                  <label className={labelCls}>Código postal {req}</label>
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  <labelclassName="fr-label">Código postal {req}</label>
                   <input type="text" value={form.postal_code} onChange={e => set('postal_code', e.target.value)}
-                    placeholder="08001" className={inputCls} />
+                    placeholder="08001" />
                 </div>
-                <div className="space-y-1.5">
-                  <label className={labelCls}>País {req}</label>
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  <labelclassName="fr-label">País {req}</label>
                   <input type="text" value={form.country} onChange={e => set('country', e.target.value)}
-                    placeholder="ES" className={inputCls} />
+                    placeholder="ES" />
                 </div>
               </div>
             )}
@@ -323,28 +323,28 @@ export default function NuevoClientePage() {
         {/* ── 4. Persona de Contacto ─────────────────────────────────────── */}
         <section>
           <Section n={4} title="Persona de Contacto" />
-          <div className="bg-white border border-gray-200 rounded-xl p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label className={labelCls}>Nombre completo {req}</label>
+          <div className="fr-card" style={{ padding: 16, display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <labelclassName="fr-label">Nombre completo {req}</label>
               <input type="text" value={form.contacto_nombre} onChange={e => set('contacto_nombre', e.target.value)}
-                placeholder="Carlos Mendez" className={inputCls} />
+                placeholder="Carlos Mendez" />
             </div>
-            <div className="space-y-1.5">
-              <label className={labelCls}>Email {req}</label>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <labelclassName="fr-label">Email {req}</label>
               <input type="email" value={form.email} onChange={e => set('email', e.target.value)}
-                placeholder="carlos@empresa.com" className={inputCls} />
+                placeholder="carlos@empresa.com" />
             </div>
-            <div className="space-y-1.5">
-              <label className={labelCls}>Teléfono {req}</label>
-              <div className="flex gap-2">
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <labelclassName="fr-label">Teléfono {req}</label>
+              <div style={{ display: "flex", gap: 8 }}>
                 <select value={form.telefono_prefijo} onChange={e => set('telefono_prefijo', e.target.value)}
-                  className="bg-gray-50 border border-gray-200 rounded-lg px-2 py-2 text-sm text-gray-900 focus:border-[#D93A35] outline-none transition-colors w-[110px] flex-shrink-0">
+                  style={{ width: 110, flexShrink: 0 }}>
                   {PHONE_PREFIXES.map(p => (
                     <option key={p.code} value={p.code}>{p.flag} {p.code}</option>
                   ))}
                 </select>
                 <input type="tel" value={form.telefono_numero} onChange={e => set('telefono_numero', e.target.value)}
-                  placeholder="612 345 678" className={inputCls} />
+                  placeholder="612 345 678" />
               </div>
             </div>
           </div>
@@ -353,33 +353,33 @@ export default function NuevoClientePage() {
         {/* ── 5. Perfil Comercial ────────────────────────────────────────── */}
         <section>
           <Section n={5} title="Perfil Comercial" />
-          <div className="bg-white border border-gray-200 rounded-xl p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label className={labelCls}>Tipo de cliente</label>
-              <select value={form.tipo_cliente} onChange={e => set('tipo_cliente', e.target.value)} className={selectCls}>
+          <div className="fr-card" style={{ padding: 16, display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <labelclassName="fr-label">Tipo de cliente</label>
+              <select value={form.tipo_cliente} onChange={e => set('tipo_cliente', e.target.value)}>
                 <option value="">— Seleccionar —</option>
                 {TIPOS_CLIENTE.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
               </select>
             </div>
-            <div className="space-y-1.5">
-              <label className={labelCls}>Número de puntos de venta</label>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <labelclassName="fr-label">Número de puntos de venta</label>
               <input type="number" min="0" value={form.num_puntos_venta} onChange={e => set('num_puntos_venta', e.target.value)}
-                placeholder="0" className={inputCls} />
+                placeholder="0" />
             </div>
-            <div className="space-y-1.5">
-              <label className={labelCls}>Zona geográfica de distribución</label>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <labelclassName="fr-label">Zona geográfica de distribución</label>
               <input type="text" value={form.zona_distribucion} onChange={e => set('zona_distribucion', e.target.value)}
-                placeholder="España, Portugal" className={inputCls} />
+                placeholder="España, Portugal" />
             </div>
-            <div className="space-y-1.5">
-              <label className={labelCls}>Volumen estimado de compra</label>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <labelclassName="fr-label">Volumen estimado de compra</label>
               <input type="text" value={form.volumen_estimado} onChange={e => set('volumen_estimado', e.target.value)}
-                placeholder="50.000 € / año" className={inputCls} />
+                placeholder="50.000 € / año" />
             </div>
-            <div className="sm:col-span-2 space-y-1.5">
-              <label className={labelCls}>Marcas que comercializa</label>
+            <div style={{ gridColumn: "1 / -1", display: "flex", flexDirection: "column", gap: 6 }}>
+              <labelclassName="fr-label">Marcas que comercializa</label>
               <input type="text" value={form.marcas_comercializadas} onChange={e => set('marcas_comercializadas', e.target.value)}
-                placeholder="Marca A, Marca B, Marca C" className={inputCls} />
+                placeholder="Marca A, Marca B, Marca C" />
             </div>
           </div>
         </section>
@@ -387,21 +387,21 @@ export default function NuevoClientePage() {
         {/* ── 6. Legal / GDPR ───────────────────────────────────────────── */}
         <section>
           <Section n={6} title="Legal / GDPR" />
-          <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-3">
+          <div className="fr-card" style={{ padding: 16, display: "flex", flexDirection: "column", gap: 12 }}>
             {[
               { key: 'acepta_condiciones',            label: 'Aceptación de condiciones generales de venta',                   required: true  },
               { key: 'acepta_privacidad',              label: 'Aceptación de la política de privacidad (RGPD / GDPR)',           required: true  },
               { key: 'consentimiento_comunicaciones',  label: 'Consentimiento para comunicaciones comerciales',                  required: false },
               { key: 'declaracion_cumplimiento',       label: 'Declaración de cumplimiento normativo (import/export si aplica)', required: false },
             ].map(({ key, label, required }) => (
-              <label key={key} className="flex items-start gap-3 cursor-pointer select-none">
+              <label key={key} style={{ display: "flex", alignItems: "flex-start", gap: 10, cursor: "pointer" }}>
                 <input
                   type="checkbox"
                   checked={(form as any)[key]}
                   onChange={e => set(key, e.target.checked)}
-                  className="mt-0.5 w-4 h-4 rounded border-gray-300 text-[#D93A35] cursor-pointer flex-shrink-0"
+                  
                 />
-                <span className="text-sm text-gray-700">
+                <span style={{ fontSize: 13 }}>
                   {label} {required && req}
                 </span>
               </label>
@@ -412,70 +412,70 @@ export default function NuevoClientePage() {
         {/* ── 7. Condiciones Comerciales (interno) ──────────────────────── */}
         <section>
           <Section n={7} title="Condiciones Comerciales — Interno" />
-          <div className="bg-white border border-gray-200 rounded-xl p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label className={labelCls}>Lista de precios {req}</label>
-              <select value={form.tarifa_id} onChange={e => set('tarifa_id', e.target.value)} className={selectCls}>
+          <div className="fr-card" style={{ padding: 16, display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <labelclassName="fr-label">Lista de precios {req}</label>
+              <select value={form.tarifa_id} onChange={e => set('tarifa_id', e.target.value)}>
                 <option value="">— Sin tarifa —</option>
                 {tarifas.map(t => (
                   <option key={t.id} value={t.id}>{t.nombre}{t.descripcion ? ` — ${t.descripcion}` : ''}</option>
                 ))}
               </select>
             </div>
-            <div className="space-y-1.5">
-              <label className={labelCls}>Descuento acordado (%)</label>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <labelclassName="fr-label">Descuento acordado (%)</label>
               <input type="number" min="0" max="100" step="0.5" value={form.descuento_pct}
-                onChange={e => set('descuento_pct', e.target.value)} placeholder="0" className={inputCls} />
-              <p className="text-[10px] text-gray-400">Aplicado sobre la tarifa. 0 = sin descuento adicional.</p>
+                onChange={e => set('descuento_pct', e.target.value)} placeholder="0" />
+              <p className="fr-label">Aplicado sobre la tarifa. 0 = sin descuento adicional.</p>
             </div>
-            <div className="space-y-2">
-              <label className={labelCls}>Forma de pago</label>
-              <div className="grid grid-cols-1 gap-2">
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <labelclassName="fr-label">Forma de pago</label>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {FORMAS_PAGO.map(fp => (
-                  <label key={fp.value} className="flex items-center gap-2.5 cursor-pointer">
+                  <label key={fp.value} style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
                     <input type="radio" name="forma_pago" value={fp.value}
                       checked={form.forma_pago === fp.value}
                       onChange={() => set('forma_pago', fp.value)}
-                      className="text-[#D93A35]" />
-                    <span className="text-sm text-gray-700">{fp.label}</span>
+                       />
+                    <span style={{ fontSize: 13 }}>{fp.label}</span>
                   </label>
                 ))}
               </div>
             </div>
-            <div className="space-y-2">
-              <label className={labelCls}>Condiciones de pago</label>
-              <div className="grid grid-cols-1 gap-2">
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <labelclassName="fr-label">Condiciones de pago</label>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {CONDICIONES_PAGO.map(cp => (
-                  <label key={cp.value} className="flex items-center gap-2.5 cursor-pointer">
+                  <label key={cp.value} style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
                     <input type="radio" name="condiciones_pago" value={cp.value}
                       checked={form.condiciones_pago === cp.value}
                       onChange={() => set('condiciones_pago', cp.value)}
-                      className="text-[#D93A35]" />
-                    <span className="text-sm text-gray-700">{cp.label}</span>
+                       />
+                    <span style={{ fontSize: 13 }}>{cp.label}</span>
                   </label>
                 ))}
               </div>
             </div>
-            <div className="sm:col-span-2 space-y-1.5">
-              <label className={labelCls}>Condiciones comerciales especiales</label>
+            <div style={{ gridColumn: "1 / -1", display: "flex", flexDirection: "column", gap: 6 }}>
+              <labelclassName="fr-label">Condiciones comerciales especiales</label>
               <textarea value={form.notas_especiales} onChange={e => set('notas_especiales', e.target.value)}
                 rows={3} placeholder="Notas internas, condiciones negociadas, excepciones…"
-                className={inputCls + ' resize-none'} />
+                >
             </div>
           </div>
         </section>
 
         {error && (
-          <div className="px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-sm text-[#D93A35]">{error}</div>
+          <div style={{ padding: "10px 14px", border: "1px solid #D93A35", fontFamily: "var(--font-mono)", fontSize: 11, color: "#D93A35" }}>{error}</div>
         )}
 
-        <div className="flex gap-3">
+        <div style={{ display: "flex", gap: 8 }}>
           <button onClick={handleSubmit} disabled={loading}
-            className="px-6 py-2.5 bg-[#D93A35] text-white text-sm font-bold rounded-lg hover:bg-[#b52e2a] disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+            className="btn-primary">
             {loading ? 'Creando cliente…' : 'Crear Cliente'}
           </button>
           <Link href="/clientes"
-            className="px-6 py-2.5 bg-white border border-gray-200 text-sm font-semibold text-gray-600 rounded-lg hover:border-gray-300 transition-colors">
+            className="btn-ghost">
             Cancelar
           </Link>
         </div>

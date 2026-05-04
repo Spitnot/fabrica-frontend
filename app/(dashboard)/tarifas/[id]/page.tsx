@@ -26,12 +26,9 @@ export default function TarifaDetailPage() {
   const [success, setSuccess]         = useState('');
   const [search, setSearch]           = useState('');
 
-  // Mapa editable: sku → precio (string para el input)
-  const [preciosEdit, setPreciosEdit]     = useState<Record<string, string>>({});
-  // Mapa editable: sku → pack_size override (string para el input, '' = usar el de la tarifa)
-  const [packSizeEdit, setPackSizeEdit]   = useState<Record<string, string>>({});
+  const [preciosEdit, setPreciosEdit]   = useState<Record<string, string>>({});
+  const [packSizeEdit, setPackSizeEdit] = useState<Record<string, string>>({});
 
-  // Meta edición
   const [meta, setMeta] = useState({
     nombre: '', descripcion: '', multiplicador: '',
     minimum_order_value: '0', pack_size: '1',
@@ -40,36 +37,27 @@ export default function TarifaDetailPage() {
 
   useEffect(() => {
     async function load() {
-      const [tRes, pRes] = await Promise.all([
-        fetch(`/api/tarifas/${id}`),
-        fetch('/api/products'),
-      ]);
+      const [tRes, pRes] = await Promise.all([fetch(`/api/tarifas/${id}`), fetch('/api/products')]);
       const tData = await tRes.json();
       const pData = await pRes.json();
-
       if (!tRes.ok) { setError('Pricing tier not found'); setLoading(false); return; }
-
       setTarifa(tData);
       setProducts(pData.data ?? []);
       setMeta({
-        nombre:              tData.nombre,
-        descripcion:         tData.descripcion ?? '',
-        multiplicador:       String(tData.multiplicador),
+        nombre: tData.nombre, descripcion: tData.descripcion ?? '',
+        multiplicador: String(tData.multiplicador),
         minimum_order_value: String(tData.minimum_order_value ?? 0),
-        pack_size:           String(tData.pack_size ?? 1),
+        pack_size: String(tData.pack_size ?? 1),
       });
       setHiddenProducts(tData.hidden_products ?? []);
-
-      // Inicializar mapas de precios y pack_sizes
-      const precioMap: Record<string, string>   = {};
-      const packMap:   Record<string, string>   = {};
+      const precioMap: Record<string, string> = {};
+      const packMap:   Record<string, string> = {};
       (tData.precios ?? []).forEach((p: TarifaPrecio) => {
         precioMap[p.sku] = String(p.precio);
         if (p.pack_size != null) packMap[p.sku] = String(p.pack_size);
       });
       setPreciosEdit(precioMap);
       setPackSizeEdit(packMap);
-
       setLoading(false);
     }
     load();
@@ -82,35 +70,21 @@ export default function TarifaDetailPage() {
           p.sku.toLowerCase().includes(search.toLowerCase()) ||
           (p.variante ?? '').toLowerCase().includes(search.toLowerCase()))
       : products;
-
     const map = new Map<string, Product[]>();
-    filtered.forEach(p => {
-      const g = map.get(p.nombre_producto) ?? [];
-      g.push(p);
-      map.set(p.nombre_producto, g);
-    });
+    filtered.forEach(p => { const g = map.get(p.nombre_producto) ?? []; g.push(p); map.set(p.nombre_producto, g); });
     return Array.from(map.entries()).map(([nombre, variantes]) => ({ nombre, variantes }));
   }, [products, search]);
 
-  function setPrice(sku: string, value: string) {
-    setPreciosEdit(prev => ({ ...prev, [sku]: value }));
-  }
-  function clearPrice(sku: string) {
-    setPreciosEdit(prev => { const n = { ...prev }; delete n[sku]; return n; });
-  }
-  function setPackSize(sku: string, value: string) {
-    setPackSizeEdit(prev => ({ ...prev, [sku]: value }));
-  }
-  function clearPackSize(sku: string) {
-    setPackSizeEdit(prev => { const n = { ...prev }; delete n[sku]; return n; });
-  }
+  function setPrice(sku: string, value: string) { setPreciosEdit(prev => ({ ...prev, [sku]: value })); }
+  function clearPrice(sku: string) { setPreciosEdit(prev => { const n = { ...prev }; delete n[sku]; return n; }); }
+  function setPackSize(sku: string, value: string) { setPackSizeEdit(prev => ({ ...prev, [sku]: value })); }
+  function clearPackSize(sku: string) { setPackSizeEdit(prev => { const n = { ...prev }; delete n[sku]; return n; }); }
 
   function effectivePrice(sku: string, shopifyPrice: number): number {
     const val = parseFloat(preciosEdit[sku] ?? '');
     if (!isNaN(val) && val > 0) return val;
     return shopifyPrice * parseFloat(meta.multiplicador || '1');
   }
-
   function effectivePackSize(sku: string): number {
     const val = parseInt(packSizeEdit[sku] ?? '');
     if (!isNaN(val) && val > 0) return val;
@@ -120,45 +94,33 @@ export default function TarifaDetailPage() {
   async function handleSaveMeta() {
     setSavingMeta(true); setError(''); setSuccess('');
     const res = await fetch(`/api/tarifas/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        nombre:              meta.nombre,
-        descripcion:         meta.descripcion || null,
-        multiplicador:       parseFloat(meta.multiplicador),
+        nombre: meta.nombre, descripcion: meta.descripcion || null,
+        multiplicador: parseFloat(meta.multiplicador),
         minimum_order_value: parseFloat(meta.minimum_order_value) || 0,
-        pack_size:           parseInt(meta.pack_size) || 1,
-        hidden_products:     hiddenProducts,
+        pack_size: parseInt(meta.pack_size) || 1,
+        hidden_products: hiddenProducts,
       }),
     });
     setSavingMeta(false);
     if (!res.ok) { setError('Failed to save'); return; }
-    setSuccess('Tier updated');
-    setTimeout(() => setSuccess(''), 3000);
+    setSuccess('Tier updated'); setTimeout(() => setSuccess(''), 3000);
   }
 
   async function handleSavePrecios() {
     setSaving(true); setError(''); setSuccess('');
-
-    // Combinar todos los SKUs que tienen precio o pack_size override
     const allSkus = new Set([
       ...Object.keys(preciosEdit).filter(sku => parseFloat(preciosEdit[sku]) > 0),
       ...Object.keys(packSizeEdit).filter(sku => parseInt(packSizeEdit[sku]) > 0),
     ]);
-
     const precios = Array.from(allSkus).map(sku => {
       const precio   = parseFloat(preciosEdit[sku] ?? '');
       const packSize = parseInt(packSizeEdit[sku]  ?? '');
-      return {
-        sku,
-        precio:    isNaN(precio)   || precio   <= 0 ? 0         : precio,
-        pack_size: isNaN(packSize) || packSize <= 0 ? null       : packSize,
-      };
+      return { sku, precio: isNaN(precio) || precio <= 0 ? 0 : precio, pack_size: isNaN(packSize) || packSize <= 0 ? null : packSize };
     }).filter(p => p.precio > 0 || p.pack_size != null);
-
     const res = await fetch(`/api/tarifas/${id}/precios`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ precios }),
     });
     setSaving(false);
@@ -167,75 +129,54 @@ export default function TarifaDetailPage() {
     setTimeout(() => setSuccess(''), 3000);
   }
 
-  if (loading) return (
-    <div className="p-7 flex items-center gap-2 text-gray-400 text-sm">
-      <div className="w-4 h-4 border border-gray-300 border-t-[#D93A35] rounded-full animate-spin" />
-      Loading…
-    </div>
-  );
-
+  if (loading) return <div style={{ padding: 32, fontSize: 12, color: '#111' }}>Loading…</div>;
   if (!tarifa) return (
-    <div className="p-7">
-      <div className="text-sm text-[#D93A35]">{error || 'Pricing tier not found'}</div>
-      <Link href="/tarifas" className="text-xs text-[#D93A35] mt-2 inline-block">← Back</Link>
+    <div style={{ padding: 32 }}>
+      <div style={{ fontSize: 12, color: '#D93A35' }}>{error || 'Pricing tier not found'}</div>
+      <Link href="/tarifas" className="fr-label" style={{ color: '#D93A35', display: 'inline-block', marginTop: 8 }}>← Back</Link>
     </div>
   );
 
   const customPriceCount = Object.values(preciosEdit).filter(v => parseFloat(v) > 0).length;
   const customPackCount  = Object.values(packSizeEdit).filter(v => parseInt(v) > 0).length;
 
-  const inputCls = "bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-[#D93A35] outline-none transition-colors";
+  const cellStyle = { padding: '10px 14px', borderBottom: '1px solid #111', fontSize: 12, color: '#111' };
+  const headStyle = { padding: '8px 14px', borderBottom: '1px solid #111', background: '#F7F7F2', fontSize: 10, fontFamily: 'var(--font-mono)', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: '#111', textAlign: 'left' as const };
 
   return (
-    <div className="p-6 md:p-7">
-      <Link href="/tarifas" className="inline-flex items-center gap-2 text-xs text-gray-400 hover:text-gray-600 mb-6 transition-colors">
-        ← Back to Pricing Tiers
-      </Link>
-
-      {/* Header */}
-      <div className="flex items-center gap-4 mb-8">
-        <div className="w-11 h-11 rounded-xl bg-[#D93A35]/10 flex items-center justify-center flex-shrink-0">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D93A35" strokeWidth="2">
-            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
-          </svg>
-        </div>
-        <div>
-          <h1 className="text-lg font-black tracking-wider uppercase text-gray-900"
-              style={{ fontFamily: 'var(--font-alexandria)' }}>{tarifa.nombre}</h1>
-          <p className="text-xs text-gray-400 mt-0.5">{tarifa.descripcion ?? 'No description'}</p>
-        </div>
+    <div className="fr-page">
+      <div>
+        <Link href="/tarifas" className="fr-label" style={{ color: '#111', textDecoration: 'none' }}>← Back to Pricing Tiers</Link>
+        <h1 style={{ fontSize: 28, fontWeight: 700, marginTop: 4 }}>{tarifa.nombre}</h1>
+        {tarifa.descripcion && <div className="fr-label" style={{ marginTop: 4 }}>{tarifa.descripcion}</div>}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-5 items-start">
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: 24, alignItems: 'start' }}>
 
         {/* LEFT — price table */}
-        <div>
-          <div className="flex items-center gap-3 mb-4">
-            <span className="text-[10px] font-black tracking-[0.18em] uppercase text-gray-400 whitespace-nowrap">Per-SKU Prices</span>
-            <div className="flex-1 h-px bg-gray-100" />
-            <span className="text-[11px] text-gray-400">
-              {customPriceCount} custom price{customPriceCount !== 1 ? 's' : ''} · {customPackCount} pack override{customPackCount !== 1 ? 's' : ''} · {products.length} total
-            </span>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <span className="fr-label" style={{ whiteSpace: 'nowrap' }}>Per-SKU Prices</span>
+            <div style={{ flex: 1, height: 1, background: '#111' }} />
+            <span className="fr-label">{customPriceCount} custom · {customPackCount} pack overrides · {products.length} total</span>
           </div>
 
-          <input type="text" value={search} onChange={e => setSearch(e.target.value)}
-            placeholder="Search products, SKU or variant…"
-            className={`w-full mb-4 ${inputCls}`} />
+          <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Search products, SKU or variant…" />
 
-          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-            <table className="w-full border-collapse min-w-[620px]">
-              <thead>
-                <tr className="bg-gray-50">
-                  {['Product / Variant', 'SKU', 'Shopify', 'Custom Price', 'Pack Size', 'Effective', ''].map(h => (
-                    <th key={h} className="text-left px-4 py-3 text-[10px] font-bold uppercase tracking-[0.1em] text-gray-400 border-b border-gray-100">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {productGroups.length === 0 ? (
-                  <tr><td colSpan={7} className="px-4 py-10 text-center text-sm text-gray-400">No products found</td></tr>
-                ) : (
-                  productGroups.flatMap(group =>
+          <div className="fr-card" style={{ overflow: 'hidden' }}>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 620 }}>
+                <thead>
+                  <tr>
+                    {['Product / Variant', 'SKU', 'Shopify', 'Custom Price', 'Pack Size', 'Effective', ''].map(h => (
+                      <th key={h} style={headStyle}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {productGroups.length === 0 ? (
+                    <tr><td colSpan={7} style={{ ...cellStyle, textAlign: 'center', padding: '40px 16px' }}>No products found</td></tr>
+                  ) : productGroups.flatMap(group =>
                     group.variantes.map((v, vi) => {
                       const hasCustomPrice = !!preciosEdit[v.sku] && parseFloat(preciosEdit[v.sku]) > 0;
                       const hasCustomPack  = !!packSizeEdit[v.sku] && parseInt(packSizeEdit[v.sku]) > 0;
@@ -244,77 +185,55 @@ export default function TarifaDetailPage() {
                       const productId      = group.nombre;
                       const isHidden       = hiddenProducts.includes(productId);
                       return (
-                        <tr key={v.sku} className={`border-b border-gray-50 last:border-0 transition-colors ${isHidden ? 'opacity-40' : 'hover:bg-gray-50/50'}`}>
-                          <td className="px-4 py-2.5">
-                            {vi === 0 && <div className="text-xs font-semibold text-gray-700">{group.nombre}</div>}
-                            {v.variante && <div className="text-[11px] text-gray-400">{v.variante}</div>}
+                        <tr key={v.sku} style={{ opacity: isHidden ? 0.4 : 1 }}>
+                          <td style={cellStyle}>
+                            {vi === 0 && <div style={{ fontSize: 12, fontWeight: 700 }}>{group.nombre}</div>}
+                            {v.variante && <div className="fr-label">{v.variante}</div>}
                           </td>
-                          <td className="px-4 py-2.5 font-mono text-[11px] text-gray-400">{v.sku}</td>
-                          <td className="px-4 py-2.5 font-mono text-xs text-gray-500">{fmt(v.precio_mayorista)}</td>
-
-                          {/* Custom Price */}
-                          <td className="px-4 py-2.5">
-                            <div className="flex items-center gap-1.5">
-                              <input
-                                type="number" step="0.01" min="0"
-                                value={preciosEdit[v.sku] ?? ''}
+                          <td style={{ ...cellStyle, fontFamily: 'var(--font-mono)', fontSize: 11 }}>{v.sku}</td>
+                          <td style={{ ...cellStyle, fontFamily: 'var(--font-mono)', fontSize: 12 }}>{fmt(v.precio_mayorista)}</td>
+                          <td style={cellStyle}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <input type="number" step="0.01" min="0" value={preciosEdit[v.sku] ?? ''}
                                 onChange={e => setPrice(v.sku, e.target.value)}
                                 placeholder={fmt(v.precio_mayorista * parseFloat(meta.multiplicador || '1'))}
-                                className="w-24 bg-gray-50 border border-gray-200 rounded-md px-2 py-1 text-xs font-mono text-gray-900 focus:border-[#D93A35] outline-none"
-                              />
+                                style={{ width: 88, fontSize: 11 }} />
                               {hasCustomPrice && (
                                 <button onClick={() => clearPrice(v.sku)} title="Clear custom price"
-                                  className="text-gray-300 hover:text-[#D93A35] transition-colors text-sm leading-none">×</button>
+                                  style={{ background: 'transparent', border: 'none', boxShadow: 'none', padding: '0 2px', fontSize: 14, color: '#D93A35', minHeight: 'auto' }}>×</button>
                               )}
                             </div>
                           </td>
-
-                          {/* Pack Size override */}
-                          <td className="px-4 py-2.5">
-                            <div className="flex items-center gap-1.5">
-                              <input
-                                type="number" step="1" min="1"
-                                value={packSizeEdit[v.sku] ?? ''}
+                          <td style={cellStyle}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <input type="number" step="1" min="1" value={packSizeEdit[v.sku] ?? ''}
                                 onChange={e => setPackSize(v.sku, e.target.value)}
                                 placeholder={String(parseInt(meta.pack_size) || 1)}
-                                className={`w-16 bg-gray-50 border rounded-md px-2 py-1 text-xs font-mono text-gray-900 outline-none transition-colors ${hasCustomPack ? 'border-[#D93A35]/40 text-[#D93A35]' : 'border-gray-200 focus:border-[#D93A35]'}`}
-                              />
+                                style={{ width: 64, fontSize: 11, border: hasCustomPack ? '1px solid #D93A35' : '1px solid #111' }} />
                               {hasCustomPack && (
                                 <button onClick={() => clearPackSize(v.sku)} title="Use tier default"
-                                  className="text-gray-300 hover:text-[#D93A35] transition-colors text-sm leading-none">×</button>
+                                  style={{ background: 'transparent', border: 'none', boxShadow: 'none', padding: '0 2px', fontSize: 14, color: '#D93A35', minHeight: 'auto' }}>×</button>
                               )}
                             </div>
                           </td>
-
-                          {/* Effective price */}
-                          <td className="px-4 py-2.5">
-                            <span className={`font-mono text-xs font-bold ${hasCustomPrice ? 'text-[#D93A35]' : 'text-gray-500'}`}>
+                          <td style={cellStyle}>
+                            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 700, color: hasCustomPrice ? '#D93A35' : '#111' }}>
                               {fmt(effective)}
                             </span>
-                            {hasCustomPrice && (
-                              <span className="ml-1.5 text-[9px] text-[#D93A35] font-bold uppercase tracking-wide">custom</span>
-                            )}
-                            <div className="text-[10px] text-gray-400 mt-0.5">
-                              ×{effPack}{hasCustomPack ? '' : ' (tier)'}
-                            </div>
+                            {hasCustomPrice && <span style={{ marginLeft: 6, fontFamily: 'var(--font-mono)', fontSize: 9, color: '#D93A35', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>custom</span>}
+                            <div className="fr-label">×{effPack}{hasCustomPack ? '' : ' (tier)'}</div>
                           </td>
-
-                          {/* Hide toggle */}
                           {vi === 0 ? (
-                            <td className="px-4 py-2.5" rowSpan={group.variantes.length}>
-                              <button
-                                title={isHidden ? 'Show product for this tier' : 'Hide product for this tier'}
-                                onClick={() => setHiddenProducts(p =>
-                                  isHidden ? p.filter(x => x !== productId) : [...p, productId]
-                                )}
-                                className="p-1 rounded hover:bg-gray-100 transition-colors"
-                              >
+                            <td style={cellStyle} rowSpan={group.variantes.length}>
+                              <button title={isHidden ? 'Show product' : 'Hide product'}
+                                onClick={() => setHiddenProducts(p => isHidden ? p.filter(x => x !== productId) : [...p, productId])}
+                                style={{ background: 'transparent', border: 'none', boxShadow: 'none', padding: 4, minHeight: 'auto' }}>
                                 {isHidden ? (
                                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#D93A35" strokeWidth="2">
                                     <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24M1 1l22 22"/>
                                   </svg>
                                 ) : (
-                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2">
+                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="2">
                                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
                                   </svg>
                                 )}
@@ -324,118 +243,82 @@ export default function TarifaDetailPage() {
                         </tr>
                       );
                     })
-                  )
-                )}
-              </tbody>
-            </table>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
 
-          <div className="mt-4 flex items-center gap-3">
-            <button onClick={handleSavePrecios} disabled={saving}
-              className="px-5 py-2 bg-[#D93A35] text-white text-sm font-bold rounded-lg hover:bg-[#b52e2a] disabled:opacity-40 transition-colors">
-              {saving ? 'Saving…' : `Save Prices & Pack Sizes`}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <button onClick={handleSavePrecios} disabled={saving} className="btn-primary">
+              {saving ? 'Saving…' : 'Save Prices & Pack Sizes'}
             </button>
-            {success && <span className="text-xs text-[#0DA265] font-semibold">{success}</span>}
-            {error   && <span className="text-xs text-[#D93A35]">{error}</span>}
+            {success && <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 700, color: '#0DA265' }}>{success}</span>}
+            {error   && <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: '#D93A35' }}>{error}</span>}
           </div>
         </div>
 
         {/* RIGHT — tarifa meta */}
-        <div className="space-y-4">
-          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-            <div className="px-4 py-3 border-b border-gray-100">
-              <span className="text-[10px] font-black tracking-[0.12em] uppercase text-gray-400"
-                    style={{ fontFamily: 'var(--font-alexandria)' }}>Tier Settings</span>
-            </div>
-            <div className="p-4 space-y-3">
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-bold tracking-[0.1em] uppercase text-gray-400">Name</label>
-                <input value={meta.nombre} onChange={e => setMeta(p => ({ ...p, nombre: e.target.value }))}
-                  className={`w-full ${inputCls}`} />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-bold tracking-[0.1em] uppercase text-gray-400">Description</label>
-                <input value={meta.descripcion} onChange={e => setMeta(p => ({ ...p, descripcion: e.target.value }))}
-                  placeholder="Optional" className={`w-full ${inputCls}`} />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-bold tracking-[0.1em] uppercase text-gray-400">Default Multiplier</label>
-                <input type="number" step="0.01" min="0" max="10"
-                  value={meta.multiplicador}
-                  onChange={e => setMeta(p => ({ ...p, multiplicador: e.target.value }))}
-                  className={`w-full ${inputCls}`} />
-                <p className="text-[10px] text-gray-400">
-                  Applied to Shopify price when no custom price is set.<br />
-                  e.g. 0.65 = 65% of retail · 1.0 = full price
-                </p>
-              </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div className="fr-card">
+            <div className="fr-section-head">Tier Settings</div>
+            <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {[
+                { label: 'Name', key: 'nombre', type: 'text', hint: '' },
+                { label: 'Description', key: 'descripcion', type: 'text', hint: '' },
+                { label: 'Default Multiplier', key: 'multiplicador', type: 'number', hint: 'Applied to Shopify price when no custom price. e.g. 0.65 = 65% of retail.' },
+                { label: 'Minimum Order Value (€)', key: 'minimum_order_value', type: 'number', hint: '0 = no minimum.' },
+                { label: 'Default Pack Size', key: 'pack_size', type: 'number', hint: 'Fallback for products without per-SKU pack size.' },
+              ].map(({ label, key, type, hint }) => (
+                <div key={key} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  <label className="fr-label">{label}</label>
+                  <input type={type} step={type === 'number' ? (key === 'pack_size' ? '1' : '0.01') : undefined}
+                    value={(meta as any)[key]}
+                    onChange={e => setMeta(p => ({ ...p, [key]: e.target.value }))} />
+                  {hint && <p style={{ fontSize: 10, color: '#111' }}>{hint}</p>}
+                </div>
+              ))}
 
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-bold tracking-[0.1em] uppercase text-gray-400">Minimum Order Value (€)</label>
-                <input type="number" step="0.01" min="0"
-                  value={meta.minimum_order_value}
-                  onChange={e => setMeta(p => ({ ...p, minimum_order_value: e.target.value }))}
-                  className={`w-full ${inputCls}`} />
-                <p className="text-[10px] text-gray-400">
-                  Customers on this tier cannot submit orders below this amount. 0 = no minimum.
-                </p>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-bold tracking-[0.1em] uppercase text-gray-400">Default Pack Size</label>
-                <input type="number" step="1" min="1"
-                  value={meta.pack_size}
-                  onChange={e => setMeta(p => ({ ...p, pack_size: e.target.value }))}
-                  className={`w-full ${inputCls}`} />
-                <p className="text-[10px] text-gray-400">
-                  Fallback for products without a per-SKU pack size. 1 = no restriction.
-                </p>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-bold tracking-[0.1em] uppercase text-gray-400">
-                  Hidden Products
-                  {hiddenProducts.length > 0 && (
-                    <span className="ml-1.5 font-mono text-[#D93A35]">({hiddenProducts.length})</span>
-                  )}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <label className="fr-label">
+                  Hidden Products{hiddenProducts.length > 0 && <span style={{ fontFamily: 'var(--font-mono)', color: '#D93A35', marginLeft: 6 }}>({hiddenProducts.length})</span>}
                 </label>
-                <p className="text-[10px] text-gray-400 mb-1">
-                  Toggle visibility per product in the table on the left using the eye button.
-                </p>
-                {hiddenProducts.length > 0 ? (
-                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-2 space-y-1 max-h-28 overflow-y-auto">
+                <p style={{ fontSize: 10, color: '#111' }}>Toggle visibility per product using the eye button in the table.</p>
+                {hiddenProducts.length > 0 && (
+                  <div style={{ border: '1px solid #111', padding: 8, display: 'flex', flexDirection: 'column', gap: 4, maxHeight: 112, overflowY: 'auto' }}>
                     {hiddenProducts.map(pid => (
-                      <div key={pid} className="flex items-center justify-between gap-2">
-                        <span className="font-mono text-[10px] text-gray-500 truncate">{pid}</span>
+                      <div key={pid} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{pid}</span>
                         <button onClick={() => setHiddenProducts(p => p.filter(x => x !== pid))}
-                          className="text-gray-300 hover:text-[#D93A35] transition-colors flex-shrink-0 text-sm leading-none">×</button>
+                          style={{ background: 'transparent', border: 'none', boxShadow: 'none', padding: '0 2px', fontSize: 14, color: '#D93A35', flexShrink: 0, minHeight: 'auto' }}>×</button>
                       </div>
                     ))}
                   </div>
-                ) : (
-                  <p className="text-[11px] text-gray-400 italic">No products hidden for this tier.</p>
                 )}
               </div>
 
-              <button onClick={handleSaveMeta} disabled={savingMeta}
-                className="w-full py-2 bg-gray-900 text-white text-sm font-bold rounded-lg hover:bg-gray-700 disabled:opacity-40 transition-colors">
+              <button onClick={handleSaveMeta} disabled={savingMeta} className="btn-primary" style={{ width: '100%', justifyContent: 'center' }}>
                 {savingMeta ? 'Saving…' : 'Save Settings'}
               </button>
             </div>
           </div>
 
-          {/* Info card */}
-          <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 text-xs text-gray-500 space-y-2">
-            <div className="font-bold text-gray-700 text-[11px] uppercase tracking-wide">Price Logic</div>
-            <div>1. If a <strong>custom price</strong> is set for a SKU → use it</div>
-            <div>2. Otherwise → <span className="font-mono">Shopify price × {meta.multiplicador || '1'}</span></div>
-            <div>3. Then apply the client's <strong>personal discount</strong> on top</div>
-            <div className="pt-1 border-t border-gray-200 font-bold text-gray-700 text-[11px] uppercase tracking-wide">Pack Size Logic</div>
-            <div>1. If a <strong>per-SKU pack size</strong> is set → use it</div>
-            <div>2. Otherwise → tier default (<span className="font-mono">{meta.pack_size || '1'}</span>)</div>
-            <div className="pt-1 border-t border-gray-200 font-bold text-gray-700 text-[11px] uppercase tracking-wide">Order Rules</div>
-            <div>Min. order: <span className="font-mono">{parseFloat(meta.minimum_order_value) > 0 ? `€${meta.minimum_order_value}` : 'none'}</span></div>
-            <div>Hidden products: <span className="font-mono">{hiddenProducts.length}</span></div>
+          <div className="fr-card" style={{ padding: 16 }}>
+            <div className="fr-label" style={{ marginBottom: 8 }}>Price Logic</div>
+            <div style={{ fontSize: 11, display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <div>1. Custom price per SKU → use it</div>
+              <div>2. Otherwise → Shopify × <span style={{ fontFamily: 'var(--font-mono)' }}>{meta.multiplicador || '1'}</span></div>
+              <div>3. Then apply client personal discount</div>
+            </div>
+            <hr style={{ margin: '10px 0' }} />
+            <div className="fr-label" style={{ marginBottom: 8 }}>Pack Size Logic</div>
+            <div style={{ fontSize: 11, display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <div>1. Per-SKU override → use it</div>
+              <div>2. Otherwise → tier default (<span style={{ fontFamily: 'var(--font-mono)' }}>{meta.pack_size || '1'}</span>)</div>
+            </div>
+            <hr style={{ margin: '10px 0' }} />
+            <div style={{ fontSize: 11 }}>Min. order: <span style={{ fontFamily: 'var(--font-mono)' }}>{parseFloat(meta.minimum_order_value) > 0 ? `€${meta.minimum_order_value}` : 'none'}</span></div>
+            <div style={{ fontSize: 11 }}>Hidden: <span style={{ fontFamily: 'var(--font-mono)' }}>{hiddenProducts.length}</span></div>
           </div>
         </div>
       </div>

@@ -409,7 +409,7 @@ export default function NewOrderPage() {
           font-family: var(--fr-mono); font-size: 13px;
           color: #111;
         }
-        .cat-search::placeholder { color: #aaa; }
+        .cat-search::placeholder { color: #111; }
         .cat-min {
           font-family: var(--fr-mono); font-size: 11px;
           letter-spacing: 0.1em; color: #888; flex-shrink: 0;
@@ -552,7 +552,7 @@ export default function NewOrderPage() {
           font-size: 12px; color: #555;
           margin-bottom: 14px;
         }
-        .cart__empty { color: #aaa; font-style: italic; margin: 0; }
+        .cart__empty { color: #111; font-style: italic; margin: 0; }
         .cart__line {
           display: flex; justify-content: space-between; gap: 8px;
           padding: 6px 0;
@@ -657,7 +657,7 @@ export default function NewOrderPage() {
         .cart__note {
           margin: 8px 0 0;
           font-size: 10px;
-          color: #aaa;
+          color: #111;
           text-align: center;
         }
 

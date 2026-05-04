@@ -241,7 +241,7 @@ export default function ProduccionPage() {
                                 letterSpacing: '-0.04em', color: FR.yellow,
                               }}>
                                 {f.total % 1 === 0 ? f.total : f.total.toFixed(1)}
-                                <span style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 10, fontWeight: 500, color: '#aaa', marginLeft: 3 }}>{f.unidad}</span>
+                                <span style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 10, fontWeight: 500, color: '#111', marginLeft: 3 }}>{f.unidad}</span>
                               </div>
                             </div>
                           ))}
@@ -289,15 +289,15 @@ export default function ProduccionPage() {
 
           {/* Totals footer */}
           <div style={{ background: '#111', color: '#fff', padding: '16px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
-            <div style={{ ...monoLabel, color: '#666' }}>TOTALS</div>
+            <div style={{ ...monoLabel, color: '#111' }}>TOTALS</div>
             <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', alignItems: 'baseline' }}>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-                <span style={{ ...monoLabel, color: '#666' }}>UNITS</span>
+                <span style={{ ...monoLabel, color: '#111' }}>UNITS</span>
                 <span style={{ fontFamily: 'var(--font-alexandria), Alexandria, sans-serif', fontWeight: 900, fontSize: 22, color: '#fff', letterSpacing: '-0.04em' }}>{totalUnidades.toLocaleString()}</span>
               </div>
               {fungTotals.map(f => (
                 <div key={f.id} style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-                  <span style={{ ...monoLabel, color: '#666' }}>{f.nombre.toUpperCase()}</span>
+                  <span style={{ ...monoLabel, color: '#111' }}>{f.nombre.toUpperCase()}</span>
                   <span style={{ fontFamily: 'var(--font-alexandria), Alexandria, sans-serif', fontWeight: 900, fontSize: 22, color: FR.yellow, letterSpacing: '-0.04em' }}>
                     {f.total.toLocaleString()}<span style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 10, fontWeight: 500, color: '#888' }}>{f.unidad}</span>
                   </span>

@@ -36,7 +36,7 @@ const TYPE_COLORS: Record<string, string> = {
   welcome:            '#0087B8',
   order_confirmation: '#0DA265',
   order_shipped:      '#876693',
-  admin_notification: '#999',
+  admin_notification: '#111',
   admin_invite:       '#E6883E',
 };
 
@@ -59,29 +59,29 @@ export default async function EmailsPage() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 16, borderBottom: '1px solid #111', marginBottom: 16, flexWrap: 'wrap', gap: 12 }}>
         <div>
           <div className="page-title">Emails</div>
-          <div style={{ fontSize: 10, color: '#aaa', marginTop: 3 }}>Last 200 transactional emails</div>
+          <div style={{ fontSize: 10, color: '#111', marginTop: 3 }}>Last 200 transactional emails</div>
         </div>
       </div>
 
       {/* Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 16 }}>
         <div className="card" style={{ borderLeft: '3px solid #111' }}>
-          <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#aaa', marginBottom: 4 }}>Total</div>
+          <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#111', marginBottom: 4 }}>Total</div>
           <div style={{ fontSize: 26, fontWeight: 900, color: '#111', lineHeight: 1 }}>{logs.length}</div>
         </div>
         <div className="card" style={{ borderLeft: '3px solid #0DA265' }}>
-          <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#aaa', marginBottom: 4 }}>Sent</div>
+          <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#111', marginBottom: 4 }}>Sent</div>
           <div style={{ fontSize: 26, fontWeight: 900, color: '#0DA265', lineHeight: 1 }}>{sentCount}</div>
         </div>
         <div className="card" style={{ borderLeft: `3px solid ${failedCount > 0 ? '#D93A35' : '#eee'}` }}>
-          <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#aaa', marginBottom: 4 }}>Failed</div>
+          <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#111', marginBottom: 4 }}>Failed</div>
           <div style={{ fontSize: 26, fontWeight: 900, color: failedCount > 0 ? '#D93A35' : '#ccc', lineHeight: 1 }}>{failedCount}</div>
         </div>
       </div>
 
       {/* Email log — cards on mobile, compact list on desktop */}
       {logs.length === 0 ? (
-        <div style={{ padding: '48px 0', textAlign: 'center', fontSize: 12, color: '#aaa' }}>No emails logged yet.</div>
+        <div style={{ padding: '48px 0', textAlign: 'center', fontSize: 12, color: '#111' }}>No emails logged yet.</div>
       ) : (
         <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
           {/* Desktop header */}
@@ -110,7 +110,7 @@ export default async function EmailsPage() {
 
               {/* Type */}
               <div>
-                <span className="badge" style={{ background: TYPE_COLORS[log.type] ?? '#999' }}>
+                <span className="badge" style={{ background: TYPE_COLORS[log.type] ?? '#111' }}>
                   {TYPE_LABELS[log.type] ?? log.type}
                 </span>
               </div>
@@ -120,11 +120,11 @@ export default async function EmailsPage() {
                 <div style={{ fontSize: 11, fontWeight: 700, color: '#111', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {log.recipient}
                 </div>
-                <div style={{ fontSize: 10, color: '#aaa', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: 2 }}>
+                <div style={{ fontSize: 10, color: '#111', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: 2 }}>
                   {log.subject}
                 </div>
                 {/* Mobile extra */}
-                <div className="fr-email-mobile" style={{ display: 'none', marginTop: 4, fontSize: 9, color: '#aaa' }}>
+                <div className="fr-email-mobile" style={{ display: 'none', marginTop: 4, fontSize: 9, color: '#111' }}>
                   <style>{`.fr-email-mobile{display:none!important}@media(max-width:600px){.fr-email-mobile{display:flex!important;gap:8px;flex-wrap:wrap;align-items:center}}`}</style>
                   {log.customer?.company_name && <span>{log.customer.company_name}</span>}
                   <span>{fmt(log.sent_at)}</span>

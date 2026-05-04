@@ -24,7 +24,7 @@ export default async function TarifasPage() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 16, borderBottom: '1px solid #111', marginBottom: 16, flexWrap: 'wrap', gap: 12 }}>
         <div>
           <div className="page-title">Pricing Tiers</div>
-          <div style={{ fontSize: 10, color: '#aaa', marginTop: 3 }}>{tarifas.length} tier{tarifas.length !== 1 ? 's' : ''} configured</div>
+          <div style={{ fontSize: 10, color: '#111', marginTop: 3 }}>{tarifas.length} tier{tarifas.length !== 1 ? 's' : ''} configured</div>
         </div>
         <Link href="/tarifas/nuevo">
           <button className="btn-primary">+ New Tier</button>
@@ -38,7 +38,7 @@ export default async function TarifasPage() {
       </div>
 
       {tarifas.length === 0 && (
-        <div style={{ textAlign: 'center', padding: '64px 16px', fontSize: 12, color: '#aaa' }}>
+        <div style={{ textAlign: 'center', padding: '64px 16px', fontSize: 12, color: '#111' }}>
           No pricing tiers found.<br />
           <span style={{ fontSize: 10 }}>Run the SQL migration to create Retail and Wholesale tiers.</span>
         </div>

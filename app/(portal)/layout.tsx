@@ -116,12 +116,12 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
               padding: '10px 10px', minHeight: 48,
               fontSize: 12, fontWeight: 700,
               letterSpacing: '0.07em', textTransform: 'uppercase',
-              color: active ? '#fff' : '#666',
+              color: active ? '#fff' : '#111',
               background: active ? '#111' : 'transparent',
               border: `1px solid ${active ? '#111' : 'transparent'}`,
               textDecoration: 'none',
             }}>
-              <span style={{ color: active ? '#D93A35' : '#aaa', flexShrink: 0 }}>
+              <span style={{ color: active ? '#D93A35' : '#111', flexShrink: 0 }}>
                 {icon(active)}
               </span>
               {label}
@@ -144,9 +144,9 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
             <div style={{ fontSize: 12, fontWeight: 700, color: '#111', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {userInfo?.name ?? '—'}
             </div>
-            <div style={{ fontSize: 10, color: '#aaa' }}>{userInfo?.company ?? 'Customer'}</div>
+            <div style={{ fontSize: 10, color: '#111' }}>{userInfo?.company ?? 'Customer'}</div>
           </div>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#aaa" strokeWidth="2">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth="2">
             <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/>
           </svg>
         </button>
@@ -172,9 +172,9 @@ function BottomNav() {
             flex: 1, display: 'flex', flexDirection: 'column',
             alignItems: 'center', justifyContent: 'center', gap: 3,
             textDecoration: 'none',
-            color: active ? '#D93A35' : '#aaa',
-            background: active ? '#f7f7f2' : 'transparent',
-            borderRight: '1px solid #f0f0f0',
+            color: active ? '#D93A35' : '#111',
+            background: active ? '#F7F7F2' : 'transparent',
+            borderRight: '1px solid #111',
             minHeight: 60,
           }}>
             {icon(active)}
