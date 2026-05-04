@@ -197,10 +197,9 @@ export default function NuevoClientePage() {
   return (
     <div className="fr-page" style={{ maxWidth: 760 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 24 }}>
-        <Link href="/clientes" href="/clientes" className="fr-label">← Clientes</Link>
+        <Link href="/clientes" className="fr-label">← Clientes</Link>
         <span>/</span>
-        <h1 style={{ fontSize: 20, fontWeight: 900 }}
-            style={{ fontFamily: 'var(--font-alexandria)' }}>Nuevo Cliente</h1>
+        <h1 style={{ fontSize: 20, fontWeight: 900, fontFamily: 'var(--font-alexandria)' }}>Nuevo Cliente</h1>
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
