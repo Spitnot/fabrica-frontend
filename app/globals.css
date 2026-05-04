@@ -22,9 +22,15 @@
   --status-enviado:     var(--fr-black);
   --status-cancelado:   #999999;
 
-  --font-main: 'Alexandria', sans-serif;
+  --font-main:    'Alexandria', sans-serif;
+  --fr-display:   'Alexandria', sans-serif;
+  --fr-mono:      'JetBrains Mono', ui-monospace, monospace;
+
   --border:        1px solid var(--fr-black);
+  --border-dash:   2px solid var(--fr-black);
   --border-light:  1px solid #e5e5e5;
+  --fr-line-soft:  #e5e5e5;
+
   --shadow-sm:  2px 2px 0 var(--fr-black);
   --shadow-md:  3px 3px 0 var(--fr-black);
   --sidebar-w: 210px;
@@ -143,11 +149,10 @@ select {
 .badge-enviado    { background: var(--status-enviado); }
 .badge-cancelado  { background: var(--status-cancelado); }
 
-/* CARD */
+/* CARD — flat, no shadow (shadows are buttons-only) */
 .card {
   background: var(--fr-white);
   border: var(--border);
-  box-shadow: var(--shadow-sm);
   padding: 16px;
 }
 
