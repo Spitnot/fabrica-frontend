@@ -35,10 +35,11 @@ export default function UsuariosPage() {
 
   const loadUsers = useCallback(async () => {
     setLoading(true);
-    const res = await fetch('/api/admin/users');
-    const data = await res.json();
-    setUsers(data.data ?? []);
-    setLoading(false);
+    try {
+      const res = await fetch('/api/admin/users');
+      const data = await res.json();
+      setUsers(data.data ?? []);
+    } catch (e) { console.error(e); } finally { setLoading(false); }
   }, []);
 
   useEffect(() => {
@@ -86,11 +87,13 @@ export default function UsuariosPage() {
   const inputSt: React.CSSProperties = { fontFamily: 'var(--font-main)', fontSize: 12, border: '1px solid #111', borderRadius: 0, padding: '7px 10px', background: '#fff', color: '#111', outline: 'none', width: '100%' };
 
   return (
-    <div style={{ padding: 16, maxWidth: 900, margin: '0 auto' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 16, borderBottom: '1px solid #111', marginBottom: 16, flexWrap: 'wrap', gap: 12 }}>
+    <div className="fr-page">
+
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
         <div>
-          <div className="page-title">Team</div>
-          <div style={{ fontSize: 10, color: '#111', marginTop: 3 }}>Admin users and access levels</div>
+          <div className="fr-label">{users.length} member{users.length !== 1 ? 's' : ''}</div>
+          <h1 style={{ fontSize: 28, fontWeight: 900, marginTop: 4 }}>Team</h1>
         </div>
         {isAdmin && !showInvite && (
           <button className="btn-primary" onClick={() => { setShowInvite(true); setInviteSent(false); setInviteError(''); }}>
@@ -101,9 +104,9 @@ export default function UsuariosPage() {
 
       {/* Invite form */}
       {showInvite && (
-        <div className="card" style={{ padding: 0, overflow: 'hidden', marginBottom: 12 }}>
+        <div className="fr-card" style={{ padding: 0, overflow: 'hidden' }}>
           <div style={{ padding: '11px 16px', borderBottom: '1px solid #111', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span className="section-label">Invite Member</span>
+            <span className="fr-section-head">Invite Member</span>
             <button onClick={() => { setShowInvite(false); setInviteSent(false); setInviteError(''); }} style={{ background: 'transparent', border: 'none', boxShadow: 'none', color: '#111', padding: '2px 6px', fontSize: 14 }}>✕</button>
           </div>
 
@@ -117,17 +120,17 @@ export default function UsuariosPage() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }} className="fr-invite-grid">
                 <style>{`@media(max-width:480px){.fr-invite-grid{grid-template-columns:1fr!important}}`}</style>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-                  <label style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#111' }}>Full Name *</label>
+                  <label className="fr-label">Full Name *</label>
                   <input type="text" value={inviteName} onChange={e => setInviteName(e.target.value)} placeholder="Maria García" style={inputSt} required />
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-                  <label style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#111' }}>Email *</label>
+                  <label className="fr-label">Email *</label>
                   <input type="email" value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder="maria@firmarollers.com" style={inputSt} required />
                 </div>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <label style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#111' }}>Role</label>
+                <label className="fr-label">Role</label>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   {(['admin', 'manager', 'viewer'] as AdminRole[]).map((r) => (
                     <button key={r} type="button" onClick={() => setInviteRole(r)} style={{
@@ -141,11 +144,11 @@ export default function UsuariosPage() {
                     </button>
                   ))}
                 </div>
-                <div style={{ fontSize: 10, color: '#111', marginTop: 2 }}>{ROLE_DESCRIPTIONS[inviteRole]}</div>
+                <div className="fr-label" style={{ marginTop: 2 }}>{ROLE_DESCRIPTIONS[inviteRole]}</div>
               </div>
 
               {inviteError && (
-                <div style={{ padding: '8px 12px', background: '#fff8f8', border: '1px solid #D93A35', fontSize: 11, color: '#D93A35' }}>{inviteError}</div>
+                <div style={{ padding: '8px 12px', border: '1px solid #D93A35', fontSize: 11, color: '#D93A35' }}>{inviteError}</div>
               )}
               <div style={{ display: 'flex', gap: 8 }}>
                 <button type="submit" disabled={inviting} className="btn-primary">{inviting ? 'Creating…' : 'Create & Send Invite'}</button>
@@ -157,7 +160,7 @@ export default function UsuariosPage() {
       )}
 
       {/* Users list */}
-      <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+      <div className="fr-card" style={{ padding: 0, overflow: 'hidden' }}>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 480 }}>
             <thead>
@@ -173,10 +176,10 @@ export default function UsuariosPage() {
               ) : users.length === 0 ? (
                 <tr><td colSpan={isAdmin ? 5 : 4} style={{ padding: '48px 16px', textAlign: 'center', fontSize: 12, color: '#111' }}>No team members yet</td></tr>
               ) : users.map((u, i) => (
-                <tr key={u.id} style={{ borderBottom: i < users.length - 1 ? '1px solid #f5f5f5' : 'none' }}>
+                <tr key={u.id} style={{ borderBottom: i < users.length - 1 ? '1px solid #111' : 'none' }}>
                   <td style={{ padding: '9px 14px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <div style={{ width: 28, height: 28, background: ROLE_COLORS[u.role] ?? '#555', border: '1px solid #111', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 900, color: '#fff', flexShrink: 0 }}>
+                      <div style={{ width: 28, height: 28, background: ROLE_COLORS[u.role] ?? '#111', border: '1px solid #111', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 900, color: '#fff', flexShrink: 0 }}>
                         {initials(u.full_name || u.email)}
                       </div>
                       <div>
@@ -184,18 +187,22 @@ export default function UsuariosPage() {
                           {u.full_name || '—'}
                           {u.id === currentUserId && <span style={{ marginLeft: 6, fontSize: 9, color: '#111', fontWeight: 400 }}>(you)</span>}
                         </div>
-                        <div style={{ fontSize: 10, color: '#111' }}>{u.email}</div>
+                        <div className="fr-label">{u.email}</div>
                       </div>
                     </div>
                   </td>
                   <td style={{ padding: '9px 14px' }}>
-                    <span className="badge" style={{ background: ROLE_COLORS[u.role] ?? '#555' }}>{ROLE_LABELS[u.role]}</span>
+                    <span className="badge" style={{ background: ROLE_COLORS[u.role] ?? '#111' }}>{ROLE_LABELS[u.role]}</span>
                   </td>
-                  <td style={{ padding: '9px 14px', fontSize: 10, color: '#bbb', fontVariantNumeric: 'tabular-nums' }}>
-                    {u.last_sign_in_at ? new Date(u.last_sign_in_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: '2-digit' }) : 'Never'}
+                  <td style={{ padding: '9px 14px' }}>
+                    <span className="fr-label" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                      {u.last_sign_in_at ? new Date(u.last_sign_in_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: '2-digit' }) : 'Never'}
+                    </span>
                   </td>
-                  <td style={{ padding: '9px 14px', fontSize: 10, color: '#bbb', fontVariantNumeric: 'tabular-nums' }}>
-                    {new Date(u.created_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: '2-digit' })}
+                  <td style={{ padding: '9px 14px' }}>
+                    <span className="fr-label" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                      {new Date(u.created_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: '2-digit' })}
+                    </span>
                   </td>
                   {isAdmin && (
                     <td style={{ padding: '9px 14px' }}>
@@ -221,9 +228,9 @@ export default function UsuariosPage() {
       {/* Edit role modal */}
       {editUser && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-          <div className="card" style={{ maxWidth: 360, width: '100%', padding: 0, overflow: 'hidden' }}>
+          <div className="fr-card" style={{ maxWidth: 360, width: '100%', padding: 0, overflow: 'hidden' }}>
             <div style={{ padding: '12px 16px', borderBottom: '1px solid #111', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span className="section-label">Edit Role</span>
+              <span className="fr-section-head">Edit Role</span>
               <button onClick={() => setEditUser(null)} style={{ background: 'transparent', border: 'none', boxShadow: 'none', color: '#111', padding: '2px 6px', fontSize: 14 }}>✕</button>
             </div>
             <form onSubmit={handleEditRole} style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -238,11 +245,11 @@ export default function UsuariosPage() {
                     textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 2,
                   }}>
                     <span style={{ fontSize: 10, fontWeight: 900, letterSpacing: '0.1em', textTransform: 'uppercase' }}>{ROLE_LABELS[r]}</span>
-                    <span style={{ fontSize: 9, fontWeight: 400, color: editRole === r ? '#ccc' : '#111', letterSpacing: 0, textTransform: 'none' }}>{ROLE_DESCRIPTIONS[r]}</span>
+                    <span style={{ fontSize: 9, fontWeight: 400, color: editRole === r ? 'rgba(255,255,255,0.6)' : '#111', letterSpacing: 0, textTransform: 'none' }}>{ROLE_DESCRIPTIONS[r]}</span>
                   </button>
                 ))}
               </div>
-              {editError && <div style={{ padding: '8px 12px', background: '#fff8f8', border: '1px solid #D93A35', fontSize: 11, color: '#D93A35' }}>{editError}</div>}
+              {editError && <div style={{ padding: '8px 12px', border: '1px solid #D93A35', fontSize: 11, color: '#D93A35' }}>{editError}</div>}
               <div style={{ display: 'flex', gap: 8 }}>
                 <button type="submit" disabled={editSaving || editRole === editUser.role} className="btn-primary" style={{ flex: 1, justifyContent: 'center' }}>
                   {editSaving ? 'Saving…' : 'Save'}

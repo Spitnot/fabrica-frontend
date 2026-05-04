@@ -37,10 +37,11 @@ function PedidosInner() {
   useEffect(() => {
     async function load() {
       setLoading(true);
-      const [oRes, cRes] = await Promise.all([fetch('/api/orders'), fetch('/api/customers')]);
-      setOrders((await oRes.json()).data ?? []);
-      setCustomers((await cRes.json()).data ?? []);
-      setLoading(false);
+      try {
+        const [oRes, cRes] = await Promise.all([fetch('/api/orders'), fetch('/api/customers')]);
+        setOrders((await oRes.json()).data ?? []);
+        setCustomers((await cRes.json()).data ?? []);
+      } catch (e) { console.error(e); } finally { setLoading(false); }
     }
     load();
   }, []);

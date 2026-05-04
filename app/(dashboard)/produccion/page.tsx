@@ -18,7 +18,7 @@ interface FungibleTotal { id: string; nombre: string; unidad: string; total: num
 const monoLabel: React.CSSProperties = {
   fontFamily: 'JetBrains Mono, ui-monospace, monospace',
   fontWeight: 700, fontSize: 9, letterSpacing: '0.18em',
-  textTransform: 'uppercase', color: '#888',
+  textTransform: 'uppercase', color: '#111',
 };
 
 const sectionHeader: React.CSSProperties = {
@@ -126,7 +126,7 @@ export default function ProduccionPage() {
                   color: '#111', fontVariantNumeric: 'tabular-nums',
                 }}>
                   {f.total.toLocaleString()}
-                  <span style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 11, fontWeight: 500, color: '#888', marginLeft: 4 }}>{f.unidad}</span>
+                  <span style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 11, fontWeight: 500, color: '#111', marginLeft: 4 }}>{f.unidad}</span>
                 </div>
               </div>
             ))}
@@ -151,9 +151,9 @@ export default function ProduccionPage() {
 
       {/* SKU expandable rows */}
       {loading ? (
-        <div style={{ padding: '60px 0', textAlign: 'center', fontSize: 12, color: '#888' }}>Loading…</div>
+        <div style={{ padding: '60px 0', textAlign: 'center', fontSize: 12, color: '#111' }}>Loading…</div>
       ) : filtered.length === 0 ? (
-        <div style={{ padding: '60px 0', textAlign: 'center', fontSize: 12, color: '#888' }}>
+        <div style={{ padding: '60px 0', textAlign: 'center', fontSize: 12, color: '#111' }}>
           {search ? 'No SKUs match the search.' : 'No pending production.'}
         </div>
       ) : (
@@ -177,7 +177,7 @@ export default function ProduccionPage() {
                   {/* Index */}
                   <div style={{
                     fontFamily: 'JetBrains Mono, ui-monospace, monospace',
-                    fontSize: 10, color: '#888', fontWeight: 700,
+                    fontSize: 10, color: '#111', fontWeight: 700,
                     width: 24, flexShrink: 0,
                   }}>
                     {String(idx + 1).padStart(2, '0')}
@@ -187,7 +187,7 @@ export default function ProduccionPage() {
                     <div style={{ fontSize: 14, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {item.nombre_producto}
                     </div>
-                    <div style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 10, color: '#888', marginTop: 2 }}>
+                    <div style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 10, color: '#111', marginTop: 2 }}>
                       {item.sku}
                     </div>
                   </div>
@@ -195,7 +195,7 @@ export default function ProduccionPage() {
                   {/* Bar — desktop only */}
                   <div className="fr-bar" style={{ width: 120, flexShrink: 0 }}>
                     <style>{`@media(max-width:560px){.fr-bar{display:none!important}}`}</style>
-                    <div style={{ height: 4, background: '#ddd6c8', position: 'relative' }}>
+                    <div style={{ height: 4, background: 'rgba(17,17,17,0.12)', position: 'relative' }}>
                       <div style={{ position: 'absolute', inset: 0, width: `${barPct}%`, background: '#111' }} />
                     </div>
                     <div style={{ ...monoLabel, marginTop: 4, fontSize: 8 }}>{barPct}%</div>
@@ -234,7 +234,7 @@ export default function ProduccionPage() {
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 14 }}>
                           {item.fungibles.map(f => (
                             <div key={f.id} style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                              <div style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 9, color: '#888', textTransform: 'uppercase', letterSpacing: '0.14em' }}>{f.nombre}</div>
+                              <div style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 9, color: '#111', textTransform: 'uppercase', letterSpacing: '0.14em' }}>{f.nombre}</div>
                               <div style={{
                                 fontFamily: 'var(--font-alexandria), Alexandria, sans-serif',
                                 fontWeight: 900, fontSize: 22, lineHeight: 1,
@@ -274,7 +274,7 @@ export default function ProduccionPage() {
                                 fontWeight: 900, fontSize: 18, color: FR.yellow,
                                 letterSpacing: '-0.03em',
                               }}>
-                                {p.cantidad}<span style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 9, fontWeight: 500, color: '#888' }}>u</span>
+                                {p.cantidad}<span style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 9, fontWeight: 500, color: '#111' }}>u</span>
                               </div>
                             </Link>
                           ))}
@@ -299,7 +299,7 @@ export default function ProduccionPage() {
                 <div key={f.id} style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
                   <span style={{ ...monoLabel, color: '#111' }}>{f.nombre.toUpperCase()}</span>
                   <span style={{ fontFamily: 'var(--font-alexandria), Alexandria, sans-serif', fontWeight: 900, fontSize: 22, color: FR.yellow, letterSpacing: '-0.04em' }}>
-                    {f.total.toLocaleString()}<span style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 10, fontWeight: 500, color: '#888' }}>{f.unidad}</span>
+                    {f.total.toLocaleString()}<span style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 10, fontWeight: 500, color: '#111' }}>{f.unidad}</span>
                   </span>
                 </div>
               ))}

@@ -66,7 +66,7 @@ function getStrength(password: string) {
 // ─── Visual atoms ──────────────────────────────────────────
 
 const ink = '#000';
-const muted = '#6a6660';
+const muted = '#111';
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
@@ -92,7 +92,7 @@ function InfoRow({ label, value }: { label: string; value: string }) {
   return (
     <div style={{
       display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
-      gap: 12, padding: '10px 0', borderBottom: '1px solid #e5e2da',
+      gap: 12, padding: '10px 0', borderBottom: '1px solid #111',
     }}>
       <span style={{
         fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
@@ -137,7 +137,7 @@ function PasswordRequirements({ password }: { password: string }) {
           fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
           fontSize: 11,
         }}>
-          <span style={{ fontWeight: 700, color: pass ? '#0DA265' : '#cfcbc0' }}>{pass ? '✓' : '○'}</span>
+          <span style={{ fontWeight: 700, color: pass ? '#0DA265' : 'rgba(17,17,17,0.3)' }}>{pass ? '✓' : '○'}</span>
           <span style={{ color: pass ? ink : muted, fontWeight: pass ? 600 : 400 }}>{label}</span>
         </li>
       ))}
@@ -304,7 +304,7 @@ export default function PerfilPage() {
         onClick={onClick}
         disabled={disabled}
         style={{
-          background: 'transparent', border: 'none', padding: 0,
+          background: 'transparent', border: 'none', padding: 0, boxShadow: 'none',
           cursor: disabled ? 'default' : 'pointer',
           fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
           fontSize: 10, fontWeight: 700, letterSpacing: '0.18em',
@@ -533,8 +533,8 @@ export default function PerfilPage() {
                   onClick={() => setShowNewPwd(v => !v)}
                   style={{
                     position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
-                    background: 'none', border: 'none', padding: 0, cursor: 'pointer',
-                    color: muted, display: 'flex', alignItems: 'center',
+                    background: 'none', border: 'none', padding: 0, boxShadow: 'none', cursor: 'pointer',
+                    color: ink, display: 'flex', alignItems: 'center',
                   }}
                 >
                   {showNewPwd ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -547,7 +547,7 @@ export default function PerfilPage() {
                     {[1, 2, 3, 4].map(i => (
                       <div key={i} style={{
                         height: 4, flex: 1,
-                        background: i <= strength.score ? strength.color : '#e5e2da',
+                        background: i <= strength.score ? strength.color : 'rgba(17,17,17,0.12)',
                       }} />
                     ))}
                   </div>
@@ -576,8 +576,8 @@ export default function PerfilPage() {
                   onClick={() => setShowConfirmPwd(v => !v)}
                   style={{
                     position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
-                    background: 'none', border: 'none', padding: 0, cursor: 'pointer',
-                    color: muted, display: 'flex', alignItems: 'center',
+                    background: 'none', border: 'none', padding: 0, boxShadow: 'none', cursor: 'pointer',
+                    color: ink, display: 'flex', alignItems: 'center',
                   }}
                 >
                   {showConfirmPwd ? <EyeOff size={16} /> : <Eye size={16} />}

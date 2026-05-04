@@ -165,7 +165,7 @@ export default function OrdersPage() {
           display: flex; align-items: center; gap: 16px;
         }
         .orders-header__count {
-          font-family: var(--fr-mono); font-size: 11px; color: #888;
+          font-family: var(--fr-mono); font-size: 11px; color: #111;
         }
         .orders-header__cta {
           background: #111; color: #fff;
@@ -185,20 +185,21 @@ export default function OrdersPage() {
           margin-bottom: 24px;
         }
         .orders-toolbar__sort {
-          background: transparent; border: 0; cursor: pointer;
-          font-family: var(--fr-mono); font-size: 12px;
-          color: #888; padding: 0;
+          background: transparent; border: 1px solid #111; cursor: pointer;
+          font-family: var(--fr-mono); font-size: 12px; font-weight: 700;
+          color: #111; padding: 6px 12px;
+          box-shadow: 2px 2px 0 #111;
         }
-        .orders-toolbar__sort.is-active { color: #111; }
+        .orders-toolbar__sort.is-active { background: #111; color: #fff; }
 
-        .orders-empty { font-family: var(--fr-mono); color: #888; padding: 40px 0; }
+        .orders-empty { font-family: var(--fr-mono); color: #111; padding: 40px 0; }
         .orders-empty-state {
-          border: 1px dashed #ccc;
+          border: 1px solid #111;
           padding: 56px 24px;
           text-align: center;
           font-family: var(--fr-mono);
         }
-        .orders-empty-state p { color: #888; margin: 0 0 12px; }
+        .orders-empty-state p { color: #111; margin: 0 0 12px; }
         .orders-empty-state__cta {
           font-family: var(--fr-display);
           font-size: 12px; font-weight: 700; letter-spacing: 0.08em;
@@ -231,7 +232,7 @@ export default function OrdersPage() {
         }
         .order-row__meta {
           font-family: var(--fr-mono);
-          font-size: 11px; color: #888;
+          font-size: 11px; color: #111;
           margin-bottom: 8px;
         }
         .order-row__status { display: flex; }
@@ -244,12 +245,12 @@ export default function OrdersPage() {
         }
         .order-row__ship {
           font-family: var(--fr-mono);
-          font-size: 10px; color: #888;
+          font-size: 10px; color: #111;
           margin-top: 4px;
         }
 
         .order-row__chev {
-          font-size: 24px; color: #ccc;
+          font-size: 24px; color: #111;
           padding: 0 4px;
         }
 

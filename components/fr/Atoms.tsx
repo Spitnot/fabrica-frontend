@@ -10,7 +10,7 @@ export function BackLink({ href, children }: { href: string; children: ReactNode
       display: 'inline-flex', alignItems: 'center', gap: 6,
       fontFamily: 'JetBrains Mono, ui-monospace, monospace',
       fontWeight: 700, fontSize: 10, letterSpacing: '0.18em',
-      textTransform: 'uppercase', color: '#888', textDecoration: 'none',
+      textTransform: 'uppercase', color: '#111', textDecoration: 'none',
     }}>← {children}</Link>
   );
 }
@@ -113,7 +113,7 @@ export function FilterTabs<T extends string>({ tabs, value, onChange }:
             }}>
             {t.label}
             {t.count !== undefined && (
-              <span style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontWeight: 500, fontSize: 11, color: active ? FR.yellow : '#888' }}>
+              <span style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontWeight: 500, fontSize: 11, color: active ? FR.yellow : '#111' }}>
                 {t.count}
               </span>
             )}

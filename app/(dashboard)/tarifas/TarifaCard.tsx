@@ -10,11 +10,11 @@ interface TarifaCardProps {
 }
 
 export function TarifaCard({ tarifa: t, count }: TarifaCardProps) {
-  const color = TARIFA_COLORS[t.nombre.toLowerCase()] ?? '#555';
+  const color = TARIFA_COLORS[t.nombre.toLowerCase()] ?? '#111';
   return (
     <Link href={`/tarifas/${t.id}`} style={{ textDecoration: 'none' }}>
       <div
-        className="card"
+        className="fr-card"
         style={{ borderTop: `3px solid ${color}`, cursor: 'pointer', transition: 'transform 0.08s, box-shadow 0.08s' }}
         onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.transform = 'translate(2px,2px)'; (e.currentTarget as HTMLDivElement).style.boxShadow = 'none'; }}
         onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.transform = 'none'; (e.currentTarget as HTMLDivElement).style.boxShadow = '2px 2px 0 #111'; }}
@@ -28,9 +28,9 @@ export function TarifaCard({ tarifa: t, count }: TarifaCardProps) {
           </span>
         </div>
         {t.descripcion && (
-          <div style={{ fontSize: 11, color: '#777', marginBottom: 12, lineHeight: 1.5 }}>{t.descripcion}</div>
+          <div style={{ fontSize: 11, color: '#111', marginBottom: 12, lineHeight: 1.5 }}>{t.descripcion}</div>
         )}
-        <div style={{ borderTop: '1px solid #eee', paddingTop: 10, display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <div style={{ borderTop: '1px solid #111', paddingTop: 10, display: 'flex', flexDirection: 'column', gap: 6 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
             <span style={{ color: '#111' }}>Multiplier</span>
             <span style={{ fontFamily: 'monospace', fontWeight: 900, color: '#111' }}>{(t.multiplicador * 100).toFixed(0)}%</span>

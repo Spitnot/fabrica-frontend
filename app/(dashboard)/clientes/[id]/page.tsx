@@ -96,7 +96,7 @@ export default function ClientePerfilPage() {
     ? `${(client as any).first_name} ${(client as any).last_name ?? ""}`.trim()
     : client.contacto_nombre ?? "—";
   const totalBilled = orders.reduce((s: number, o: any) => s + (o.total_productos ?? 0), 0);
-  const tarifaColor = client.tarifa ? (TARIFA_COLORS[client.tarifa.nombre.toLowerCase()] ?? '#555') : '#555';
+  const tarifaColor = client.tarifa ? (TARIFA_COLORS[client.tarifa.nombre.toLowerCase()] ?? '#111') : '#111';
 
   return (
     <div style={{ padding: 16, maxWidth: 1100, margin: '0 auto' }}>
@@ -112,7 +112,7 @@ export default function ClientePerfilPage() {
             {initials(clientName)}
           </div>
           <div>
-            <div className="page-title">{clientName}</div>
+            <div style={{ fontSize: 20, fontWeight: 900, fontFamily: 'var(--font-alexandria)' }}>{clientName}</div>
             <div style={{ fontSize: 11, color: '#111', marginTop: 2 }}>{client.company_name}</div>
           </div>
         </div>
@@ -124,7 +124,7 @@ export default function ClientePerfilPage() {
           <Link href={`/pedidos/nuevo?cliente=${id}`}>
             <button className="btn-primary">+ New Order</button>
           </Link>
-          <button onClick={() => setConfirmDelete(true)} style={{ background: 'transparent', border: '1px solid #ddd', boxShadow: 'none', color: '#D93A35', borderColor: '#D93A35' }}>
+          <button onClick={() => setConfirmDelete(true)} style={{ background: 'transparent', border: '1px solid #D93A35', boxShadow: 'none', color: '#D93A35' }}>
             Delete
           </button>
         </div>
@@ -133,7 +133,7 @@ export default function ClientePerfilPage() {
       {/* Delete modal */}
       {confirmDelete && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-          <div className="card" style={{ maxWidth: 380, width: '100%', padding: 24 }}>
+          <div className="fr-card" style={{ maxWidth: 380, width: '100%', padding: 24 }}>
             <div style={{ fontSize: 13, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Delete Client</div>
             <p style={{ fontSize: 12, color: '#111', marginBottom: 20, lineHeight: 1.6 }}>
               This will permanently delete <strong>{clientName}</strong> and all their data.
@@ -156,9 +156,9 @@ export default function ClientePerfilPage() {
 
         {/* LEFT — orders */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+          <div className="fr-card" style={{ padding: 0, overflow: 'hidden' }}>
             <div style={{ padding: '11px 16px', borderBottom: '1px solid #111' }}>
-              <span className="section-label">Order History</span>
+              <span className="fr-section-head">Order History</span>
             </div>
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 480 }}>
@@ -173,7 +173,7 @@ export default function ClientePerfilPage() {
                   {orders.length === 0 ? (
                     <tr><td colSpan={5} style={{ padding: '32px 16px', textAlign: 'center', fontSize: 12, color: '#111' }}>No orders yet</td></tr>
                   ) : orders.map((o: any, i: number) => (
-                    <tr key={o.id} style={{ borderBottom: i < orders.length - 1 ? '1px solid #f5f5f5' : 'none' }}>
+                    <tr key={o.id} style={{ borderBottom: i < orders.length - 1 ? '1px solid #111' : 'none' }}>
                       <td style={{ padding: '9px 14px' }}>
                         <Link href={`/pedidos/${o.id}`} style={{ fontSize: 10, fontWeight: 700, color: '#D93A35', fontFamily: 'monospace' }}>
                           #{o.id.slice(0, 8).toUpperCase()}
@@ -186,7 +186,7 @@ export default function ClientePerfilPage() {
                       </td>
                       <td style={{ padding: '9px 14px', fontSize: 10, color: '#111', fontFamily: 'monospace' }}>{o.peso_total} kg</td>
                       <td style={{ padding: '9px 14px', fontSize: 12, fontWeight: 900, color: '#111' }}>{fmt(o.total_productos)}</td>
-                      <td style={{ padding: '9px 14px', fontSize: 10, color: '#bbb', fontVariantNumeric: 'tabular-nums' }}>
+                      <td style={{ padding: '9px 14px', fontSize: 10, color: '#111', fontVariantNumeric: 'tabular-nums' }}>
                         {new Date(o.created_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: '2-digit' })}
                       </td>
                     </tr>
@@ -202,20 +202,20 @@ export default function ClientePerfilPage() {
 
           {/* Stats */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-            <div className="card" style={{ borderLeft: '3px solid #0087B8' }}>
+            <div className="fr-card" style={{ borderLeft: '3px solid #0087B8' }}>
               <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#111', marginBottom: 4 }}>Orders</div>
               <div style={{ fontSize: 26, fontWeight: 900, color: '#0087B8', lineHeight: 1 }}>{orders.length}</div>
             </div>
-            <div className="card" style={{ borderLeft: '3px solid #D93A35' }}>
+            <div className="fr-card" style={{ borderLeft: '3px solid #D93A35' }}>
               <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#111', marginBottom: 4 }}>Billed</div>
               <div style={{ fontSize: 16, fontWeight: 900, color: '#D93A35', lineHeight: 1 }}>{fmt(totalBilled)}</div>
             </div>
           </div>
 
           {/* Pricing */}
-          <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-            <div style={{ padding: '11px 16px', borderBottom: '1px solid #eee', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span className="section-label">Pricing</span>
+          <div className="fr-card" style={{ padding: 0, overflow: 'hidden' }}>
+            <div style={{ padding: '11px 16px', borderBottom: '1px solid #111', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span className="fr-section-head">Pricing</span>
               <button onClick={() => setEditPricing(p => !p)} style={{ background: 'transparent', border: 'none', boxShadow: 'none', fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#D93A35', padding: 0 }}>
                 {editPricing ? 'Cancel' : 'Edit'}
               </button>
@@ -227,11 +227,11 @@ export default function ClientePerfilPage() {
                     <span style={{ color: '#111' }}>Tier</span>
                     {client.tarifa ? (
                       <span className="badge" style={{ background: tarifaColor }}>{client.tarifa.nombre}</span>
-                    ) : <span style={{ color: '#ccc' }}>—</span>}
+                    ) : <span style={{ color: '#111', fontFamily: 'monospace' }}>—</span>}
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
                     <span style={{ color: '#111' }}>Discount</span>
-                    <span style={{ fontWeight: 900, color: client.descuento_pct > 0 ? '#D93A35' : '#ccc', fontFamily: 'monospace' }}>
+                    <span style={{ fontWeight: 900, color: client.descuento_pct > 0 ? '#D93A35' : '#111', fontFamily: 'monospace' }}>
                       {client.descuento_pct > 0 ? `-${client.descuento_pct}%` : '—'}
                     </span>
                   </div>
@@ -239,14 +239,14 @@ export default function ClientePerfilPage() {
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-                    <label style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#111' }}>Tier</label>
+                    <label className="fr-label">Tier</label>
                     <select value={pricingForm.tarifa_id} onChange={e => setPricingForm(p => ({ ...p, tarifa_id: e.target.value }))} style={inputSt}>
                       <option value="">— No tier —</option>
                       {tarifas.map(t => <option key={t.id} value={t.id}>{t.nombre}</option>)}
                     </select>
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-                    <label style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#111' }}>Discount (%)</label>
+                    <label className="fr-label">Discount (%)</label>
                     <input type="number" min="0" max="100" step="0.5" value={pricingForm.descuento_pct} onChange={e => setPricingForm(p => ({ ...p, descuento_pct: e.target.value }))} style={inputSt} />
                   </div>
                   <button onClick={savePricing} disabled={savingPricing} className="btn-primary" style={{ justifyContent: 'center', width: '100%' }}>
@@ -258,9 +258,9 @@ export default function ClientePerfilPage() {
           </div>
 
           {/* Contact */}
-          <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-            <div style={{ padding: '11px 16px', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span className="section-label">Contact</span>
+          <div className="fr-card" style={{ padding: 0, overflow: 'hidden' }}>
+            <div style={{ padding: '11px 16px', borderBottom: '1px solid #111', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span className="fr-section-head">Contact</span>
               <span className="badge" style={{ background: client.estado === 'active' ? '#0DA265' : '#111' }}>
                 {client.estado === 'active' ? 'Active' : 'Inactive'}
               </span>
@@ -272,24 +272,24 @@ export default function ClientePerfilPage() {
                 ['VAT ID', client.nif_cif],
                 ['Joined', new Date(client.created_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })],
               ].map(([label, value]) => (
-                <div key={String(label)} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, fontSize: 11 }}>
-                  <span style={{ color: '#111', flexShrink: 0 }}>{label}</span>
-                  <span style={{ color: '#555', fontWeight: 600, textAlign: 'right', fontSize: 10, fontFamily: 'monospace' }}>{value}</span>
+                <div key={String(label)} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, fontSize: 11, borderBottom: '1px solid #111', paddingBottom: 6 }}>
+                  <span className="fr-label" style={{ flexShrink: 0 }}>{label}</span>
+                  <span style={{ color: '#111', fontWeight: 600, textAlign: 'right', fontSize: 10, fontFamily: 'monospace' }}>{value}</span>
                 </div>
               ))}
             </div>
           </div>
 
           {/* Address */}
-          <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-            <div style={{ padding: '11px 16px', borderBottom: '1px solid #eee' }}>
-              <span className="section-label">Shipping Address</span>
+          <div className="fr-card" style={{ padding: 0, overflow: 'hidden' }}>
+            <div style={{ padding: '11px 16px', borderBottom: '1px solid #111' }}>
+              <span className="fr-section-head">Shipping Address</span>
             </div>
             <div style={{ padding: '12px 16px' }}>
               {address ? (
                 <>
                   <div style={{ fontSize: 12, fontWeight: 600, color: '#111' }}>{address.street}</div>
-                  <div style={{ fontSize: 11, color: '#777', marginTop: 2 }}>{address.postal_code} {address.city}</div>
+                  <div style={{ fontSize: 11, color: '#111', marginTop: 2 }}>{address.postal_code} {address.city}</div>
                   <div style={{ fontSize: 10, color: '#111', fontFamily: 'monospace', marginTop: 2 }}>{address.country}</div>
                 </>
               ) : (

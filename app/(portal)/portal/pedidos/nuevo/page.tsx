@@ -76,7 +76,14 @@ export default function NewOrderPage() {
       if (cust) setCustomer(cust as unknown as Customer);
     }
     loadData();
-    fetch('/api/products').then(r => r.json()).then(d => { setProducts(d.data ?? []); setLoadingProducts(false); });
+    fetch('/api/products')
+      .then(r => r.json())
+      .then(d => {
+        if (d.error) setError(`Catalog error: ${d.error}`);
+        setProducts(d.data ?? []);
+        setLoadingProducts(false);
+      })
+      .catch(() => { setError('Could not load catalog. Please refresh.'); setLoadingProducts(false); });
   }, []);
 
   const hiddenProducts: string[] = customer?.tarifa?.hidden_products ?? [];
@@ -392,7 +399,7 @@ export default function NewOrderPage() {
         }
         @media (max-width: 768px) { .cat-title { font-size: 40px; } }
         .cat-header__count {
-          font-family: var(--fr-mono); font-size: 11px; color: #888;
+          font-family: var(--fr-mono); font-size: 11px; color: #111;
         }
 
         .cat-filterbar {
@@ -412,7 +419,7 @@ export default function NewOrderPage() {
         .cat-search::placeholder { color: #111; }
         .cat-min {
           font-family: var(--fr-mono); font-size: 11px;
-          letter-spacing: 0.1em; color: #888; flex-shrink: 0;
+          letter-spacing: 0.1em; color: #111; flex-shrink: 0;
         }
         .cat-min.is-warn { color: var(--fr-red); font-weight: 700; }
 
@@ -426,7 +433,7 @@ export default function NewOrderPage() {
           .cat-layout { grid-template-columns: 1fr; }
         }
 
-        .cat-loading { font-family: var(--fr-mono); color: #888; padding: 60px 0; text-align: center; }
+        .cat-loading { font-family: var(--fr-mono); color: #111; padding: 60px 0; text-align: center; }
 
         .cat-grid {
           display: grid;
@@ -538,7 +545,7 @@ export default function NewOrderPage() {
         }
         .cart__count {
           font-family: var(--fr-mono); font-size: 11px;
-          color: #888; font-weight: 400; letter-spacing: 0;
+          color: #111; font-weight: 400; letter-spacing: 0;
         }
         .cart__client {
           padding: 10px 12px;
@@ -546,7 +553,7 @@ export default function NewOrderPage() {
           margin-bottom: 14px;
         }
         .cart__client-name { font-size: 12px; font-weight: 700; color: #111; }
-        .cart__client-addr { font-size: 11px; color: #888; margin-top: 2px; }
+        .cart__client-addr { font-size: 11px; color: #111; margin-top: 2px; }
 
         .cart__lines {
           font-size: 12px; color: #555;
@@ -560,8 +567,8 @@ export default function NewOrderPage() {
         }
         .cart__line:last-child { border-bottom: 0; }
         .cart__line-name { color: #111; flex: 1; }
-        .cart__line-var { color: #888; }
-        .cart__line-qty { color: #888; flex-shrink: 0; }
+        .cart__line-var { color: #111; }
+        .cart__line-qty { color: #111; flex-shrink: 0; }
 
         .cart__totals {
           margin: 0 0 14px; padding: 12px 0;
@@ -572,7 +579,7 @@ export default function NewOrderPage() {
           display: flex; justify-content: space-between;
           padding: 3px 0;
         }
-        .cart__totals dt { color: #888; }
+        .cart__totals dt { color: #111; }
         .cart__totals dd { color: #111; margin: 0; font-weight: 700; }
         .cart__totals-grand {
           padding-top: 8px !important;
@@ -630,7 +637,7 @@ export default function NewOrderPage() {
           border-color: #111; background: #f7f6f1;
         }
         .cart__quote-carrier { color: #111; font-weight: 700; }
-        .cart__quote-service { color: #888; }
+        .cart__quote-service { color: #111; }
         .cart__quote-price { color: #111; font-weight: 700; }
 
         .cart__error {
@@ -652,7 +659,7 @@ export default function NewOrderPage() {
           cursor: pointer;
         }
         .cart__confirm:hover { background: #b52e2a; }
-        .cart__confirm:disabled { background: #ccc; cursor: not-allowed; }
+        .cart__confirm:disabled { background: rgba(17,17,17,0.3); cursor: not-allowed; }
 
         .cart__note {
           margin: 8px 0 0;
@@ -677,7 +684,7 @@ export default function NewOrderPage() {
           font-size: 22px; font-weight: 900; color: #111;
         }
         .mob-bar__items {
-          font-family: var(--fr-mono); font-size: 11px; color: #888;
+          font-family: var(--fr-mono); font-size: 11px; color: #111;
         }
         .mob-bar__cta {
           background: var(--fr-red); color: #fff; border: 0;
@@ -686,7 +693,7 @@ export default function NewOrderPage() {
           font-size: 13px; font-weight: 900; letter-spacing: 0.08em;
           cursor: pointer;
         }
-        .mob-bar__cta:disabled { background: #ccc; }
+        .mob-bar__cta:disabled { background: rgba(17,17,17,0.3); }
       `}</style>
     </div>
   );
