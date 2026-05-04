@@ -112,7 +112,7 @@ export default async function PedidoDetallePage({ params }: Props) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
 
           {/* Order items */}
-          <div style={{ border: '2px solid #111', background: '#fff' }}>
+          <div style={{ border: 'var(--border-dash)', background: '#fff' }}>
             <div style={sectionHeader}>▣ ORDER ITEMS / {order.order_items?.length ?? 0}</div>
 
             {/* Mobile: cards */}
@@ -121,7 +121,7 @@ export default async function PedidoDetallePage({ params }: Props) {
               {order.order_items?.map((item, i) => (
                 <div key={item.id} style={{
                   padding: '14px 16px',
-                  borderBottom: i < order.order_items.length - 1 ? '1px solid #ddd6c8' : 'none',
+                  borderBottom: i < order.order_items.length - 1 ? 'var(--border-light)' : 'none',
                   display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12,
                 }}>
                   <div style={{ flex: 1 }}>
@@ -159,7 +159,7 @@ export default async function PedidoDetallePage({ params }: Props) {
                   display: 'grid',
                   gridTemplateColumns: '2fr 110px 60px 80px 110px 130px',
                   padding: '14px 16px', gap: 12, alignItems: 'center',
-                  borderBottom: i < order.order_items.length - 1 ? '1px solid #ddd6c8' : 'none',
+                  borderBottom: i < order.order_items.length - 1 ? 'var(--border-light)' : 'none',
                 }}>
                   <div style={{ fontSize: 13, fontWeight: 700 }}>{item.nombre_producto}</div>
                   <div style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 10, color: '#888' }}>{item.sku}</div>
@@ -209,7 +209,7 @@ export default async function PedidoDetallePage({ params }: Props) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
 
           {/* Status timeline */}
-          <div style={{ border: '2px solid #111', background: '#fff' }}>
+          <div style={{ border: 'var(--border-dash)', background: '#fff' }}>
             <div style={sectionHeader}>◷ STATUS</div>
             <div style={{ padding: '16px 18px' }}>
               {STATUS_ORDER.map((s, i) => {
@@ -223,7 +223,7 @@ export default async function PedidoDetallePage({ params }: Props) {
                     )}
                     <div style={{
                       width: 12, height: 12, flexShrink: 0,
-                      border: '2px solid #111', background: dotBg,
+                      border: 'var(--border-dash)', background: dotBg,
                       position: 'relative', zIndex: 1,
                     }} />
                     <div style={{
@@ -241,7 +241,7 @@ export default async function PedidoDetallePage({ params }: Props) {
           </div>
 
           {/* Logistics */}
-          <div style={{ border: '2px solid #111', background: '#fff' }}>
+          <div style={{ border: 'var(--border-dash)', background: '#fff' }}>
             <div style={{ ...sectionHeader, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span>◈ LOGISTICS</span>
               {order.status === 'enviado' && order.packlink_shipment_id && (
@@ -264,7 +264,7 @@ export default async function PedidoDetallePage({ params }: Props) {
                 </div>
               ))}
               {order.tracking_url && (
-                <div style={{ paddingTop: 10, borderTop: '1px solid #ddd6c8' }}>
+                <div style={{ paddingTop: 10, borderTop: 'var(--border-light)' }}>
                   <a href={order.tracking_url} target="_blank" rel="noopener noreferrer" style={{
                     fontFamily: 'JetBrains Mono, ui-monospace, monospace',
                     fontSize: 10, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase',
@@ -278,7 +278,7 @@ export default async function PedidoDetallePage({ params }: Props) {
           </div>
 
           {/* Client */}
-          <div style={{ border: '2px solid #111', background: '#fff' }}>
+          <div style={{ border: 'var(--border-dash)', background: '#fff' }}>
             <div style={{ ...sectionHeader, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span>◉ CLIENT</span>
               <Link href={`/clientes/${order.customer?.id}`} style={{

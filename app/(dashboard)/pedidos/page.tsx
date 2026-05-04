@@ -80,7 +80,7 @@ function PedidosInner() {
 
   const inputSt: React.CSSProperties = {
     fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 11, fontWeight: 500,
-    border: '2px solid #111', borderRadius: 0, padding: '8px 12px',
+    border: 'var(--border-dash)', borderRadius: 0, padding: '8px 12px',
     background: '#fff', color: '#111', outline: 'none',
   };
 
@@ -103,7 +103,7 @@ function PedidosInner() {
       />
 
       {/* Status tab strip — connected to ?status= URL param */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', border: '2px solid #111', background: '#fff' }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', border: 'var(--border-dash)', background: '#fff' }}>
         {tabs.map((t, i) => {
           const active = t.id === statusParam;
           return (
@@ -112,7 +112,7 @@ function PedidosInner() {
               onClick={() => setParam('status', t.id)}
               style={{
                 padding: '12px 18px',
-                borderLeft: i === 0 ? 'none' : '2px solid #111',
+                borderLeft: i === 0 ? 'none' : 'var(--border-dash)',
                 background: active ? '#111' : '#fff',
                 color: active ? '#fff' : '#111',
                 boxShadow: 'none', border: 'none',
@@ -150,7 +150,7 @@ function PedidosInner() {
         {hasFilters && (
           <button
             onClick={() => router.replace(pathname, { scroll: false })}
-            style={{ background: 'transparent', border: '2px solid #111', boxShadow: 'none', color: '#111', fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 10, fontWeight: 700, letterSpacing: '0.14em', padding: '8px 14px', textTransform: 'uppercase' }}
+            style={{ background: 'transparent', border: 'var(--border-dash)', boxShadow: 'none', color: '#111', fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 10, fontWeight: 700, letterSpacing: '0.14em', padding: '8px 14px', textTransform: 'uppercase' }}
           >
             CLEAR ×
           </button>
@@ -158,7 +158,7 @@ function PedidosInner() {
       </div>
 
       {/* Table */}
-      <div style={{ border: '2px solid #111', background: '#fff', overflow: 'hidden' }}>
+      <div style={{ border: 'var(--border-dash)', background: '#fff', overflow: 'hidden' }}>
         <div style={{ overflowX: 'auto' }}>
           <div style={{ minWidth: 720 }}>
             {/* Header row */}
@@ -188,7 +188,7 @@ function PedidosInner() {
                   style={{
                     display: 'grid', gridTemplateColumns: '110px 1.4fr 140px 100px 130px 90px',
                     padding: '14px 18px', gap: 12, alignItems: 'center',
-                    borderBottom: i < filtered.length - 1 ? '1px solid #ddd6c8' : 'none',
+                    borderBottom: i < filtered.length - 1 ? 'var(--border-light)' : 'none',
                     color: '#111', textDecoration: 'none',
                   }}
                 >

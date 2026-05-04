@@ -109,7 +109,7 @@ export default async function DashboardPage() {
       <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: 12 }}>
 
         {/* Recent orders */}
-        <div style={{ border: '2px solid #111', background: '#fff' }}>
+        <div style={{ border: 'var(--border-dash)', background: '#fff' }}>
           <div style={{ padding: '12px 16px', background: '#111', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <span style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontWeight: 700, fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase' }}>● RECENT ORDERS / LIVE</span>
             <Link href="/pedidos" style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 10, fontWeight: 700, letterSpacing: '0.14em', color: FR.yellow, textTransform: 'uppercase' }}>VIEW ALL ↗</Link>
@@ -127,7 +127,7 @@ export default async function DashboardPage() {
                   style={{
                     display: 'grid', gridTemplateColumns: '1fr 130px 110px 70px',
                     padding: '12px 16px', gap: 12, alignItems: 'center',
-                    borderBottom: i < orders.length - 1 ? '1px solid #ddd6c8' : 'none',
+                    borderBottom: i < orders.length - 1 ? 'var(--border-light)' : 'none',
                     color: '#111', textDecoration: 'none',
                   }}
                 >
@@ -149,20 +149,20 @@ export default async function DashboardPage() {
         </div>
 
         {/* Production aside */}
-        <div style={{ border: '2px solid #111', background: '#fff' }}>
+        <div style={{ border: 'var(--border-dash)', background: '#fff' }}>
           <div style={{ padding: '12px 16px', background: '#111', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <span style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontWeight: 700, fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase' }}>▲ PRODUCTION FLOOR</span>
             <Link href="/produccion" style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 10, fontWeight: 700, letterSpacing: '0.14em', color: FR.yellow, textTransform: 'uppercase' }}>VIEW ↗</Link>
           </div>
 
           {/* 3-cell mini stat row */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', borderBottom: '2px solid #111' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', borderBottom: 'var(--border-dash)' }}>
             {[
               { label: 'SKUS',    value: stock.totalSkus,                bg: '#fff',   fg: '#111' },
               { label: 'LITERS',  value: `${stock.totalLitros}`,         bg: '#fff',   fg: '#111' },
               { label: 'ALERTS',  value: stock.alertas,                  bg: '#111',   fg: stock.alertas > 0 ? FR.red : '#fff' },
             ].map((s, i) => (
-              <div key={s.label} style={{ padding: 14, borderRight: i < 2 ? '1px solid #ddd6c8' : 'none', background: s.bg, color: s.fg }}>
+              <div key={s.label} style={{ padding: 14, borderRight: i < 2 ? 'var(--border-light)' : 'none', background: s.bg, color: s.fg }}>
                 <div style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontWeight: 700, fontSize: 9, letterSpacing: '0.18em', textTransform: 'uppercase', color: s.bg === '#111' ? '#aaa' : '#111' }}>{s.label}</div>
                 <div style={{ fontFamily: 'var(--font-alexandria), Alexandria, sans-serif', fontWeight: 900, fontSize: 32, lineHeight: 1, marginTop: 8, letterSpacing: '-0.04em', color: s.fg, fontVariantNumeric: 'tabular-nums' }}>{s.value}</div>
               </div>
@@ -174,7 +174,7 @@ export default async function DashboardPage() {
           ) : stock.top.map((s, i) => (
             <div key={s.sku} style={{
               padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              borderBottom: i < stock.top.length - 1 ? '1px solid #ddd6c8' : 'none',
+              borderBottom: i < stock.top.length - 1 ? 'var(--border-light)' : 'none',
               background: s.alerta ? 'rgba(217,58,53,0.06)' : 'transparent',
             }}>
               <div>

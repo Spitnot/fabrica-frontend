@@ -102,7 +102,7 @@ export default function ClientesPage() {
 
   const inputSt: React.CSSProperties = {
     fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 12, fontWeight: 500,
-    border: '2px solid #111', borderRadius: 0, padding: '8px 12px',
+    border: 'var(--border-dash)', borderRadius: 0, padding: '8px 12px',
     background: '#fff', color: '#111', outline: 'none', width: '100%',
   };
 
@@ -122,7 +122,7 @@ export default function ClientesPage() {
 
       {/* Invite form */}
       {showInvite && (
-        <div style={{ border: '2px solid #111', background: '#fff' }}>
+        <div style={{ border: 'var(--border-dash)', background: '#fff' }}>
           <div style={sectionHeader}>
             <span>+ INVITE CLIENT</span>
             <button
@@ -158,7 +158,7 @@ export default function ClientesPage() {
               {/* Tier — segmented */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 <label style={monoLabel}>PRICING TIER</label>
-                <div style={{ display: 'flex', border: '2px solid #111', width: 'fit-content' }}>
+                <div style={{ display: 'flex', border: 'var(--border-dash)', width: 'fit-content' }}>
                   {tarifas.map((t, i) => {
                     const active = inviteTarifa === t.id;
                     return (
@@ -168,7 +168,7 @@ export default function ClientesPage() {
                         onClick={() => setInviteTarifa(t.id)}
                         style={{
                           padding: '10px 22px',
-                          borderLeft: i === 0 ? 'none' : '2px solid #111',
+                          borderLeft: i === 0 ? 'none' : 'var(--border-dash)',
                           background: active ? '#111' : '#fff',
                           color: active ? '#fff' : '#111',
                           boxShadow: 'none', border: 'none',
@@ -217,7 +217,7 @@ export default function ClientesPage() {
       )}
 
       {/* Client grid */}
-      <div style={{ border: '2px solid #111', background: '#fff' }}>
+      <div style={{ border: 'var(--border-dash)', background: '#fff' }}>
         <div style={sectionHeader}>
           <span>◉ CLIENT REGISTRY</span>
           <span style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 10, color: FR.yellow }}>
@@ -236,7 +236,7 @@ export default function ClientesPage() {
               display: 'none',
               gridTemplateColumns: '60px 1.4fr 1.4fr 1fr 130px 110px 90px',
               padding: '10px 18px', gap: 12, alignItems: 'center',
-              borderBottom: '2px solid #111', background: '#f6efdf',
+              borderBottom: 'var(--border-dash)', background: '#f6efdf',
             }}>
               <style>{`@media(min-width:768px){.fr-clients-head{display:grid!important}.fr-client-row{display:grid!important;grid-template-columns:60px 1.4fr 1.4fr 1fr 130px 110px 90px!important}.fr-client-row > *{display:block!important}}`}</style>
               {['', 'CLIENT', 'COMPANY', 'EMAIL', 'TIER', 'STATUS', 'JOINED'].map(h => (
@@ -256,14 +256,14 @@ export default function ClientesPage() {
                   style={{
                     display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'center',
                     padding: '14px 18px',
-                    borderBottom: i < clients.length - 1 ? '1px solid #ddd6c8' : 'none',
+                    borderBottom: i < clients.length - 1 ? 'var(--border-light)' : 'none',
                     color: '#111', textDecoration: 'none',
                   }}
                 >
                   <div style={{
                     width: 44, height: 44, flexShrink: 0,
                     background: '#111', color: FR.yellow,
-                    border: '2px solid #111',
+                    border: 'var(--border-dash)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontFamily: 'var(--font-alexandria), Alexandria, sans-serif',
                     fontWeight: 900, fontSize: 16, letterSpacing: '-0.02em',
@@ -282,7 +282,7 @@ export default function ClientesPage() {
                     {c.tarifa && (
                       <span style={{
                         background: tarifaBg, color: tarifaFg,
-                        padding: '4px 10px', border: '2px solid #111',
+                        padding: '4px 10px', border: 'var(--border-dash)',
                         fontFamily: 'JetBrains Mono, ui-monospace, monospace',
                         fontWeight: 700, fontSize: 10, letterSpacing: '0.14em',
                         textTransform: 'uppercase',

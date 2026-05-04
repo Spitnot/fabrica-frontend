@@ -96,7 +96,7 @@ export default function ProduccionPage() {
             {filtered.length}
           </div>
         </div>
-        <div style={{ background: '#fff', border: '2px solid #111', padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div style={{ background: '#fff', border: 'var(--border-dash)', padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 8 }}>
           <div style={monoLabel}>TOTAL UNITS</div>
           <div style={{ fontFamily: 'var(--font-alexandria), Alexandria, sans-serif', fontWeight: 900, fontSize: 56, lineHeight: 0.9, letterSpacing: '-0.04em' }}>
             {totalUnidades.toLocaleString()}
@@ -106,7 +106,7 @@ export default function ProduccionPage() {
 
       {/* Fungible totals */}
       {fungTotals.length > 0 && (
-        <div style={{ border: '2px solid #111', background: '#fff' }}>
+        <div style={{ border: 'var(--border-dash)', background: '#fff' }}>
           <div style={sectionHeader}>
             <span>▲ MATERIALS NEEDED</span>
             <span style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 10, color: FR.yellow }}>{fungTotals.length} TYPES</span>
@@ -115,8 +115,8 @@ export default function ProduccionPage() {
             {fungTotals.map((f, i) => (
               <div key={f.id} style={{
                 padding: '16px 18px',
-                borderRight: '1px solid #ddd6c8',
-                borderBottom: i >= fungTotals.length - (fungTotals.length % (Math.floor(1280/140)) || 1) ? 'none' : '1px solid #ddd6c8',
+                borderRight: 'var(--border-light)',
+                borderBottom: i >= fungTotals.length - (fungTotals.length % (Math.floor(1280/140)) || 1) ? 'none' : 'var(--border-light)',
                 display: 'flex', flexDirection: 'column', gap: 6,
               }}>
                 <div style={monoLabel}>{f.nombre.toUpperCase()}</div>
@@ -143,7 +143,7 @@ export default function ProduccionPage() {
             maxWidth: 320, width: '100%',
             fontFamily: 'JetBrains Mono, ui-monospace, monospace',
             fontSize: 11, fontWeight: 500, letterSpacing: '0.06em',
-            border: '2px solid #111', borderRadius: 0,
+            border: 'var(--border-dash)', borderRadius: 0,
             padding: '10px 14px', background: '#fff', color: '#111', outline: 'none',
           }}
         />
@@ -157,7 +157,7 @@ export default function ProduccionPage() {
           {search ? 'No SKUs match the search.' : 'No pending production.'}
         </div>
       ) : (
-        <div style={{ border: '2px solid #111', background: '#fff' }}>
+        <div style={{ border: 'var(--border-dash)', background: '#fff' }}>
           <div style={sectionHeader}>
             <span>▣ SKU QUEUE</span>
             <span style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 10, color: FR.yellow }}>{filtered.length} ITEMS</span>
@@ -167,7 +167,7 @@ export default function ProduccionPage() {
             const barPct = Math.round((item.unidades / maxUnidades) * 100);
 
             return (
-              <div key={item.sku} style={{ borderBottom: idx < filtered.length - 1 ? '1px solid #ddd6c8' : 'none' }}>
+              <div key={item.sku} style={{ borderBottom: idx < filtered.length - 1 ? 'var(--border-light)' : 'none' }}>
 
                 {/* Main row */}
                 <div
@@ -225,7 +225,7 @@ export default function ProduccionPage() {
 
                 {/* Expanded */}
                 {isOpen && (
-                  <div style={{ borderTop: '2px solid #111', background: '#111', color: '#fff' }}>
+                  <div style={{ borderTop: 'var(--border-dash)', background: '#111', color: '#fff' }}>
 
                     {/* Fungibles */}
                     {item.fungibles.length > 0 && (
