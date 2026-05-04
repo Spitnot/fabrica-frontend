@@ -1,21 +1,19 @@
+// app/(dashboard)/pedidos/page.tsx
+// Client component — original data fetching, URL param sync, and filter state preserved.
+// Body restructured to match Foundry/Marker mockup: page header + filter strip
+// + dark-headed table with Alexandria amounts, mono ids, and StatusChip.
+
 'use client';
 
 import { useState, useEffect, useMemo, Suspense } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import Link from 'next/link';
+import { PageHeader, FR } from '@/components/fr/Atoms';
+import { StatusChip, FRStatus } from '@/components/fr/StatusChip';
 
 const STATUS_LABELS: Record<string, string> = {
   draft: 'Draft', confirmado: 'Confirmed', produccion: 'In Production',
   listo_envio: 'Ready to Ship', enviado: 'Shipped', cancelado: 'Cancelled',
-};
-
-const STATUS_COLORS: Record<string, string> = {
-  draft:       '#876693',
-  confirmado:  '#0087B8',
-  produccion:  '#E6883E',
-  listo_envio: '#0DA265',
-  enviado:     '#111111',
-  cancelado:   '#999999',
 };
 
 const fmt = (n: number) =>
@@ -70,118 +68,151 @@ function PedidosInner() {
     return true;
   }), [orders, statusParam, customerParam, fromParam, toParam]);
 
+  // Counts per status for the filter tab strip
+  const statusCounts = useMemo(() => {
+    const counts: Record<string, number> = { all: orders.length };
+    Object.keys(STATUS_LABELS).forEach(k => counts[k] = 0);
+    orders.forEach(o => { counts[o.status] = (counts[o.status] ?? 0) + 1; });
+    return counts;
+  }, [orders]);
+
   const hasFilters = statusParam || customerParam || fromParam || toParam;
 
   const inputSt: React.CSSProperties = {
-    fontFamily: 'var(--font-main)', fontSize: 11, fontWeight: 400,
-    border: 'var(--border)', borderRadius: 0, padding: '6px 10px',
-    background: '#fff', color: '#111', outline: 'none', width: 'auto',
+    fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 11, fontWeight: 500,
+    border: '2px solid #111', borderRadius: 0, padding: '8px 12px',
+    background: '#fff', color: '#111', outline: 'none',
   };
 
-  return (
-    <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+  const tabs: { id: string; label: string; count: number }[] = [
+    { id: '',            label: 'ALL',       count: statusCounts.all ?? 0 },
+    { id: 'draft',       label: 'DRAFT',     count: statusCounts.draft ?? 0 },
+    { id: 'confirmado',  label: 'CONFIRMED', count: statusCounts.confirmado ?? 0 },
+    { id: 'produccion',  label: 'IN PROD',   count: statusCounts.produccion ?? 0 },
+    { id: 'listo_envio', label: 'READY',     count: statusCounts.listo_envio ?? 0 },
+    { id: 'enviado',     label: 'SHIPPED',   count: statusCounts.enviado ?? 0 },
+  ];
 
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 16, borderBottom: 'var(--border)' }}>
-        <div>
-          <div className="page-title">Orders</div>
-          <div style={{ fontSize: 10, color: '#aaa', marginTop: 3, letterSpacing: '0.04em' }}>
-            {loading ? 'Loading…' : `${filtered.length} of ${orders.length} orders`}
-          </div>
-        </div>
-        <Link href="/pedidos/nuevo">
-          <button className="btn-primary">+ New Order</button>
-        </Link>
+  return (
+    <div style={{ padding: '24px 28px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+      <PageHeader
+        title="ORDERS"
+        count={loading ? 'LOADING…' : `${filtered.length} OF ${orders.length} RECORDS`}
+        actions={<Link href="/pedidos/nuevo"><button className="btn-primary">+ NEW ORDER</button></Link>}
+      />
+
+      {/* Status tab strip — connected to ?status= URL param */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', border: '2px solid #111', background: '#fff' }}>
+        {tabs.map((t, i) => {
+          const active = t.id === statusParam;
+          return (
+            <button
+              key={t.id || 'all'}
+              onClick={() => setParam('status', t.id)}
+              style={{
+                padding: '12px 18px',
+                borderLeft: i === 0 ? 'none' : '2px solid #111',
+                background: active ? '#111' : '#fff',
+                color: active ? '#fff' : '#111',
+                boxShadow: 'none', border: 'none',
+                fontFamily: 'var(--font-alexandria), Alexandria, sans-serif',
+                fontWeight: 900, fontSize: 11, letterSpacing: '0.14em',
+                textTransform: 'uppercase',
+                display: 'flex', gap: 8, alignItems: 'baseline',
+              }}>
+              {t.label}
+              <span style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontWeight: 500, fontSize: 11, color: active ? FR.yellow : '#888' }}>
+                {t.count}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
-      {/* Filters */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'flex-end' }}>
+      {/* Secondary filters */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'flex-end' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <label style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#aaa' }}>Status</label>
-          <select value={statusParam} onChange={e => setParam('status', e.target.value)} style={inputSt}>
-            <option value="">All statuses</option>
-            {Object.entries(STATUS_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-          </select>
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <label style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#aaa' }}>Client</label>
-          <select value={customerParam} onChange={e => setParam('customer', e.target.value)} style={{ ...inputSt, maxWidth: 200 }}>
+          <label style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 9, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#888' }}>CLIENT</label>
+          <select value={customerParam} onChange={e => setParam('customer', e.target.value)} style={{ ...inputSt, maxWidth: 240 }}>
             <option value="">All clients</option>
             {customers.map(c => <option key={c.id} value={c.id}>{`${c.first_name ?? c.contacto_nombre ?? ""} ${c.last_name ?? ""}`.trim()} · {c.company_name}</option>)}
           </select>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <label style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#aaa' }}>From</label>
+          <label style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 9, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#888' }}>FROM</label>
           <input type="date" value={fromParam} onChange={e => setParam('from', e.target.value)} style={inputSt} />
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <label style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#aaa' }}>To</label>
+          <label style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 9, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#888' }}>TO</label>
           <input type="date" value={toParam} onChange={e => setParam('to', e.target.value)} style={inputSt} />
         </div>
         {hasFilters && (
           <button
             onClick={() => router.replace(pathname, { scroll: false })}
-            style={{ background: 'transparent', border: '1px solid #ddd', boxShadow: 'none', color: '#999', fontSize: 10, padding: '6px 10px' }}
+            style={{ background: 'transparent', border: '2px solid #111', boxShadow: 'none', color: '#111', fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 10, fontWeight: 700, letterSpacing: '0.14em', padding: '8px 14px', textTransform: 'uppercase' }}
           >
-            Clear ×
+            CLEAR ×
           </button>
         )}
       </div>
 
       {/* Table */}
-      <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+      <div style={{ border: '2px solid #111', background: '#fff', overflow: 'hidden' }}>
         <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 600 }}>
-            <thead>
-              <tr style={{ background: '#111' }}>
-                {['Client', 'Status', 'Weight', 'Amount', 'Date'].map((h) => (
-                  <th key={h} style={{ textAlign: 'left', padding: '9px 14px', fontSize: 8, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#fff' }}>
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr>
-                  <td colSpan={5} style={{ padding: '48px 16px', textAlign: 'center', fontSize: 12, color: '#aaa' }}>
-                    Loading…
-                  </td>
-                </tr>
-              ) : filtered.length === 0 ? (
-                <tr>
-                  <td colSpan={5} style={{ padding: '48px 16px', textAlign: 'center', fontSize: 12, color: '#aaa' }}>
-                    {hasFilters ? 'No orders match the filters.' : 'No orders yet.'}
-                  </td>
-                </tr>
-              ) : filtered.map((o, i) => (
-                <tr key={o.id} style={{ borderBottom: i < filtered.length - 1 ? '1px solid #f5f5f5' : 'none' }}>
-                  <td style={{ padding: '9px 14px' }}>
-                    <Link href={`/pedidos/${o.id}`}>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: '#111' }}>
-                        {`${(o.customer as any)?.first_name ?? o.customer?.contacto_nombre ?? "—"} ${(o.customer as any)?.last_name ?? ""}`.trim()}
-                      </div>
-                      <div style={{ fontSize: 10, color: '#aaa' }}>{o.customer?.company_name}</div>
-                    </Link>
-                  </td>
-                  <td style={{ padding: '9px 14px' }}>
-                    <span className="badge" style={{ background: STATUS_COLORS[o.status] ?? '#999' }}>
-                      {STATUS_LABELS[o.status] ?? o.status}
-                    </span>
-                  </td>
-                  <td style={{ padding: '9px 14px', fontSize: 11, color: '#aaa', fontFamily: 'monospace' }}>
-                    {o.peso_total} kg
-                  </td>
-                  <td style={{ padding: '9px 14px', fontSize: 12, fontWeight: 900, color: '#111' }}>
-                    {fmt(o.total_productos)}
-                  </td>
-                  <td style={{ padding: '9px 14px', fontSize: 10, color: '#bbb', fontVariantNumeric: 'tabular-nums' }}>
-                    {new Date(o.created_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })}
-                  </td>
-                </tr>
+          <div style={{ minWidth: 720 }}>
+            {/* Header row */}
+            <div style={{
+              display: 'grid', gridTemplateColumns: '110px 1.4fr 140px 100px 130px 90px',
+              padding: '12px 18px', background: '#111', color: '#fff', gap: 12, alignItems: 'center',
+            }}>
+              {['ID', 'CLIENT', 'STATUS', 'WEIGHT', 'AMOUNT', 'DATE'].map(h => (
+                <div key={h} style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontWeight: 700, fontSize: 10, letterSpacing: '0.18em' }}>{h}</div>
               ))}
-            </tbody>
-          </table>
+            </div>
+            {/* Body */}
+            {loading ? (
+              <div style={{ padding: '48px 16px', textAlign: 'center', fontSize: 12, color: '#888' }}>Loading…</div>
+            ) : filtered.length === 0 ? (
+              <div style={{ padding: '48px 16px', textAlign: 'center', fontSize: 12, color: '#888' }}>
+                {hasFilters ? 'No orders match the filters.' : 'No orders yet.'}
+              </div>
+            ) : filtered.map((o, i) => {
+              const first = (o.customer as any)?.first_name ?? o.customer?.contacto_nombre ?? '—';
+              const last = (o.customer as any)?.last_name ?? '';
+              const shortId = o.id.slice(0, 8).toUpperCase();
+              return (
+                <Link
+                  key={o.id}
+                  href={`/pedidos/${o.id}`}
+                  style={{
+                    display: 'grid', gridTemplateColumns: '110px 1.4fr 140px 100px 130px 90px',
+                    padding: '14px 18px', gap: 12, alignItems: 'center',
+                    borderBottom: i < filtered.length - 1 ? '1px solid #ddd6c8' : 'none',
+                    color: '#111', textDecoration: 'none',
+                  }}
+                >
+                  <div style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontWeight: 700, fontSize: 11, color: FR.red, letterSpacing: '0.06em' }}>
+                    {shortId}
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 700 }}>{`${first} ${last}`.trim()}</div>
+                    <div style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 10, color: '#888' }}>{o.customer?.company_name}</div>
+                  </div>
+                  <StatusChip status={o.status as FRStatus} size="sm" />
+                  <div style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 12 }}>
+                    {o.peso_total}<span style={{ fontSize: 9, color: '#888', marginLeft: 2 }}>kg</span>
+                  </div>
+                  <div style={{ fontFamily: 'var(--font-alexandria), Alexandria, sans-serif', fontWeight: 900, fontSize: 22, letterSpacing: '-0.04em', fontVariantNumeric: 'tabular-nums' }}>
+                    {fmt(o.total_productos)}
+                  </div>
+                  <div style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 10, color: '#888' }}>
+                    {new Date(o.created_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }).toUpperCase()}
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
         </div>
       </div>
     </div>
@@ -190,7 +221,7 @@ function PedidosInner() {
 
 export default function PedidosPage() {
   return (
-    <Suspense fallback={<div style={{ padding: 24, color: '#aaa', fontSize: 12 }}>Loading…</div>}>
+    <Suspense fallback={<div style={{ padding: 24, color: '#888', fontSize: 12 }}>Loading…</div>}>
       <PedidosInner />
     </Suspense>
   );

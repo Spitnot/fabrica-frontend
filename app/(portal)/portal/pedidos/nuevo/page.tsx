@@ -1,32 +1,68 @@
+/**
+ * Drop-in replacement for app/(portal)/portal/pedidos/nuevo/page.tsx
+ *
+ * Same data flow (supabase load, /api/quotes, /api/orders POST) — visuals
+ * lifted from the public storefront's PRODUCTS grid + product detail page.
+ *
+ *   ┌─────────────────────────────────────────────────────┐
+ *   │  PRODUCTS                       8 items   Sort ▾    │
+ *   ├─────────────────────────────────────────────────────┤
+ *   │ ░░░░  ░░░░  ░░░░  ░░░░     ← color-block product cards
+ *   │ BASICS BASICS BASICS …
+ *   │  ●●●●  ●●●●  ●●●●          ← variant color dots, click to add
+ *   ├─────────────────────────────────────────────────────┤
+ *   │  Sticky cart on the right ▶                         │
+ *   └─────────────────────────────────────────────────────┘
+ */
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabaseClient } from '@/lib/supabase/client';
 import { getColorHex, parseVariant } from '@/lib/colors';
+import { ColorDot } from '../../_components/StatusChip';
 
 interface Product { sku: string; nombre_producto: string; variante?: string; precio_mayorista: number; peso_kg: number; imagen?: string; }
 interface ProductGroup { nombre: string; variantes: Product[]; imagen?: string; }
 interface TarifaPrecioPortal { sku: string; pack_size?: number | null; }
 interface Tarifa { pack_size: number; minimum_order_value: number; hidden_products: string[]; precios?: TarifaPrecioPortal[]; }
-interface Customer { id: string; contacto_nombre?: string; first_name?: string; last_name?: string; company_name: string; tarifa?: Tarifa | null; ship_street1?: string; ship_city?: string; ship_postal_code?: string; ship_country?: string; direccion_envio?: { street: string; city: string; postal_code: string; country: string; }; }
+interface Customer {
+  id: string;
+  contacto_nombre?: string;
+  first_name?: string;
+  last_name?: string;
+  company_name: string;
+  tarifa?: Tarifa | null;
+  ship_street1?: string; ship_city?: string; ship_postal_code?: string; ship_country?: string;
+  direccion_envio?: { street: string; city: string; postal_code: string; country: string; };
+}
 interface LineItem { sku: string; nombre_producto: string; variante?: string; cantidad: number; precio_unitario: number; peso_unitario: number; }
 interface Quote { service_id: string; carrier: string; service_name: string; price: number; estimated_days: number; }
 
-const fmt = (n: number) => new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'EUR' }).format(n);
+const fmt = (n: number) =>
+  new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'EUR' }).format(n);
 
-export default function NuevoPedidoPortalPage() {
+/* Storefront block palette — assigned by product name so cards stay stable */
+const BLOCK_COLORS = ['#D93A35', '#F4D03F', '#E07B3A', '#5BA8C7', '#5BB85A', '#A8D5D5', '#B5B5B5'];
+function blockFor(s: string) {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+  return BLOCK_COLORS[Math.abs(h) % BLOCK_COLORS.length];
+}
+
+export default function NewOrderPage() {
   const router = useRouter();
-  const [customer, setCustomer]             = useState<Customer | null>(null);
-  const [products, setProducts]             = useState<Product[]>([]);
+  const [customer, setCustomer]               = useState<Customer | null>(null);
+  const [products, setProducts]               = useState<Product[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
-  const [search, setSearch]                 = useState('');
-  const [lineItems, setLineItems]           = useState<LineItem[]>([]);
-  const [quotes, setQuotes]                 = useState<Quote[]>([]);
-  const [selectedQuote, setSelectedQuote]   = useState<Quote | null>(null);
-  const [quotesLoading, setQuotesLoading]   = useState(false);
-  const [confirming, setConfirming]         = useState(false);
-  const [error, setError]                   = useState('');
+  const [search, setSearch]                   = useState('');
+  const [lineItems, setLineItems]             = useState<LineItem[]>([]);
+  const [quotes, setQuotes]                   = useState<Quote[]>([]);
+  const [selectedQuote, setSelectedQuote]     = useState<Quote | null>(null);
+  const [quotesLoading, setQuotesLoading]     = useState(false);
+  const [confirming, setConfirming]           = useState(false);
+  const [error, setError]                     = useState('');
 
   useEffect(() => {
     async function loadData() {
@@ -67,7 +103,6 @@ export default function NuevoPedidoPortalPage() {
   const canConfirm = !!customer && lineItems.length > 0 && !belowMinimum;
 
   function getQty(sku: string) { return lineItems.find(i => i.sku === sku)?.cantidad ?? 0; }
-
   function getPackStep(sku: string): number {
     const skuPs = customer?.tarifa?.precios?.find(pr => pr.sku === sku)?.pack_size;
     if (skuPs != null && skuPs > 0) return skuPs;
@@ -83,7 +118,6 @@ export default function NuevoPedidoPortalPage() {
     });
     setSelectedQuote(null); setQuotes([]);
   }
-
   function removeProduct(p: Product) {
     const step = getPackStep(p.sku);
     setLineItems(prev => {
@@ -102,7 +136,12 @@ export default function NuevoPedidoPortalPage() {
       const res = await fetch('/api/quotes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ peso: totalWeight, ancho: 30, alto: 20, largo: 30, destination: customer.ship_street1 ? { street: customer.ship_street1, city: customer.ship_city, postal_code: customer.ship_postal_code, country: customer.ship_country } : customer.direccion_envio }),
+        body: JSON.stringify({
+          peso: totalWeight, ancho: 30, alto: 20, largo: 30,
+          destination: customer.ship_street1
+            ? { street: customer.ship_street1, city: customer.ship_city, postal_code: customer.ship_postal_code, country: customer.ship_country }
+            : customer.direccion_envio,
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? 'Error quoting');
@@ -136,261 +175,519 @@ export default function NuevoPedidoPortalPage() {
     } catch (err: any) { setError(err.message); setConfirming(false); }
   }
 
+  const itemCount = lineItems.reduce((s, i) => s + i.cantidad, 0);
+
   return (
-    <div className="p-4 md:p-7 pb-32 lg:pb-7">
-      <div className="mb-6">
-        <h1 className="text-lg font-black tracking-wider uppercase text-gray-900" style={{ fontFamily: 'var(--font-alexandria)' }}>New Order</h1>
-        <p className="text-xs text-gray-400 mt-0.5">Select products from the catalogue</p>
-      </div>
+    <div className="cat-page">
+      <div className="cat-page__inner">
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-5 items-start">
-        <div className="space-y-5">
+        <header className="cat-header">
+          <h1 className="cat-title">PRODUCTS</h1>
+          <div className="cat-header__right">
+            <span className="cat-header__count">
+              {productGroups.length} item{productGroups.length !== 1 ? 's' : ''}
+            </span>
+          </div>
+        </header>
 
-          {/* Client info (read-only) */}
-          {customer && (
-            <section>
-              <div className="flex items-center gap-3 mb-3">
-                <span className="text-[10px] font-black tracking-[0.18em] uppercase text-gray-400 whitespace-nowrap">1 · Client</span>
-                <div className="flex-1 h-px bg-gray-100" />
-              </div>
-              <div className="bg-white border border-gray-200 rounded-xl p-4">
-                <div className="flex gap-3 p-3 bg-gray-50 border border-gray-200 rounded-lg">
-                  <div className="w-8 h-8 rounded-lg bg-[#D93A35] flex items-center justify-center text-xs font-bold text-white flex-shrink-0">
-                    {(`${customer.first_name ?? customer.contacto_nombre ?? "?"}`)}
-                  </div>
-                  <div>
-                    <div className="text-sm font-semibold text-gray-900">{`${customer.first_name ?? customer.contacto_nombre ?? ""} ${customer.last_name ?? ""}`.trim()}</div>
-                    <div className="text-xs text-gray-400">{customer.company_name}</div>
-                    <div className="font-mono text-xs text-gray-400 mt-0.5 truncate">
-                      {(customer.ship_street1 ?? customer.direccion_envio?.street)} · {(customer.ship_postal_code ?? customer.direccion_envio?.postal_code)} {(customer.ship_city ?? customer.direccion_envio?.city)}
-                    </div>
-                  </div>
-                </div>
-                {minimumOrderValue > 0 && (
-                  <div className="mt-3 flex items-center justify-between text-xs px-1">
-                    <span className="text-gray-400">Minimum order</span>
-                    <span className={`font-mono font-semibold ${belowMinimum && lineItems.length > 0 ? 'text-[#D93A35]' : 'text-gray-500'}`}>
-                      {fmt(minimumOrderValue)}
-                    </span>
-                  </div>
-                )}
-              </div>
-            </section>
+        {/* Filter bar — exact rhythm of the storefront's filter row */}
+        <div className="cat-filterbar">
+          <input
+            className="cat-search"
+            placeholder="Search by name, SKU or variant…"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
+          {minimumOrderValue > 0 && (
+            <span className={`cat-min ${belowMinimum && lineItems.length > 0 ? 'is-warn' : ''}`}>
+              MIN. ORDER {fmt(minimumOrderValue)}
+            </span>
           )}
-
-          {/* Catalogue */}
-          <section>
-            <div className="flex items-center gap-3 mb-3">
-              <span className="text-[10px] font-black tracking-[0.18em] uppercase text-gray-400 whitespace-nowrap">2 · Catalogue</span>
-              <div className="flex-1 h-px bg-gray-100" />
-              <span className="text-[11px] text-gray-400">{productGroups.length} products</span>
-            </div>
-            <input
-              type="text"
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="Search by name, SKU or variant…"
-              className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-[#D93A35] outline-none mb-4"
-            />
-            {loadingProducts ? (
-              <div className="flex items-center justify-center py-12 text-gray-400 text-sm gap-2">
-                <div className="w-4 h-4 border border-gray-300 border-t-[#D93A35] rounded-full animate-spin" />
-                Loading catalogue…
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {productGroups.map(group => (
-                  <div key={group.nombre} className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-                    {group.imagen && (
-                      /* eslint-disable-next-line @next/next/no-img-element */
-                      <img src={group.imagen} alt={group.nombre} className="w-full h-36 object-cover" />
-                    )}
-                    <div className="p-4">
-                      <div className="text-sm font-semibold text-gray-900 mb-3">{group.nombre}</div>
-                      <div className="space-y-2">
-                        {group.variantes.map(v => {
-                          const qty = getQty(v.sku);
-                          const { color } = parseVariant(v.variante);
-                          const colorHex = color ? getColorHex(color) : null;
-                          return (
-                            <div key={v.sku} className="flex items-center justify-between gap-2">
-                              <div className="min-w-0">
-                                {v.variante && (
-                                  <div className="flex items-center gap-1.5">
-                                    {colorHex && <span className="w-3 h-3 rounded-full flex-shrink-0 border border-black/10" style={{ backgroundColor: colorHex }} />}
-                                    <div className="text-xs text-gray-500 truncate">{v.variante}</div>
-                                  </div>
-                                )}
-                                <div className="font-mono text-[10px] text-gray-400">{v.sku}</div>
-                              </div>
-                              <div className="flex items-center gap-1.5 flex-shrink-0">
-                                {qty > 0 ? (
-                                  <>
-                                    <button onClick={() => removeProduct(v)} className="w-9 h-9 rounded-md bg-gray-50 border border-gray-200 text-gray-600 hover:border-[#D93A35]/40 text-base transition-colors flex items-center justify-center">−</button>
-                                    <span className="font-mono text-sm font-bold text-[#D93A35] w-6 text-center">{qty}</span>
-                                    <button onClick={() => addProduct(v)} className="w-9 h-9 rounded-md bg-gray-50 border border-gray-200 text-gray-600 hover:border-[#D93A35]/40 text-base transition-colors flex items-center justify-center">+</button>
-                                  </>
-                                ) : (
-                                  <button onClick={() => addProduct(v)} className="px-2.5 py-1 text-[11px] font-semibold bg-gray-50 border border-gray-200 rounded-md text-gray-600 hover:border-[#D93A35]/40 hover:text-[#D93A35] transition-colors">+ Add</button>
-                                )}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                      <div className="mt-3 pt-3 border-t border-gray-100 flex justify-between text-xs text-gray-400">
-                        <span>{fmt(group.variantes[0].precio_mayorista)}</span>
-                        <span>{group.variantes[0].peso_kg} kg/u</span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
         </div>
 
-        {/* RIGHT — hidden on mobile, shown on lg+ */}
-        <div className="hidden lg:block space-y-3 lg:sticky lg:top-4">
-          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-            <div className="px-4 py-3 border-b border-gray-100">
-              <span className="text-[10px] font-black tracking-[0.12em] uppercase text-gray-400" style={{ fontFamily: 'var(--font-alexandria)' }}>Order</span>
-            </div>
-            <div className="p-4">
-              {lineItems.length === 0 ? (
-                <div className="text-xs text-gray-400 text-center py-3">No products yet</div>
-              ) : (
-                <div className="space-y-2 mb-4">
-                  {lineItems.map(item => (
-                    <div key={item.sku} className="flex justify-between text-xs gap-2">
-                      <div className="min-w-0">
-                        <div className="text-gray-700 truncate">{item.nombre_producto}</div>
-                        {item.variante && <div className="text-gray-400">{item.variante}</div>}
+        <div className="cat-layout">
+          {/* ── Product grid ─────────────────────────────────── */}
+          <div className="cat-grid-wrap">
+            {loadingProducts ? (
+              <p className="cat-loading">Loading catalogue…</p>
+            ) : (
+              <div className="cat-grid">
+                {productGroups.map(group => {
+                  const first = group.variantes[0];
+                  const block = blockFor(group.nombre);
+                  return (
+                    <article key={group.nombre} className="prod-card">
+                      <div className="prod-card__block" style={{ background: block }}>
+                        {group.imagen
+                          ? <img src={group.imagen} alt={group.nombre} className="prod-card__img" />
+                          : <span className="prod-card__placeholder">{group.nombre.split(' ')[0]}</span>
+                        }
                       </div>
-                      <div className="text-gray-500 flex-shrink-0">{item.cantidad} × {fmt(item.precio_unitario)}</div>
-                    </div>
-                  ))}
-                </div>
-              )}
-              <div className="space-y-1.5 border-t border-gray-100 pt-3">
-                {[
-                  ['Total weight', `${totalWeight.toFixed(2)} kg`],
-                  ['Subtotal', fmt(subtotal)],
-                  ['Shipping', selectedQuote ? fmt(selectedQuote.price) : '—'],
-                ].map(([label, value]) => (
-                  <div key={String(label)} className="flex justify-between text-sm">
-                    <span className="text-gray-400">{label}</span>
-                    <span className="text-gray-700">{value}</span>
-                  </div>
-                ))}
-                <div className="flex justify-between pt-2 border-t border-gray-100">
-                  <span className="font-semibold text-sm text-gray-900">Total</span>
-                  <span className="font-black text-lg text-[#D93A35]" style={{ fontFamily: 'var(--font-alexandria)' }}>{fmt(total)}</span>
-                </div>
-              </div>
+                      <div className="prod-card__body">
+                        <h3 className="prod-card__name">{group.nombre.toUpperCase()}</h3>
+                        <div className="prod-card__price">{fmt(first.precio_mayorista)}</div>
 
-              {/* Minimum order warning */}
-              {belowMinimum && lineItems.length > 0 && (
-                <div className="mt-3 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-700">
-                  Minimum order is {fmt(minimumOrderValue)}. Add {fmt(minimumOrderValue - subtotal)} more to proceed.
-                </div>
-              )}
-            </div>
+                        <div className="prod-card__variants">
+                          {group.variantes.map(v => {
+                            const qty = getQty(v.sku);
+                            const { color } = parseVariant(v.variante);
+                            const colorHex = color ? getColorHex(color) : null;
+                            return (
+                              <button
+                                key={v.sku}
+                                className={`var-btn ${qty > 0 ? 'is-active' : ''}`}
+                                onClick={() => addProduct(v)}
+                                title={`${v.variante ?? v.sku} — click to add`}
+                              >
+                                {colorHex ? (
+                                  <ColorDot hex={colorHex} size={20} active={qty > 0} />
+                                ) : (
+                                  <span className="var-btn__sku">{v.variante ?? v.sku.slice(-3)}</span>
+                                )}
+                                {qty > 0 && <span className="var-btn__qty">{qty}</span>}
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        {/* Quick decrement strip — only shows when something's in cart from this group */}
+                        {group.variantes.some(v => getQty(v.sku) > 0) && (
+                          <div className="prod-card__lines">
+                            {group.variantes.filter(v => getQty(v.sku) > 0).map(v => (
+                              <div key={v.sku} className="prod-card__line">
+                                <span className="prod-card__line-name">{v.variante ?? v.sku}</span>
+                                <div className="prod-card__line-ctrl">
+                                  <button onClick={() => removeProduct(v)} aria-label="Remove one">−</button>
+                                  <span>{getQty(v.sku)}</span>
+                                  <button onClick={() => addProduct(v)} aria-label="Add one">+</button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
-          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-            <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
-              <span className="text-[10px] font-black tracking-[0.12em] uppercase text-gray-400" style={{ fontFamily: 'var(--font-alexandria)' }}>Shipping · Packlink</span>
-              <button
-                onClick={requestQuotes}
-                disabled={!lineItems.length || !customer || quotesLoading}
-                className="px-2.5 py-1 text-[11px] font-semibold bg-gray-50 border border-gray-200 rounded-md text-gray-600 hover:border-[#D93A35]/40 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-              >
-                Quote
-              </button>
+          {/* ── Sticky cart panel ────────────────────────────── */}
+          <aside className="cart">
+            <div className="cart__head">
+              <span>YOUR ORDER</span>
+              <span className="cart__count">{itemCount} item{itemCount !== 1 ? 's' : ''}</span>
             </div>
-            <div className="p-4">
-              {quotesLoading && (
-                <div className="flex items-center gap-2 text-xs text-gray-400 py-2">
-                  <div className="w-3 h-3 border border-gray-300 border-t-[#D93A35] rounded-full animate-spin" />
-                  Querying Packlink…
+
+            {customer && (
+              <div className="cart__client">
+                <div className="cart__client-name">{customer.company_name}</div>
+                <div className="cart__client-addr">
+                  {(customer.ship_street1 ?? customer.direccion_envio?.street)} ·{' '}
+                  {(customer.ship_postal_code ?? customer.direccion_envio?.postal_code)}{' '}
+                  {(customer.ship_city ?? customer.direccion_envio?.city)}
                 </div>
+              </div>
+            )}
+
+            <div className="cart__lines">
+              {lineItems.length === 0 ? (
+                <p className="cart__empty">No products yet. Tap a color to add.</p>
+              ) : (
+                lineItems.map(item => (
+                  <div key={item.sku} className="cart__line">
+                    <div className="cart__line-name">
+                      {item.nombre_producto}
+                      {item.variante && <span className="cart__line-var"> · {item.variante}</span>}
+                    </div>
+                    <div className="cart__line-qty">{item.cantidad} × {fmt(item.precio_unitario)}</div>
+                  </div>
+                ))
               )}
-              {!quotesLoading && quotes.length === 0 && (
-                <div className="text-xs text-gray-400 text-center py-2">Add products and quote</div>
-              )}
+            </div>
+
+            <dl className="cart__totals">
+              <div><dt>Weight</dt><dd>{totalWeight.toFixed(2)} kg</dd></div>
+              <div><dt>Subtotal</dt><dd>{fmt(subtotal)}</dd></div>
+              <div><dt>Shipping</dt><dd>{selectedQuote ? fmt(selectedQuote.price) : '—'}</dd></div>
+              <div className="cart__totals-grand"><dt>Total</dt><dd>{fmt(total)}</dd></div>
+            </dl>
+
+            {belowMinimum && lineItems.length > 0 && (
+              <div className="cart__warn">
+                Minimum order is {fmt(minimumOrderValue)}. Add {fmt(minimumOrderValue - subtotal)} more.
+              </div>
+            )}
+
+            {/* Shipping quotes */}
+            <div className="cart__shipping">
+              <div className="cart__shipping-head">
+                <span>SHIPPING · PACKLINK</span>
+                <button
+                  className="cart__quote"
+                  onClick={requestQuotes}
+                  disabled={!lineItems.length || !customer || quotesLoading}
+                >
+                  {quotesLoading ? 'Querying…' : 'Get quotes'}
+                </button>
+              </div>
               {quotes.map(q => (
-                <button key={q.service_id} onClick={() => setSelectedQuote(q)}
-                  className={`w-full flex items-center justify-between p-3 rounded-lg mb-1.5 last:mb-0 border transition-colors text-left ${selectedQuote?.service_id === q.service_id ? 'border-[#D93A35]/40 bg-red-50' : 'border-gray-200 hover:border-gray-300'}`}>
+                <button
+                  key={q.service_id}
+                  onClick={() => setSelectedQuote(q)}
+                  className={`cart__quote-row ${selectedQuote?.service_id === q.service_id ? 'is-selected' : ''}`}
+                >
                   <div>
-                    <div className="text-sm font-semibold text-gray-900">{q.carrier}</div>
-                    <div className="text-xs text-gray-400">{q.service_name}</div>
-                    {q.estimated_days && <div className="text-xs text-gray-400">{q.estimated_days} days</div>}
+                    <div className="cart__quote-carrier">{q.carrier}</div>
+                    <div className="cart__quote-service">{q.service_name} · {q.estimated_days}d</div>
                   </div>
-                  <div className="flex flex-col items-end gap-1">
-                    <div className="text-sm font-black text-[#D93A35]" style={{ fontFamily: 'var(--font-alexandria)' }}>{fmt(q.price)}</div>
-                    {selectedQuote?.service_id === q.service_id && (
-                      <span className="text-[10px] font-bold text-[#0DA265] flex items-center gap-1">
-                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M5 13l4 4L19 7"/></svg>
-                        Selected
-                      </span>
-                    )}
-                  </div>
+                  <div className="cart__quote-price">{fmt(q.price)}</div>
                 </button>
               ))}
             </div>
-          </div>
 
-          {error && (
-            <div className="px-3 py-2 bg-red-50 border border-red-200 rounded-lg text-xs text-[#D93A35]">{error}</div>
-          )}
+            {error && <div className="cart__error">{error}</div>}
 
-          <button
-            onClick={handleConfirm}
-            disabled={!canConfirm || confirming}
-            className="w-full py-3 bg-[#D93A35] text-white text-sm font-bold rounded-xl hover:bg-[#b52e2a] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-          >
-            {confirming ? 'Creating order…' : 'Confirm Order'}
-          </button>
-          <p className="text-[11px] text-gray-400 text-center">Prices and weights will be locked on confirmation</p>
+            <button
+              className="cart__confirm"
+              disabled={!canConfirm || confirming}
+              onClick={handleConfirm}
+            >
+              {confirming ? 'CREATING ORDER…' : 'CONFIRM ORDER'}
+            </button>
+            <p className="cart__note">Prices and weights are locked on confirmation</p>
+          </aside>
         </div>
       </div>
 
-      {/* ── Mobile sticky bottom bar ─────────────────────────────────── */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-3 z-30">
-        <div className="flex items-center gap-3">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-baseline gap-2">
-              <span className="text-xl font-black text-[#D93A35]" style={{ fontFamily: 'var(--font-alexandria)' }}>
-                {fmt(total)}
-              </span>
-              {lineItems.length > 0 && (
-                <span className="text-xs text-gray-400">{lineItems.length} item{lineItems.length !== 1 ? 's' : ''}</span>
-              )}
-            </div>
-            {selectedQuote && (
-              <div className="text-[11px] text-gray-400 truncate">
-                + {fmt(selectedQuote.price)} shipping ({selectedQuote.carrier})
-              </div>
-            )}
-            {belowMinimum && lineItems.length > 0 && (
-              <div className="text-[11px] text-amber-600 font-semibold">
-                Min. order: {fmt(minimumOrderValue)} · still need {fmt(minimumOrderValue - subtotal)}
-              </div>
-            )}
-          </div>
-          <button
-            onClick={handleConfirm}
-            disabled={!canConfirm || confirming}
-            className="px-5 py-2.5 bg-[#D93A35] text-white text-sm font-bold rounded-xl hover:bg-[#b52e2a] disabled:opacity-40 disabled:cursor-not-allowed transition-colors whitespace-nowrap"
-          >
-            {confirming ? 'Creating…' : 'Confirm Order'}
-          </button>
+      {/* Mobile sticky bar */}
+      <div className="mob-bar">
+        <div className="mob-bar__left">
+          <span className="mob-bar__total">{fmt(total)}</span>
+          <span className="mob-bar__items">{itemCount} item{itemCount !== 1 ? 's' : ''}</span>
         </div>
-        {error && (
-          <div className="mt-2 px-3 py-1.5 bg-red-50 border border-red-200 rounded-lg text-xs text-[#D93A35]">{error}</div>
-        )}
+        <button
+          className="mob-bar__cta"
+          disabled={!canConfirm || confirming}
+          onClick={handleConfirm}
+        >
+          {confirming ? '…' : 'CONFIRM'}
+        </button>
       </div>
+
+      <style jsx>{`
+        .cat-page { padding: 32px 24px 120px; }
+        @media (min-width: 1024px) { .cat-page { padding-bottom: 64px; } }
+        .cat-page__inner { max-width: 1300px; margin: 0 auto; }
+
+        .cat-header {
+          display: flex; align-items: flex-end; justify-content: space-between;
+          margin-bottom: 14px; gap: 16px; flex-wrap: wrap;
+        }
+        .cat-title {
+          font-family: var(--fr-display);
+          font-size: 56px; font-weight: 900; line-height: 1; letter-spacing: -0.01em;
+          margin: 0; color: #111;
+        }
+        @media (max-width: 768px) { .cat-title { font-size: 40px; } }
+        .cat-header__count {
+          font-family: var(--fr-mono); font-size: 11px; color: #888;
+        }
+
+        .cat-filterbar {
+          display: flex; align-items: center; gap: 16px;
+          padding: 12px 0;
+          border-top: 1px solid #111;
+          border-bottom: 1px solid var(--fr-line-soft);
+          margin-bottom: 24px;
+        }
+        .cat-search {
+          flex: 1;
+          background: transparent;
+          border: 0; outline: 0;
+          font-family: var(--fr-mono); font-size: 13px;
+          color: #111;
+        }
+        .cat-search::placeholder { color: #aaa; }
+        .cat-min {
+          font-family: var(--fr-mono); font-size: 11px;
+          letter-spacing: 0.1em; color: #888; flex-shrink: 0;
+        }
+        .cat-min.is-warn { color: var(--fr-red); font-weight: 700; }
+
+        .cat-layout {
+          display: grid;
+          grid-template-columns: 1fr 320px;
+          gap: 32px;
+          align-items: start;
+        }
+        @media (max-width: 1023px) {
+          .cat-layout { grid-template-columns: 1fr; }
+        }
+
+        .cat-loading { font-family: var(--fr-mono); color: #888; padding: 60px 0; text-align: center; }
+
+        .cat-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+          gap: 20px;
+        }
+
+        .prod-card {
+          display: flex; flex-direction: column;
+        }
+        .prod-card__block {
+          aspect-ratio: 1 / 1;
+          display: flex; align-items: center; justify-content: center;
+          overflow: hidden;
+        }
+        .prod-card__img {
+          width: 100%; height: 100%;
+          object-fit: contain;
+          mix-blend-mode: multiply;
+        }
+        .prod-card__placeholder {
+          font-family: var(--fr-display);
+          font-size: 32px; font-weight: 900; color: rgba(255,255,255,0.85);
+          letter-spacing: 0.02em;
+        }
+
+        .prod-card__body { padding: 12px 0 0; }
+        .prod-card__name {
+          font-family: var(--fr-display);
+          font-size: 17px; font-weight: 900;
+          margin: 0 0 4px;
+          line-height: 1.1;
+          letter-spacing: 0;
+        }
+        .prod-card__price {
+          font-family: var(--fr-mono);
+          font-size: 12px; color: #111;
+          margin-bottom: 10px;
+        }
+
+        .prod-card__variants {
+          display: flex; flex-wrap: wrap; gap: 6px;
+          margin-bottom: 10px;
+        }
+        .var-btn {
+          background: transparent; border: 0; padding: 0;
+          cursor: pointer; position: relative;
+          display: inline-flex; align-items: center;
+        }
+        .var-btn:hover { transform: translateY(-1px); }
+        .var-btn__sku {
+          font-family: var(--fr-mono);
+          font-size: 9px; padding: 4px 6px;
+          border: 1px solid #111;
+          color: #111;
+        }
+        .var-btn.is-active .var-btn__sku { background: #111; color: #fff; }
+        .var-btn__qty {
+          position: absolute;
+          top: -8px; right: -8px;
+          background: var(--fr-red); color: #fff;
+          font-family: var(--fr-mono);
+          font-size: 9px; font-weight: 700;
+          padding: 1px 4px; min-width: 14px; text-align: center;
+        }
+
+        .prod-card__lines {
+          border-top: 1px solid var(--fr-line-soft);
+          padding-top: 8px; margin-top: 4px;
+          display: flex; flex-direction: column; gap: 4px;
+        }
+        .prod-card__line {
+          display: flex; align-items: center; justify-content: space-between;
+          font-family: var(--fr-mono); font-size: 10px; color: #555;
+        }
+        .prod-card__line-name { letter-spacing: 0.04em; }
+        .prod-card__line-ctrl {
+          display: inline-flex; align-items: center; gap: 6px;
+        }
+        .prod-card__line-ctrl button {
+          background: #fff; border: 1px solid #111;
+          width: 22px; height: 22px; cursor: pointer;
+          font-family: var(--fr-mono); font-size: 13px; color: #111;
+          padding: 0; line-height: 1;
+        }
+        .prod-card__line-ctrl button:hover { background: #111; color: #fff; }
+        .prod-card__line-ctrl span {
+          min-width: 16px; text-align: center;
+          font-weight: 700; color: #111;
+        }
+
+        /* Cart */
+        .cart {
+          position: sticky; top: 24px;
+          border: 1px solid #111;
+          background: #fff;
+          padding: 16px;
+          font-family: var(--fr-mono);
+        }
+        @media (max-width: 1023px) {
+          .cart { position: static; }
+        }
+        .cart__head {
+          display: flex; align-items: baseline; justify-content: space-between;
+          font-family: var(--fr-display);
+          font-size: 14px; font-weight: 900; letter-spacing: 0.06em;
+          padding-bottom: 12px; border-bottom: 1px solid #111;
+          margin-bottom: 14px;
+        }
+        .cart__count {
+          font-family: var(--fr-mono); font-size: 11px;
+          color: #888; font-weight: 400; letter-spacing: 0;
+        }
+        .cart__client {
+          padding: 10px 12px;
+          background: #f7f6f1;
+          margin-bottom: 14px;
+        }
+        .cart__client-name { font-size: 12px; font-weight: 700; color: #111; }
+        .cart__client-addr { font-size: 11px; color: #888; margin-top: 2px; }
+
+        .cart__lines {
+          font-size: 12px; color: #555;
+          margin-bottom: 14px;
+        }
+        .cart__empty { color: #aaa; font-style: italic; margin: 0; }
+        .cart__line {
+          display: flex; justify-content: space-between; gap: 8px;
+          padding: 6px 0;
+          border-bottom: 1px dashed var(--fr-line-soft);
+        }
+        .cart__line:last-child { border-bottom: 0; }
+        .cart__line-name { color: #111; flex: 1; }
+        .cart__line-var { color: #888; }
+        .cart__line-qty { color: #888; flex-shrink: 0; }
+
+        .cart__totals {
+          margin: 0 0 14px; padding: 12px 0;
+          border-top: 1px solid #111;
+          font-size: 12px;
+        }
+        .cart__totals div {
+          display: flex; justify-content: space-between;
+          padding: 3px 0;
+        }
+        .cart__totals dt { color: #888; }
+        .cart__totals dd { color: #111; margin: 0; font-weight: 700; }
+        .cart__totals-grand {
+          padding-top: 8px !important;
+          margin-top: 6px;
+          border-top: 1px solid var(--fr-line-soft);
+        }
+        .cart__totals-grand dt {
+          font-family: var(--fr-display) !important;
+          font-weight: 900 !important;
+          font-size: 14px !important;
+          color: #111 !important;
+        }
+        .cart__totals-grand dd {
+          font-family: var(--fr-display) !important;
+          font-weight: 900 !important;
+          font-size: 18px !important;
+        }
+
+        .cart__warn {
+          background: #fff7e6;
+          border: 1px solid #f3c87b;
+          padding: 10px;
+          font-size: 11px;
+          color: #8a5b00;
+          margin-bottom: 12px;
+        }
+
+        .cart__shipping { margin-bottom: 14px; }
+        .cart__shipping-head {
+          display: flex; align-items: center; justify-content: space-between;
+          font-family: var(--fr-display);
+          font-size: 11px; font-weight: 900; letter-spacing: 0.08em;
+          padding: 8px 0; border-top: 1px solid var(--fr-line-soft);
+          margin-bottom: 8px;
+        }
+        .cart__quote {
+          background: transparent; border: 1px solid #111;
+          padding: 4px 8px;
+          font-family: var(--fr-mono); font-size: 10px; color: #111;
+          cursor: pointer; letter-spacing: 0;
+          text-transform: none;
+        }
+        .cart__quote:hover { background: #111; color: #fff; }
+        .cart__quote:disabled { opacity: 0.4; cursor: not-allowed; }
+        .cart__quote-row {
+          width: 100%;
+          display: flex; align-items: center; justify-content: space-between;
+          padding: 8px 10px;
+          background: #fff; border: 1px solid var(--fr-line-soft);
+          margin-bottom: 4px;
+          font-family: var(--fr-mono); font-size: 11px;
+          cursor: pointer; text-align: left;
+        }
+        .cart__quote-row.is-selected {
+          border-color: #111; background: #f7f6f1;
+        }
+        .cart__quote-carrier { color: #111; font-weight: 700; }
+        .cart__quote-service { color: #888; }
+        .cart__quote-price { color: #111; font-weight: 700; }
+
+        .cart__error {
+          background: #fff0ef;
+          border: 1px solid var(--fr-red);
+          padding: 8px 10px;
+          font-size: 11px; color: var(--fr-red);
+          margin-bottom: 10px;
+        }
+
+        .cart__confirm {
+          width: 100%;
+          background: var(--fr-red);
+          color: #fff;
+          border: 0;
+          padding: 14px;
+          font-family: var(--fr-display);
+          font-size: 13px; font-weight: 900; letter-spacing: 0.1em;
+          cursor: pointer;
+        }
+        .cart__confirm:hover { background: #b52e2a; }
+        .cart__confirm:disabled { background: #ccc; cursor: not-allowed; }
+
+        .cart__note {
+          margin: 8px 0 0;
+          font-size: 10px;
+          color: #aaa;
+          text-align: center;
+        }
+
+        /* Mobile sticky bar */
+        .mob-bar {
+          display: none;
+          position: fixed; bottom: 0; left: 0; right: 0;
+          background: #fff; border-top: 1px solid #111;
+          padding: 10px 16px;
+          align-items: center; justify-content: space-between;
+          gap: 12px; z-index: 30;
+        }
+        @media (max-width: 1023px) { .mob-bar { display: flex; } }
+        .mob-bar__left { display: flex; flex-direction: column; gap: 2px; }
+        .mob-bar__total {
+          font-family: var(--fr-display);
+          font-size: 22px; font-weight: 900; color: #111;
+        }
+        .mob-bar__items {
+          font-family: var(--fr-mono); font-size: 11px; color: #888;
+        }
+        .mob-bar__cta {
+          background: var(--fr-red); color: #fff; border: 0;
+          padding: 12px 20px;
+          font-family: var(--fr-display);
+          font-size: 13px; font-weight: 900; letter-spacing: 0.08em;
+          cursor: pointer;
+        }
+        .mob-bar__cta:disabled { background: #ccc; }
+      `}</style>
     </div>
   );
 }
