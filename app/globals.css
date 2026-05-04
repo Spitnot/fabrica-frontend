@@ -2,8 +2,50 @@
 
 /* ─────────────────────────────────────────────
    FIRMA ROLLERS B2B — Design System
+   Fuente de verdad única. No hardcodear colores,
+   bordes ni tipografía fuera de este archivo.
    ───────────────────────────────────────────── */
 
+/* ── Tailwind v4 tokens ─────────────────────── */
+@theme {
+  /* Paleta */
+  --color-ink:     #111111;
+  --color-muted:   #666666;
+  --color-subtle:  #999999;
+  --color-white:   #ffffff;
+  --color-cream:   #F7F7F2;
+
+  --color-red:     #D93A35;
+  --color-orange:  #E6883E;
+  --color-yellow:  #F6E451;
+  --color-green:   #0DA265;
+  --color-blue:    #0087B8;
+  --color-purple:  #876693;
+
+  /* Status */
+  --color-status-draft:      #E6883E;
+  --color-status-confirmado: #0087B8;
+  --color-status-produccion: #876693;
+  --color-status-listo:      #F6E451;
+  --color-status-enviado:    #0DA265;
+  --color-status-cancelado:  #D93A35;
+
+  /* Tipografía */
+  --font-sans: 'Alexandria', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  /* Esquinas: siempre 0 */
+  --radius-sm:   0px;
+  --radius:      0px;
+  --radius-md:   0px;
+  --radius-lg:   0px;
+  --radius-xl:   0px;
+  --radius-2xl:  0px;
+  --radius-3xl:  0px;
+  --radius-full: 0px;
+}
+
+/* ── CSS vars (para inline styles durante migración) ── */
 :root {
   --fr-red:     #D93A35;
   --fr-orange:  #E6883E;
@@ -11,116 +53,95 @@
   --fr-green:   #0DA265;
   --fr-blue:    #0087B8;
   --fr-purple:  #876693;
-  --fr-black:   #111111;
+  --fr-ink:     #111111;
+  --fr-muted:   #666666;
+  --fr-subtle:  #999999;
   --fr-white:   #ffffff;
   --fr-cream:   #F7F7F2;
-
-  --status-draft:       var(--fr-orange);
-  --status-confirmado:  var(--fr-blue);
-  --status-produccion:  var(--fr-purple);
-  --status-listo:       var(--fr-yellow);
-  --status-enviado:     var(--fr-green);
-  --status-cancelado:   var(--fr-red);
 
   --font-main:    'Alexandria', sans-serif;
   --fr-display:   'Alexandria', sans-serif;
   --fr-mono:      'JetBrains Mono', ui-monospace, monospace;
 
-  --border:        1px solid var(--fr-black);
-  --border-dash:   2px solid var(--fr-black);
-  --border-light:  1px solid #e5e5e5;
-  --fr-line-soft:  #e5e5e5;
+  --border:        1px solid #111111;
+  --border-dash:   1px solid #111111;
+  --border-light:  1px solid #111111;
+  --fr-line-soft:  #111111;
 
-  --shadow-sm:  2px 2px 0 var(--fr-black);
-  --shadow-md:  3px 3px 0 var(--fr-black);
-  --sidebar-w: 210px;
+  --shadow-sm: 2px 2px 0 #111111;
+  --shadow-md: 3px 3px 0 #111111;
+  --sidebar-w: 220px;
 }
 
+/* ── Reset ──────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; }
-
 html, body { height: 100%; margin: 0; padding: 0; }
 
 body {
-  font-family: var(--font-main);
+  font-family: var(--font-sans);
   font-size: 13px;
   font-weight: 400;
   line-height: 1.5;
-  color: var(--fr-black);
-  background: var(--fr-cream);
+  color: #111;
+  background: #fff;
   -webkit-font-smoothing: antialiased;
 }
 
-h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-main);
-  font-weight: 900;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  margin: 0;
-  line-height: 1.1;
-}
+h1, h2, h3, h4, h5, h6 { font-family: var(--font-sans); font-weight: 700; margin: 0; line-height: 1.2; }
+p  { margin: 0; }
+a  { color: #111; text-decoration: none; }
+a:hover { color: #D93A35; }
+hr { border: none; border-top: 1px solid #111; margin: 0; }
 
-h1 { font-size: 22px; }
-h2 { font-size: 16px; }
-h3 { font-size: 13px; letter-spacing: 0.1em; }
-p { margin: 0; }
-
-/* BUTTON RESET — sin border-radius */
+/* ── Buttons ────────────────────────────────── */
 button, [type='button'], [type='submit'], [type='reset'] {
-  font-family: var(--font-main);
-  font-weight: 900;
-  font-size: 10px;
-  letter-spacing: 0.14em;
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   border-radius: 0;
-  border: var(--border);
-  background: var(--fr-white);
-  color: var(--fr-black);
+  border: 1px solid #111;
+  background: #fff;
+  color: #111;
   cursor: pointer;
-  padding: 7px 14px;
-  box-shadow: var(--shadow-sm);
-  transition: box-shadow 0.08s, transform 0.08s;
+  padding: 8px 16px;
+  box-shadow: 2px 2px 0 #111;
   display: inline-flex;
   align-items: center;
   gap: 6px;
   appearance: none;
   -webkit-appearance: none;
+  transition: box-shadow 0.08s, transform 0.08s;
 }
 
-button:hover, [type='button']:hover {
-  box-shadow: none;
-  transform: translate(2px, 2px);
-}
-
+button:hover  { box-shadow: none; transform: translate(2px, 2px); }
 button:active { box-shadow: none; transform: translate(2px, 2px); }
 button:disabled { opacity: 0.4; pointer-events: none; }
 
-.btn-primary { background: var(--fr-black); color: var(--fr-white); }
-.btn-danger  { background: var(--fr-red); color: var(--fr-white); border-color: var(--fr-red); }
-.btn-ghost   { box-shadow: none; border-color: #ddd; }
-.btn-ghost:hover { border-color: var(--fr-black); transform: none; }
+.btn-primary { background: #111; color: #fff; }
+.btn-danger  { background: #D93A35; color: #fff; border-color: #D93A35; }
+.btn-ghost   { box-shadow: none; }
+.btn-ghost:hover { transform: none; box-shadow: none; }
 
-/* INPUT RESET */
+/* ── Inputs ─────────────────────────────────── */
 input, select, textarea {
-  font-family: var(--font-main);
+  font-family: var(--font-mono);
   font-size: 12px;
   font-weight: 400;
   border-radius: 0;
-  border: var(--border);
-  background: var(--fr-white);
-  color: var(--fr-black);
-  padding: 7px 10px;
+  border: 1px solid #111;
+  background: #fff;
+  color: #111;
+  padding: 8px 12px;
   outline: none;
   appearance: none;
   -webkit-appearance: none;
   width: 100%;
 }
 
-input:focus, select:focus, textarea:focus {
-  border-color: var(--fr-black);
-  box-shadow: var(--shadow-sm);
-}
-
-input::placeholder, textarea::placeholder { color: #bbb; font-weight: 400; }
+input:focus, select:focus, textarea:focus { box-shadow: 2px 2px 0 #111; }
+input::placeholder, textarea::placeholder { color: #999; font-weight: 400; }
 
 select {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23111'/%3E%3C/svg%3E");
@@ -129,60 +150,110 @@ select {
   padding-right: 28px;
 }
 
-/* BADGE */
+/* ── Componentes ────────────────────────────── */
+
+/* Card — fondo blanco, borde 1px negro, sin sombra */
+.fr-card {
+  background: #fff;
+  border: 1px solid #111;
+}
+
+/* Label mono uppercase */
+.fr-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #666;
+}
+
+/* Cabecera de sección: texto mono, borde inferior, sin relleno negro */
+.fr-section-head {
+  padding: 10px 16px;
+  border-bottom: 1px solid #111;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #666;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Fila de tabla */
+.fr-row {
+  display: grid;
+  padding: 12px 16px;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid #111;
+  color: #111;
+  text-decoration: none;
+}
+.fr-row:last-child { border-bottom: none; }
+.fr-row:hover { background: #F7F7F2; }
+
+/* Cabecera de tabla */
+.fr-table-head {
+  display: grid;
+  padding: 8px 16px;
+  gap: 12px;
+  align-items: center;
+  border-bottom: 1px solid #111;
+  background: #fff;
+}
+
+/* Status chip */
+.fr-chip {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  display: inline-block;
+  color: #fff;
+  border-radius: 0;
+}
+.fr-chip-draft      { background: #E6883E; }
+.fr-chip-confirmado { background: #0087B8; }
+.fr-chip-produccion { background: #876693; }
+.fr-chip-listo      { background: #F6E451; color: #111; }
+.fr-chip-enviado    { background: #0DA265; }
+.fr-chip-cancelado  { background: #D93A35; }
+
+/* Badge (inline, sin bg) */
 .badge {
-  font-family: var(--font-main);
-  font-size: 8px;
-  font-weight: 900;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   padding: 3px 8px;
   border-radius: 0;
-  color: var(--fr-white);
   display: inline-block;
+  color: #fff;
 }
+.badge-draft      { background: #E6883E; }
+.badge-confirmado { background: #0087B8; }
+.badge-produccion { background: #876693; }
+.badge-listo      { background: #F6E451; color: #111; }
+.badge-enviado    { background: #0DA265; }
+.badge-cancelado  { background: #D93A35; }
 
-.badge-draft      { background: var(--status-draft); }
-.badge-confirmado { background: var(--status-confirmado); }
-.badge-produccion { background: var(--status-produccion); }
-.badge-listo      { background: var(--status-listo); }
-.badge-enviado    { background: var(--status-enviado); }
-.badge-cancelado  { background: var(--status-cancelado); }
+/* Página: padding estándar */
+.fr-page { padding: 32px; display: flex; flex-direction: column; gap: 24px; }
+@media (max-width: 768px) { .fr-page { padding: 20px 16px; } }
 
-/* CARD — flat, no shadow (shadows are buttons-only) */
-.card {
-  background: var(--fr-white);
-  border: var(--border);
-  padding: 16px;
-}
-
-.section-label {
-  font-size: 9px;
-  font-weight: 900;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: var(--fr-black);
-}
-
-.page-title {
-  font-size: 18px;
-  font-weight: 900;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--fr-black);
-}
-
-hr { border: none; border-top: var(--border); margin: 0; }
-
-a { color: var(--fr-black); text-decoration: none; }
-a:hover { color: var(--fr-red); }
-
+/* Scrollbar */
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #ddd; }
-::-webkit-scrollbar-thumb:hover { background: #bbb; }
+::-webkit-scrollbar-thumb { background: #111; }
 
-/* Tailwind border-radius override */
+/* Tailwind radius override (doble seguro) */
 .rounded, .rounded-sm, .rounded-md, .rounded-lg,
 .rounded-xl, .rounded-2xl, .rounded-full {
   border-radius: 0 !important;

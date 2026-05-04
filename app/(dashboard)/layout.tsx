@@ -10,14 +10,14 @@ const NAV_ITEMS = [
   { href: '/pedidos',    label: 'Orders',     group: 'Main' },
   { href: '/clientes',   label: 'Clients',    group: 'Main' },
   { href: '/tarifas',    label: 'Pricing',    group: 'Main' },
-  { href: '/produccion', label: 'Production', group: 'Operations' },
-  { href: '/catalogo',   label: 'Catalog',    group: 'Operations' },
+  { href: '/produccion', label: 'Production', group: 'Ops' },
+  { href: '/catalogo',   label: 'Catalog',    group: 'Ops' },
   { href: '/emails',     label: 'Emails',     group: 'Admin' },
   { href: '/usuarios',   label: 'Team',       group: 'Admin' },
   { href: '/company',    label: 'Company',    group: 'Admin' },
 ];
 
-const GROUPS = ['Main', 'Operations', 'Admin'];
+const GROUPS = ['Main', 'Ops', 'Admin'];
 
 const FRLogoSVG = ({ width = 88 }: { width?: number }) => (
   <svg viewBox="0 0 133.16 43.48" xmlns="http://www.w3.org/2000/svg" style={{ width, height: 'auto', display: 'block' }}>
@@ -48,7 +48,7 @@ function SidebarInner({ onClose }: { onClose: () => void }) {
   }
 
   const initials = (name: string) =>
-    name.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase();
+    name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
 
   function isActive(href: string) {
     if (href === '/dashboard') return pathname === '/dashboard';
@@ -59,23 +59,23 @@ function SidebarInner({ onClose }: { onClose: () => void }) {
   return (
     <>
       {/* Logo */}
-      <div style={{ padding: '16px 16px 12px', borderBottom: 'var(--border-dash)' }}>
+      <div style={{ padding: '20px 20px 16px', borderBottom: '1px solid #111' }}>
         <Link href="/dashboard" onClick={onClose}>
           <FRLogoSVG width={88} />
         </Link>
-        <div style={{ marginTop: 6, fontSize: 8, fontWeight: 700, letterSpacing: '0.3em', textTransform: 'uppercase' as const, color: '#bbb', borderTop: '1px solid #eee', paddingTop: 5 }}>
+        <div style={{ marginTop: 8, fontFamily: 'var(--font-mono)', fontSize: 8, fontWeight: 700, letterSpacing: '0.3em', textTransform: 'uppercase', color: '#999', borderTop: '1px solid #111', paddingTop: 6 }}>
           B2B Platform
         </div>
       </div>
 
       {/* Nav */}
-      <nav style={{ flex: 1, padding: '8px', overflowY: 'auto' as const, display: 'flex', flexDirection: 'column' as const }}>
-        {GROUPS.map((group) => (
-          <div key={group}>
-            <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase' as const, color: '#ccc', padding: '10px 8px 3px' }}>
+      <nav style={{ flex: 1, padding: '12px 12px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 4 }}>
+        {GROUPS.map(group => (
+          <div key={group} style={{ marginBottom: 8 }}>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 8, fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: '#999', padding: '4px 8px 6px' }}>
               {group}
             </div>
-            {NAV_ITEMS.filter((i) => i.group === group).map(({ href, label }) => {
+            {NAV_ITEMS.filter(i => i.group === group).map(({ href, label }) => {
               const active = isActive(href);
               return (
                 <Link
@@ -83,21 +83,17 @@ function SidebarInner({ onClose }: { onClose: () => void }) {
                   href={href}
                   onClick={onClose}
                   style={{
-                    display: 'flex', alignItems: 'center', gap: 9,
-                    padding: '9px 9px', marginBottom: 1,
-                    fontSize: 11, fontWeight: 700,
-                    letterSpacing: '0.07em', textTransform: 'uppercase' as const,
-                    color: active ? '#fff' : '#666',
-                    background: active ? '#111' : 'transparent',
-                    border: `1px solid ${active ? '#111' : 'transparent'}`,
-                    textDecoration: 'none', minHeight: 44,
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    padding: '8px 10px', marginBottom: 1,
+                    fontSize: 12, fontWeight: active ? 700 : 500,
+                    letterSpacing: '0.03em',
+                    color: active ? '#111' : '#666',
+                    background: active ? '#F7F7F2' : 'transparent',
+                    borderLeft: active ? '2px solid #D93A35' : '2px solid transparent',
+                    textDecoration: 'none',
+                    transition: 'background 0.1s',
                   }}
                 >
-                  <span style={{
-                    width: 7, height: 7, flexShrink: 0,
-                    border: `1.5px solid ${active ? '#D93A35' : 'currentColor'}`,
-                    background: active ? '#D93A35' : 'transparent',
-                  }} />
                   {label}
                 </Link>
               );
@@ -106,38 +102,32 @@ function SidebarInner({ onClose }: { onClose: () => void }) {
         ))}
       </nav>
 
-      {/* User / logout — borderTop via wrapper div to avoid duplicate border props */}
-      <div style={{ borderTop: 'var(--border-dash)' }}>
+      {/* User */}
+      <div style={{ borderTop: '1px solid #111' }}>
         <button
           onClick={handleLogout}
           style={{
-            padding: '12px 13px',
-            display: 'flex', alignItems: 'center', gap: 9,
-            background: 'transparent',
-            border: 'none',
-            boxShadow: 'none',
-            cursor: 'pointer',
-            width: '100%',
-            textAlign: 'left' as const,
-            minHeight: 52,
-            fontFamily: 'var(--font-main)',
+            padding: '12px 16px',
+            display: 'flex', alignItems: 'center', gap: 10,
+            background: 'transparent', border: 'none', boxShadow: 'none',
+            cursor: 'pointer', width: '100%', textAlign: 'left',
+            fontFamily: 'var(--font-sans)',
           }}
         >
           <div style={{
-            width: 28, height: 28, background: '#D93A35',
-            border: '1px solid #111',
+            width: 28, height: 28, background: '#111', color: '#F6E451',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 9, fontWeight: 900, color: '#fff', flexShrink: 0,
+            fontSize: 10, fontWeight: 900, flexShrink: 0,
           }}>
             {userInfo ? initials(userInfo.name) : '—'}
           </div>
-          <div style={{ flex: 1, minWidth: 0, textAlign: 'left' as const }}>
-            <div style={{ fontSize: 11, fontWeight: 900, color: '#111', letterSpacing: '0.06em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>
+          <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: '#111', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {userInfo?.name ?? '—'}
             </div>
-            <div style={{ fontSize: 9, color: '#aaa' }}>{userInfo?.role ?? 'Administrator'}</div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: '#999' }}>{userInfo?.role ?? 'Administrator'}</div>
           </div>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#aaa" strokeWidth="2">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#999" strokeWidth="2">
             <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/>
           </svg>
         </button>
@@ -159,9 +149,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         }
       `}</style>
 
-      {/* Sidebar */}
       <aside className="fr-sidebar" style={{
-        width: 210, background: '#fff', borderRight: 'var(--border-dash)',
+        width: 220, background: '#fff', borderRight: '1px solid #111',
         display: 'flex', flexDirection: 'column',
         position: 'fixed', top: 0, left: 0, bottom: 0, zIndex: 50,
         transform: mobileOpen ? 'translateX(0)' : 'translateX(-100%)',
@@ -170,43 +159,31 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <SidebarInner onClose={() => setMobileOpen(false)} />
       </aside>
 
-      {/* Overlay móvil */}
       {mobileOpen && (
-        <div
-          onClick={() => setMobileOpen(false)}
-          style={{ position: 'fixed', inset: 0, zIndex: 40, background: 'rgba(0,0,0,0.4)' }}
-        />
+        <div onClick={() => setMobileOpen(false)}
+          style={{ position: 'fixed', inset: 0, zIndex: 40, background: 'rgba(0,0,0,0.4)' }} />
       )}
 
-      {/* Layout wrapper */}
-      <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--fr-cream)' }}>
-        {/* Spacer desktop */}
-        <div className="fr-sidebar-spacer" style={{ width: 210, flexShrink: 0, display: 'none' }} />
-
+      <div style={{ display: 'flex', minHeight: '100vh', background: '#fff' }}>
+        <div className="fr-sidebar-spacer" style={{ width: 220, flexShrink: 0, display: 'none' }} />
         <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
-          {/* Topbar móvil */}
+
+          {/* Mobile topbar */}
           <div className="fr-mobile-topbar" style={{
             position: 'sticky', top: 0, zIndex: 30,
-            background: '#fff', borderBottom: 'var(--border-dash)',
-            padding: '10px 16px',
+            background: '#fff', borderBottom: '1px solid #111',
+            padding: '12px 16px',
             display: 'flex', alignItems: 'center', gap: 14,
           }}>
             <button
               onClick={() => setMobileOpen(true)}
-              style={{
-                background: 'transparent', border: 'none', boxShadow: 'none',
-                padding: 4, color: '#111',
-                display: 'flex', alignItems: 'center',
-                minHeight: 44, minWidth: 44, justifyContent: 'center',
-              }}
+              style={{ background: 'transparent', border: 'none', boxShadow: 'none', padding: 4, color: '#111', display: 'flex', alignItems: 'center' }}
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <path d="M3 12h18M3 6h18M3 18h18"/>
               </svg>
             </button>
-            <Link href="/dashboard">
-              <FRLogoSVG width={60} />
-            </Link>
+            <Link href="/dashboard"><FRLogoSVG width={60} /></Link>
           </div>
 
           <main style={{ flex: 1, overflowX: 'hidden' }}>
