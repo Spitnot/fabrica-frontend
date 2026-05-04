@@ -21,7 +21,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabaseClient } from '@/lib/supabase/client';
 import { getColorHex, parseVariant } from '@/lib/colors';
-import { ColorDot } from '../_components/StatusChip';
+import { ColorDot } from '../../../_components/StatusChip';
 
 interface Product { sku: string; nombre_producto: string; variante?: string; precio_mayorista: number; peso_kg: number; imagen?: string; }
 interface ProductGroup { nombre: string; variantes: Product[]; imagen?: string; }
