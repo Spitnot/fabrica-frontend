@@ -459,8 +459,7 @@ export default function NuevoClientePage() {
             <div style={{ gridColumn: "1 / -1", display: "flex", flexDirection: "column", gap: 6 }}>
               <label className="fr-label">Condiciones comerciales especiales</label>
               <textarea value={form.notas_especiales} onChange={e => set('notas_especiales', e.target.value)}
-                rows={3} placeholder="Notas internas, condiciones negociadas, excepciones…"
-                >
+                rows={3} placeholder="Notas internas, condiciones negociadas, excepciones…" />
             </div>
           </div>
         </section>
