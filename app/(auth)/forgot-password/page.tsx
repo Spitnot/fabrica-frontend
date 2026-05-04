@@ -11,62 +11,42 @@ export default function ForgotPasswordPage() {
   const handleReset = async () => {
     if (!email) return;
     setLoading(true);
-
     try {
-      await fetch('/api/auth/generate-reset-link', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
-      });
-    } catch (err) {
-      console.error(err);
-    } finally {
-      // Siempre mostrar mensaje genérico — nunca confirmar si el email existe
+      await fetch('/api/auth/generate-reset-link', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email }) });
+    } catch (err) { console.error(err); } finally {
       setMessage('If an account with that email exists, a reset link has been sent.');
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <div className="w-full max-w-sm">
-        <div className="text-center mb-8">
-          <img src="/FR_ICON_B.svg" alt="Logo" className="w-12 h-auto mx-auto mb-4" />
-          <h1 className="text-xl font-bold text-gray-900" style={{ fontFamily: 'var(--font-alexandria)' }}>Forgot Password</h1>
-          <p className="text-xs text-gray-400 mt-1">Enter your email to receive a reset link.</p>
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff', padding: 16 }}>
+      <div style={{ width: '100%', maxWidth: 360 }}>
+        <div style={{ textAlign: 'center', marginBottom: 32 }}>
+          <img src="/FR_ICON_B.svg" alt="Logo" style={{ width: 48, height: 'auto', margin: '0 auto 16px' }} />
+          <h1 style={{ fontFamily: 'var(--font-sans)', fontWeight: 900, fontSize: 22, color: '#111' }}>Forgot Password</h1>
+          <p style={{ fontSize: 12, color: '#111', marginTop: 4 }}>Enter your email to receive a reset link.</p>
         </div>
 
         {message ? (
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center text-sm text-green-800">
+          <div style={{ padding: '12px 16px', border: '1px solid #0DA265', fontFamily: 'var(--font-mono)', fontSize: 11, color: '#0DA265', textAlign: 'center' }}>
             {message}
           </div>
         ) : (
-          <div className="space-y-4">
-            <div className="space-y-1.5">
-              <label className="text-[11px] font-bold tracking-[0.1em] uppercase text-gray-400">Email</label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleReset()}
-                placeholder="you@company.com"
-                className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:border-[#D93A35] outline-none transition-colors"
-              />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <label className="fr-label">Email</label>
+              <input type="email" value={email} onChange={e => setEmail(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleReset()} placeholder="you@company.com" />
             </div>
-            <button
-              onClick={handleReset}
-              disabled={loading || !email}
-              className="w-full py-2.5 bg-[#D93A35] text-white text-sm font-bold rounded-lg hover:bg-[#b52e2a] disabled:opacity-40 transition-colors"
-            >
-              {loading ? 'Sending...' : 'Send Reset Link'}
+            <button onClick={handleReset} disabled={loading || !email} className="btn-primary" style={{ width: '100%', justifyContent: 'center' }}>
+              {loading ? 'Sending…' : 'Send Reset Link'}
             </button>
           </div>
         )}
 
-        <div className="mt-6 text-center">
-          <Link href="/login" className="text-xs text-gray-400 hover:text-[#D93A35] transition-colors">
-            ← Back to Login
-          </Link>
+        <div style={{ marginTop: 24, textAlign: 'center' }}>
+          <Link href="/login" className="fr-label" style={{ color: '#111', textDecoration: 'none' }}>← Back to Login</Link>
         </div>
       </div>
     </div>

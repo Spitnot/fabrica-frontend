@@ -160,25 +160,25 @@ export default function OnboardingPage() {
     // Force full reload so layout re-fetches onboarding_completed from DB
     setTimeout(() => { window.location.href = '/portal' }, 1500)  }
 
-  const inputCls  = "w-full bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-[#D93A35] focus:ring-1 focus:ring-[#D93A35]/20 outline-none transition-all"
+  const inputCls  = "w-full bg-white border border-[#111] rounded-lg px-3 py-2.5 text-sm text-[#111] placeholder-[#111] focus:border-[#D93A35] focus:ring-1 focus:ring-[#D93A35]/20 outline-none transition-all"
   const selectCls = inputCls
-  const labelCls  = "block text-[11px] font-bold tracking-[0.1em] uppercase text-gray-400 mb-1.5"
+  const labelCls  = "block text-[11px] font-bold tracking-[0.1em] uppercase text-[#111] mb-1.5"
   const req       = <span className="text-[#D93A35]">*</span>
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-white flex flex-col">
       {/* Top bar */}
-      <div className="bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between">
-        <span className="text-sm font-black tracking-widest uppercase text-gray-900"
+      <div className="bg-white border-b border-[#111] px-6 py-4 flex items-center justify-between">
+        <span className="text-sm font-black tracking-widest uppercase text-[#111]"
               style={{ fontFamily: 'var(--font-alexandria)' }}>Firma Rollers B2B</span>
         {step > 0 && step < 4 && (
           <div className="flex items-center gap-3">
             <div className="hidden sm:flex gap-1">
               {[1,2,3].map(i => (
-                <div key={i} className={`h-1 w-10 rounded-full transition-all duration-500 ${i <= step ? 'bg-[#D93A35]' : 'bg-gray-200'}`} />
+                <div key={i} className={`h-1 w-10 rounded-full transition-all duration-500 ${i <= step ? 'bg-[#D93A35]' : 'bg-[#111]'}`} />
               ))}
             </div>
-            <span className="text-xs text-gray-400 font-mono">Step {step} of 3</span>
+            <span className="text-xs text-[#111] font-mono">Step {step} of 3</span>
           </div>
         )}
       </div>
@@ -194,14 +194,14 @@ export default function OnboardingPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
                 </svg>
               </div>
-              <h1 className="text-3xl font-black tracking-tight text-gray-900 mb-3"
+              <h1 className="text-3xl font-black tracking-tight text-[#111] mb-3"
                   style={{ fontFamily: 'var(--font-alexandria)' }}>
                 Welcome{name ? `, ${name.split(' ')[0]}` : ''}!
               </h1>
-              <p className="text-gray-500 text-base mb-2 max-w-sm mx-auto">
+              <p className="text-[#111] text-base mb-2 max-w-sm mx-auto">
                 Your account is ready. Before placing orders, we need a few details about your business.
               </p>
-              <p className="text-gray-400 text-sm mb-8 max-w-sm mx-auto">This takes about 2 minutes.</p>
+              <p className="text-[#111] text-sm mb-8 max-w-sm mx-auto">This takes about 2 minutes.</p>
               <button onClick={() => setStep(1)}
                 className="inline-flex items-center gap-2 px-8 py-3 bg-[#D93A35] text-white font-bold rounded-xl hover:bg-[#b52e2a] transition-colors shadow-lg shadow-[#D93A35]/20 text-sm">
                 Get started
@@ -211,9 +211,9 @@ export default function OnboardingPage() {
               </button>
               <div className="mt-10 grid grid-cols-3 gap-3 text-center">
                 {[['01','Company details'],['02','Your address'],['03','Business profile']].map(([n,label]) => (
-                  <div key={n} className="bg-white border border-gray-200 rounded-xl p-4">
+                  <div key={n} className="bg-white border border-[#111] rounded-xl p-4">
                     <div className="text-[10px] font-black tracking-[0.2em] text-[#D93A35] mb-1">{n}</div>
-                    <div className="text-xs text-gray-500 font-medium">{label}</div>
+                    <div className="text-xs text-[#111] font-medium">{label}</div>
                   </div>
                 ))}
               </div>
@@ -224,11 +224,11 @@ export default function OnboardingPage() {
           {step === 1 && (
             <div>
               <div className="mb-6">
-                <h2 className="text-xl font-black tracking-tight text-gray-900 mb-1"
+                <h2 className="text-xl font-black tracking-tight text-[#111] mb-1"
                     style={{ fontFamily: 'var(--font-alexandria)' }}>Company details</h2>
-                <p className="text-sm text-gray-400">Legal and contact information for your business.</p>
+                <p className="text-sm text-[#111]">Legal and contact information for your business.</p>
               </div>
-              <div className="bg-white border border-gray-200 rounded-2xl p-5 space-y-4">
+              <div className="bg-white border border-[#111] rounded-2xl p-5 space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="sm:col-span-2">
                     <label className={labelCls}>Legal company name {req}</label>
@@ -269,7 +269,7 @@ export default function OnboardingPage() {
                       className={inputCls} />
                   </div>
                 </div>
-                <div className="border-t border-gray-100 pt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="border-t border-[#111] pt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="sm:col-span-2">
                     <label className={labelCls}>Contact name {req}</label>
                     <input type="text" value={form.contacto_nombre} onChange={e => set('contacto_nombre', e.target.value)}
@@ -294,13 +294,13 @@ export default function OnboardingPage() {
           {step === 2 && (
             <div>
               <div className="mb-6">
-                <h2 className="text-xl font-black tracking-tight text-gray-900 mb-1"
+                <h2 className="text-xl font-black tracking-tight text-[#111] mb-1"
                     style={{ fontFamily: 'var(--font-alexandria)' }}>Your address</h2>
-                <p className="text-sm text-gray-400">Fiscal and shipping addresses for your orders.</p>
+                <p className="text-sm text-[#111]">Fiscal and shipping addresses for your orders.</p>
               </div>
               <div className="space-y-4">
-                <div className="bg-white border border-gray-200 rounded-2xl p-5">
-                  <div className="text-[10px] font-black tracking-[0.15em] uppercase text-gray-400 mb-4">Fiscal address</div>
+                <div className="bg-white border border-[#111] rounded-2xl p-5">
+                  <div className="text-[10px] font-black tracking-[0.15em] uppercase text-[#111] mb-4">Fiscal address</div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="sm:col-span-2">
                       <label className={labelCls}>Street {req}</label>
@@ -329,17 +329,17 @@ export default function OnboardingPage() {
                     </div>
                   </div>
                 </div>
-                <div className="bg-white border border-gray-200 rounded-2xl p-5">
+                <div className="bg-white border border-[#111] rounded-2xl p-5">
                   <div className="flex items-center justify-between mb-4">
-                    <div className="text-[10px] font-black tracking-[0.15em] uppercase text-gray-400">Shipping address</div>
+                    <div className="text-[10px] font-black tracking-[0.15em] uppercase text-[#111]">Shipping address</div>
                     <label className="flex items-center gap-2 cursor-pointer select-none">
                       <input type="checkbox" checked={form.same_address} onChange={e => set('same_address', e.target.checked)}
-                        className="w-4 h-4 rounded border-gray-300 text-[#D93A35] cursor-pointer" />
-                      <span className="text-xs text-gray-500">Same as fiscal</span>
+                        className="w-4 h-4 rounded border-[#111] text-[#D93A35] cursor-pointer" />
+                      <span className="text-xs text-[#111]">Same as fiscal</span>
                     </label>
                   </div>
                   {form.same_address ? (
-                    <p className="text-sm text-gray-400 italic">Using fiscal address for shipments.</p>
+                    <p className="text-sm text-[#111] italic">Using fiscal address for shipments.</p>
                   ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="sm:col-span-2">
@@ -373,11 +373,11 @@ export default function OnboardingPage() {
           {step === 3 && (
             <div>
               <div className="mb-6">
-                <h2 className="text-xl font-black tracking-tight text-gray-900 mb-1"
+                <h2 className="text-xl font-black tracking-tight text-[#111] mb-1"
                     style={{ fontFamily: 'var(--font-alexandria)' }}>Business profile</h2>
-                <p className="text-sm text-gray-400">Help us understand your business. All fields are optional.</p>
+                <p className="text-sm text-[#111]">Help us understand your business. All fields are optional.</p>
               </div>
-              <div className="bg-white border border-gray-200 rounded-2xl p-5">
+              <div className="bg-white border border-[#111] rounded-2xl p-5">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className={labelCls}>Customer type</label>
@@ -419,9 +419,9 @@ export default function OnboardingPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                 </svg>
               </div>
-              <h2 className="text-2xl font-black tracking-tight text-gray-900 mb-3"
+              <h2 className="text-2xl font-black tracking-tight text-[#111] mb-3"
                   style={{ fontFamily: 'var(--font-alexandria)' }}>You're all set!</h2>
-              <p className="text-gray-500 text-base mb-8 max-w-sm mx-auto">
+              <p className="text-[#111] text-base mb-8 max-w-sm mx-auto">
                 Your profile is complete. You can now browse the catalogue and place orders.
               </p>
               <button onClick={() => { window.location.href = '/portal' }}
@@ -441,7 +441,7 @@ export default function OnboardingPage() {
           {step > 0 && step < 4 && (
             <div className="mt-6 flex items-center justify-between">
               <button onClick={() => { setError(''); setStep(s => s - 1) }}
-                className="px-5 py-2.5 bg-white border border-gray-200 text-sm font-semibold text-gray-500 rounded-xl hover:border-gray-300 transition-colors">
+                className="px-5 py-2.5 bg-white border border-[#111] text-sm font-semibold text-[#111] rounded-xl hover:border-[#111] transition-colors">
                 ← Back
               </button>
               {step < 3 ? (

@@ -24,104 +24,76 @@ export default function LoginPage() {
     const { data, error: authError } = await supabaseClient.auth.signInWithPassword({ email, password });
     if (authError || !data.user) {
       setError('Incorrect credentials. Please check your email and password.');
-      setLoading(false);
-      return;
+      setLoading(false); return;
     }
     const role = data.user.user_metadata?.role as string | undefined;
-    if (!role) {
-      setError('This user has no role assigned. Contact the administrator.');
-      setLoading(false);
-      return;
-    }
-    if (role === 'admin' || role === 'manager' || role === 'viewer') {
-      router.push('/dashboard');
-    } else if (role === 'customer') {
-      router.push('/portal');
-    } else {
-      setError(`Unknown role: ${role}. Contact the administrator.`);
-      setLoading(false);
-      return;
-    }
+    if (!role) { setError('This user has no role assigned. Contact the administrator.'); setLoading(false); return; }
+    if (role === 'admin' || role === 'manager' || role === 'viewer') router.push('/dashboard');
+    else if (role === 'customer') router.push('/portal');
+    else { setError(`Unknown role: ${role}. Contact the administrator.`); setLoading(false); return; }
     router.refresh();
   }
 
   return (
-    <div className="min-h-screen flex bg-[#D93A35]">
+    <div style={{ minHeight: '100vh', display: 'flex', background: '#D93A35' }}>
       {/* LEFT — brand panel */}
-      <div className="hidden md:flex w-1/2 flex-col items-center justify-center p-12 relative overflow-hidden">
-        <div className="relative z-10 flex flex-col items-center justify-center">
-          <img src="/FR_ICON_W.svg" alt="Firma Rollers Logo" className="w-24 h-auto mb-6" />
-          <div className="text-white text-[11px] font-black tracking-[0.4em] uppercase mb-1 opacity-80"
-               style={{ fontFamily: 'var(--font-alexandria)' }}>FIRMA ROLLERS</div>
-          <div className="text-white text-5xl font-black tracking-widest"
-               style={{ fontFamily: 'var(--font-alexandria)' }}>B2B</div>
-          <div className="text-white/60 text-xs mt-4 tracking-widest uppercase font-medium">Management Platform</div>
+      <div style={{ width: '50%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 48 }}
+           className="fr-login-left">
+        <img src="/FR_ICON_W.svg" alt="Firma Rollers" style={{ width: 96, height: 'auto', marginBottom: 24 }} />
+        <div style={{ color: '#fff', fontFamily: 'var(--font-sans)', fontSize: 11, fontWeight: 900, letterSpacing: '0.4em', textTransform: 'uppercase', opacity: 0.8, marginBottom: 4 }}>
+          FIRMA ROLLERS
         </div>
+        <div style={{ color: '#fff', fontFamily: 'var(--font-sans)', fontWeight: 900, fontSize: 48, letterSpacing: '0.2em' }}>B2B</div>
+        <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: 11, letterSpacing: '0.2em', textTransform: 'uppercase', marginTop: 16 }}>Management Platform</div>
       </div>
 
-      {/* RIGHT — form panel */}
-      <div className="flex-1 flex items-center justify-center bg-white p-8">
-        <div className="w-full max-w-[360px]">
-
-          {/* Mobile brand */}
-          <div className="md:hidden text-center mb-8">
-            <img src="/FR_ICON_B.svg" alt="Firma Rollers Logo" className="w-16 h-auto mx-auto mb-3" />
-            <div className="text-2xl font-black tracking-widest text-gray-900"
-                 style={{ fontFamily: 'var(--font-alexandria)' }}>B2B</div>
+      {/* RIGHT — form */}
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff', padding: 32 }}>
+        <div style={{ width: '100%', maxWidth: 360 }}>
+          <div className="fr-login-mobile" style={{ display: 'none', textAlign: 'center', marginBottom: 32 }}>
+            <img src="/FR_ICON_B.svg" alt="Firma Rollers" style={{ width: 64, height: 'auto', margin: '0 auto 12px' }} />
+            <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 900, fontSize: 24, letterSpacing: '0.2em' }}>B2B</div>
           </div>
+          <style>{`@media(max-width:767px){.fr-login-left{display:none!important}.fr-login-mobile{display:block!important}}`}</style>
 
-          <h2 className="text-2xl font-black tracking-wide text-gray-900 mb-1"
-              style={{ fontFamily: 'var(--font-alexandria)' }}>Sign In</h2>
-          <p className="text-sm text-gray-400 mb-8">Internal panel · Administrators only</p>
+          <h2 style={{ fontFamily: 'var(--font-sans)', fontWeight: 900, fontSize: 24, letterSpacing: '0.05em', color: '#111', marginBottom: 4 }}>Sign In</h2>
+          <p style={{ fontSize: 13, color: '#111', marginBottom: 32 }}>Internal panel · Administrators only</p>
 
           {error && (
-            <div className="mb-5 px-3 py-2.5 bg-red-50 border border-red-200 rounded-lg text-sm text-[#D93A35]">
+            <div style={{ marginBottom: 20, padding: '10px 14px', border: '1px solid #D93A35', fontFamily: 'var(--font-mono)', fontSize: 11, color: '#D93A35' }}>
               {error}
             </div>
           )}
 
-          <div className="space-y-4">
-            <div className="space-y-1.5">
-              <label className="text-[11px] font-bold tracking-[0.1em] uppercase text-gray-400">Email</label>
-              <input
-                type="email" value={email} onChange={(e) => setEmail(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
-                placeholder="admin@firmarollers.com"
-                className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-[#D93A35] outline-none transition-colors"
-              />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <label className="fr-label">Email</label>
+              <input type="email" value={email} onChange={e => setEmail(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleLogin()}
+                placeholder="admin@firmarollers.com" />
             </div>
 
-            <div className="space-y-1.5">
-              <label className="text-[11px] font-bold tracking-[0.1em] uppercase text-gray-400">Password</label>
-              <div className="relative">
-                <input
-                  type={showPwd ? 'text' : 'password'}
-                  value={password} onChange={(e) => setPassword(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
-                  placeholder="••••••••"
-                  className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 pr-10 text-sm text-gray-900 placeholder-gray-400 focus:border-[#D93A35] outline-none transition-colors"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPwd(v => !v)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 transition-colors"
-                  aria-label={showPwd ? 'Hide password' : 'Show password'}
-                >
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <label className="fr-label">Password</label>
+              <div style={{ position: 'relative' }}>
+                <input type={showPwd ? 'text' : 'password'} value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && handleLogin()}
+                  placeholder="••••••••" style={{ paddingRight: 40 }} />
+                <button type="button" onClick={() => setShowPwd(v => !v)}
+                  style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', boxShadow: 'none', padding: 4, color: '#111', minHeight: 'auto' }}
+                  aria-label={showPwd ? 'Hide password' : 'Show password'}>
                   {showPwd ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
             </div>
 
-            <div className="flex justify-end -mt-1">
-              <a href="/forgot-password" className="text-xs text-gray-400 hover:text-[#D93A35] transition-colors">
-                Forgot password?
-              </a>
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <a href="/forgot-password" className="fr-label" style={{ color: '#111', textDecoration: 'none' }}>Forgot password?</a>
             </div>
 
-            <button
-              onClick={handleLogin} disabled={loading || !email || !password}
-              className="w-full py-3 bg-[#D93A35] text-white text-sm font-bold rounded-lg hover:bg-[#b52e2a] disabled:opacity-40 disabled:cursor-not-allowed transition-colors mt-2"
-            >
+            <button onClick={handleLogin} disabled={loading || !email || !password} className="btn-primary"
+              style={{ width: '100%', justifyContent: 'center', padding: '12px 16px' }}>
               {loading ? 'Signing in…' : 'Sign In'}
             </button>
           </div>

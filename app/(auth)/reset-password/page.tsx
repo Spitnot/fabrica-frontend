@@ -114,7 +114,7 @@ export default function ResetPasswordPage() {
           <div className="md:hidden text-center mb-8">
             <img src="/FR_ICON_B.svg" alt="Firma Rollers" className="w-16 h-auto mx-auto mb-3" />
             <div
-              className="text-2xl font-black tracking-widest text-gray-900"
+              className="text-2xl font-black tracking-widest text-[#111]"
               style={{ fontFamily: 'var(--font-alexandria)' }}
             >
               B2B
@@ -122,12 +122,12 @@ export default function ResetPasswordPage() {
           </div>
 
           <h2
-            className="text-2xl font-black tracking-wide text-gray-900 mb-1"
+            className="text-2xl font-black tracking-wide text-[#111] mb-1"
             style={{ fontFamily: 'var(--font-alexandria)' }}
           >
             Set New Password
           </h2>
-          <p className="text-sm text-gray-400 mb-8">Enter and confirm your new password.</p>
+          <p className="text-sm text-[#111] mb-8">Enter and confirm your new password.</p>
 
           {/* Invalid link */}
           {invalidLink && (
@@ -155,7 +155,7 @@ export default function ResetPasswordPage() {
 
               {/* Password */}
               <div className="space-y-1.5">
-                <label className="text-[11px] font-bold tracking-[0.1em] uppercase text-gray-400">
+                <label className="text-[11px] font-bold tracking-[0.1em] uppercase text-[#111]">
                   New Password
                 </label>
                 <div className="relative">
@@ -164,14 +164,14 @@ export default function ResetPasswordPage() {
                     type={showPassword ? 'text' : 'password'}
                     autoComplete="new-password"
                     placeholder="••••••••"
-                    className={`w-full bg-gray-50 border px-3 py-2.5 pr-10 text-sm text-gray-900
+                    className={`w-full bg-white border px-3 py-2.5 pr-10 text-sm text-[#111]
                       placeholder-gray-400 outline-none transition-colors
-                      ${errors.password ? 'border-[#D93A35]' : 'border-gray-200 focus:border-[#D93A35]'}`}
+                      ${errors.password ? 'border-[#D93A35]' : 'border-[#111] focus:border-[#D93A35]'}`}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(v => !v)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 transition-colors"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#111] hover:text-[#111] transition-colors"
                     aria-label={showPassword ? 'Hide password' : 'Show password'}
                   >
                     {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -185,7 +185,7 @@ export default function ResetPasswordPage() {
                       {[1, 2, 3, 4].map(i => (
                         <div
                           key={i}
-                          className={`h-1 flex-1 transition-colors ${i <= strength.score ? strength.color : 'bg-gray-200'}`}
+                          className={`h-1 flex-1 transition-colors ${i <= strength.score ? strength.color : 'bg-[#111]'}`}
                         />
                       ))}
                     </div>
@@ -200,7 +200,7 @@ export default function ResetPasswordPage() {
 
               {/* Confirm password */}
               <div className="space-y-1.5">
-                <label className="text-[11px] font-bold tracking-[0.1em] uppercase text-gray-400">
+                <label className="text-[11px] font-bold tracking-[0.1em] uppercase text-[#111]">
                   Confirm Password
                 </label>
                 <div className="relative">
@@ -209,14 +209,14 @@ export default function ResetPasswordPage() {
                     type={showConfirm ? 'text' : 'password'}
                     autoComplete="new-password"
                     placeholder="••••••••"
-                    className={`w-full bg-gray-50 border px-3 py-2.5 pr-10 text-sm text-gray-900
+                    className={`w-full bg-white border px-3 py-2.5 pr-10 text-sm text-[#111]
                       placeholder-gray-400 outline-none transition-colors
-                      ${errors.confirm_password ? 'border-[#D93A35]' : 'border-gray-200 focus:border-[#D93A35]'}`}
+                      ${errors.confirm_password ? 'border-[#D93A35]' : 'border-[#111] focus:border-[#D93A35]'}`}
                   />
                   <button
                     type="button"
                     onClick={() => setShowConfirm(v => !v)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 transition-colors"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#111] hover:text-[#111] transition-colors"
                     aria-label={showConfirm ? 'Hide password' : 'Show password'}
                   >
                     {showConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -237,10 +237,10 @@ export default function ResetPasswordPage() {
                     { label: 'One number',                  pass: /[0-9]/.test(password) },
                   ].map(({ label, pass }) => (
                     <li key={label} className="flex items-center gap-2 text-[11px]">
-                      <span className={`font-black ${pass ? 'text-[#0DA265]' : 'text-gray-300'}`}>
+                      <span className={`font-black ${pass ? 'text-[#0DA265]' : 'text-[#111]'}`}>
                         {pass ? '✓' : '○'}
                       </span>
-                      <span className={pass ? 'text-[#0DA265] font-bold' : 'text-gray-400'}>
+                      <span className={pass ? 'text-[#0DA265] font-bold' : 'text-[#111]'}>
                         {label}
                       </span>
                     </li>
