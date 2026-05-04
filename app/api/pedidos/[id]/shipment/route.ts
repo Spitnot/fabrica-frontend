@@ -51,6 +51,7 @@ export async function POST(req: NextRequest, { params }: Props) {
         service_id,
         from: {
           name:     FROM_NAME,
+          surname:  process.env.PACKLINK_FROM_SURNAME ?? 'FIRMA ROLLERS',
           street1:  FROM_STREET,
           city:     FROM_CITY,
           zip_code: FROM_POSTAL_CODE,
@@ -59,7 +60,8 @@ export async function POST(req: NextRequest, { params }: Props) {
           email:    FROM_EMAIL,
         },
         to: {
-          name:    recipientName,
+          name:    customer?.first_name ?? recipientName,
+          surname: customer?.last_name  ?? '',
           company: customer?.company_name,
           street1:    shipStreet,
           city:       shipCity,

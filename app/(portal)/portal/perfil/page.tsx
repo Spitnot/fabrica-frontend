@@ -1,5 +1,11 @@
 'use client';
 
+// ─────────────────────────────────────────────────────────────
+// PORTAL · MY PROFILE
+// Storefront-faithful redesign. Logic preserved 1:1 from FIRMA_FRESH.
+// Surfaces: white paper, 1px ink hairlines, mono labels, red accent.
+// ─────────────────────────────────────────────────────────────
+
 import { useState, useEffect } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import { supabaseClient } from '@/lib/supabase/client';
@@ -39,57 +45,115 @@ function splitPhone(telefono: string) {
   return { prefix: '+34', number: telefono };
 }
 
-function Feedback({ fb }: { fb: { type: 'success' | 'error'; msg: string } | null }) {
-  if (!fb) return null;
+// ─── Password strength ─────────────────────────────────────
+
+function getStrength(password: string) {
+  let score = 0;
+  if (password.length >= 8) score++;
+  if (password.length >= 12) score++;
+  if (/[A-Z]/.test(password) && /[a-z]/.test(password)) score++;
+  if (/[0-9]/.test(password) && /[^A-Za-z0-9]/.test(password)) score++;
+  const levels = [
+    { label: 'Too weak', color: '#D93A35' },
+    { label: 'Weak', color: '#E6883E' },
+    { label: 'Fair', color: '#F6E451' },
+    { label: 'Strong', color: '#0DA265' },
+    { label: 'Very strong', color: '#0DA265' },
+  ];
+  return { score, ...levels[Math.min(score, levels.length - 1)] };
+}
+
+// ─── Visual atoms ──────────────────────────────────────────
+
+const ink = '#000';
+const muted = '#6a6660';
+
+function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
     <div style={{
-      padding: '8px 12px', fontSize: 12, fontWeight: 600,
-      background: fb.type === 'success' ? '#f0fdf4' : '#fff8f8',
-      border: `1px solid ${fb.type === 'success' ? '#0DA265' : '#D93A35'}`,
-      color: fb.type === 'success' ? '#0DA265' : '#D93A35',
+      fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
+      fontSize: 10, fontWeight: 700, letterSpacing: '0.22em',
+      textTransform: 'uppercase', color: ink,
+    }}>{children}</div>
+  );
+}
+
+function FieldLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <label style={{
+      fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
+      fontSize: 10, fontWeight: 700, letterSpacing: '0.18em',
+      textTransform: 'uppercase', color: muted,
+    }}>{children}</label>
+  );
+}
+
+function InfoRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div style={{
+      display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
+      gap: 12, padding: '10px 0', borderBottom: '1px solid #e5e2da',
     }}>
-      {fb.msg}
+      <span style={{
+        fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
+        fontSize: 11, color: muted, letterSpacing: '0.06em',
+      }}>{label}</span>
+      <span style={{
+        fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
+        fontSize: 13, color: ink, fontWeight: 500, textAlign: 'right',
+      }}>{value || '—'}</span>
     </div>
   );
 }
 
-// ─── Password strength ────────────────────────────────────
-
-function getStrength(password: string) {
-  let score = 0;
-  if (password.length >= 8)  score++;
-  if (password.length >= 12) score++;
-  if (/[A-Z]/.test(password) && /[a-z]/.test(password)) score++;
-  if (/[0-9]/.test(password) && /[^A-Za-z0-9]/.test(password)) score++;
-
-  const levels = [
-    { label: 'Too weak',    color: '#D93A35' },
-    { label: 'Weak',        color: '#E6883E' },
-    { label: 'Fair',        color: '#F6E451' },
-    { label: 'Strong',      color: '#0DA265' },
-    { label: 'Very strong', color: '#0DA265' },
-  ];
-  return { score, ...levels[Math.min(score, levels.length - 1)] };
+function Feedback({ fb }: { fb: { type: 'success' | 'error'; msg: string } | null }) {
+  if (!fb) return null;
+  const isOk = fb.type === 'success';
+  return (
+    <div style={{
+      padding: '10px 12px',
+      fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
+      fontSize: 11, fontWeight: 600, letterSpacing: '0.06em',
+      background: isOk ? '#0DA265' : '#D93A35',
+      color: '#fff',
+    }}>
+      {isOk ? '● ' : '! '}{fb.msg}
+    </div>
+  );
 }
 
 function PasswordRequirements({ password }: { password: string }) {
   if (!password.length) return null;
   const checks = [
     { label: 'At least 8 characters', pass: password.length >= 8 },
-    { label: 'One uppercase letter',  pass: /[A-Z]/.test(password) },
-    { label: 'One number',            pass: /[0-9]/.test(password) },
+    { label: 'One uppercase letter', pass: /[A-Z]/.test(password) },
+    { label: 'One number', pass: /[0-9]/.test(password) },
   ];
   return (
-    <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 3 }}>
+    <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
       {checks.map(({ label, pass }) => (
-        <li key={label} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11 }}>
-          <span style={{ fontWeight: 700, color: pass ? '#0DA265' : '#ccc' }}>{pass ? '✓' : '○'}</span>
-          <span style={{ color: pass ? '#0DA265' : '#aaa', fontWeight: pass ? 600 : 400 }}>{label}</span>
+        <li key={label} style={{
+          display: 'flex', alignItems: 'center', gap: 8,
+          fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
+          fontSize: 11,
+        }}>
+          <span style={{ fontWeight: 700, color: pass ? '#0DA265' : '#cfcbc0' }}>{pass ? '✓' : '○'}</span>
+          <span style={{ color: pass ? ink : muted, fontWeight: pass ? 600 : 400 }}>{label}</span>
         </li>
       ))}
     </ul>
   );
 }
+
+const inp: React.CSSProperties = {
+  fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
+  fontSize: 13, fontWeight: 500,
+  border: `1px solid ${ink}`, borderRadius: 0,
+  padding: '10px 12px', background: '#fff', color: ink,
+  outline: 'none', width: '100%',
+};
+
+// ─── Page ──────────────────────────────────────────────────
 
 export default function PerfilPage() {
   const [profile, setProfile] = useState<CustomerProfile | null>(null);
@@ -120,12 +184,12 @@ export default function PerfilPage() {
         setProfile(data);
         const { prefix, number } = splitPhone(data.telefono ?? '');
         setDraft({
-          contacto_nombre: data.first_name ? `${data.first_name} ${data.last_name ?? ""}`.trim() : data.contacto_nombre ?? "",
+          contacto_nombre: data.first_name ? `${data.first_name} ${data.last_name ?? ''}`.trim() : data.contacto_nombre ?? '',
           telefono_prefix: prefix, telefono_number: number,
-          street: data.ship_street1 ?? data.direccion_envio?.street ?? "",
-          city: data.ship_city ?? data.direccion_envio?.city ?? "",
-          postal_code: data.ship_postal_code ?? data.direccion_envio?.postal_code ?? "",
-          country: data.ship_country ?? data.direccion_envio?.country ?? "",
+          street: data.ship_street1 ?? data.direccion_envio?.street ?? '',
+          city: data.ship_city ?? data.direccion_envio?.city ?? '',
+          postal_code: data.ship_postal_code ?? data.direccion_envio?.postal_code ?? '',
+          country: data.ship_country ?? data.direccion_envio?.country ?? '',
         });
       });
   }, []);
@@ -136,12 +200,12 @@ export default function PerfilPage() {
     if (!profile) return;
     const { prefix, number } = splitPhone(profile.telefono ?? '');
     setDraft({
-      contacto_nombre: profile.first_name ? `${profile.first_name} ${profile.last_name ?? ""}`.trim() : profile.contacto_nombre ?? "",
+      contacto_nombre: profile.first_name ? `${profile.first_name} ${profile.last_name ?? ''}`.trim() : profile.contacto_nombre ?? '',
       telefono_prefix: prefix, telefono_number: number,
-      street: profile.ship_street1 ?? profile.direccion_envio?.street ?? "",
-      city: profile.ship_city ?? profile.direccion_envio?.city ?? "",
-      postal_code: profile.ship_postal_code ?? profile.direccion_envio?.postal_code ?? "",
-      country: profile.ship_country ?? profile.direccion_envio?.country ?? "",
+      street: profile.ship_street1 ?? profile.direccion_envio?.street ?? '',
+      city: profile.ship_city ?? profile.direccion_envio?.city ?? '',
+      postal_code: profile.ship_postal_code ?? profile.direccion_envio?.postal_code ?? '',
+      country: profile.ship_country ?? profile.direccion_envio?.country ?? '',
     });
     setEditing(false);
     setProfileFeedback(null);
@@ -152,7 +216,7 @@ export default function PerfilPage() {
       setProfileFeedback({ type: 'error', msg: 'Contact name is required.' }); return;
     }
     if (!draft.postal_code.trim() || !draft.country.trim()) {
-      setProfileFeedback({ type: 'error', msg: 'Postal code and country are required for shipping.' }); return;
+      setProfileFeedback({ type: 'error', msg: 'Postal code and country are required.' }); return;
     }
     setSavingProfile(true);
     setProfileFeedback(null);
@@ -212,158 +276,219 @@ export default function PerfilPage() {
     }
   }
 
-  const inp: React.CSSProperties = {
-    fontFamily: 'var(--font-main)', fontSize: 13, border: '1px solid #111',
-    borderRadius: 0, padding: '9px 10px', background: '#fff', color: '#111', outline: 'none', width: '100%',
-  };
+  // ─── Card primitive ────────────────────────────────────
 
-  const lbl: React.CSSProperties = {
-    fontSize: 8, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#aaa',
-  };
-
-  function CardHeader({ title, onEdit }: { title: string; onEdit?: () => void }) {
+  function Card({ title, action, children }: { title: string; action?: React.ReactNode; children: React.ReactNode }) {
     return (
-      <div style={{ padding: '11px 16px', borderBottom: '1px solid #eee', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.22em', textTransform: 'uppercase', color: '#111' }}>{title}</span>
-        {onEdit && (
-          <div style={{ display: 'flex', gap: 12 }}>
-            {editing ? (
-              <>
-                <button onClick={cancelEdit} style={{ background: 'transparent', border: 'none', boxShadow: 'none', fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#aaa', padding: 0 }}>Cancel</button>
-                <button onClick={saveProfile} disabled={savingProfile} style={{ background: 'transparent', border: 'none', boxShadow: 'none', fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#D93A35', padding: 0 }}>
-                  {savingProfile ? 'Saving…' : 'Save'}
-                </button>
-              </>
-            ) : (
-              <button onClick={startEdit} style={{ background: 'transparent', border: 'none', boxShadow: 'none', fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#D93A35', padding: 0 }}>Edit</button>
-            )}
-          </div>
-        )}
-      </div>
+      <section style={{ background: '#fff', border: `1px solid ${ink}` }}>
+        <div style={{
+          padding: '12px 16px',
+          borderBottom: `1px solid ${ink}`,
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        }}>
+          <SectionTitle>{title}</SectionTitle>
+          {action}
+        </div>
+        <div style={{ padding: '16px' }}>{children}</div>
+      </section>
     );
   }
 
-  function InfoRow({ label, value }: { label: string; value: string }) {
+  function ActionBtn({ onClick, danger, children, type, disabled }: {
+    onClick?: () => void; danger?: boolean; children: React.ReactNode;
+    type?: 'button' | 'submit'; disabled?: boolean;
+  }) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8, padding: '5px 0', borderBottom: '1px solid #f5f5f5' }}>
-        <span style={{ fontSize: 11, color: '#aaa', flexShrink: 0 }}>{label}</span>
-        <span style={{ fontSize: 11, color: '#555', fontFamily: 'monospace', textAlign: 'right' }}>{value || '—'}</span>
-      </div>
+      <button
+        type={type ?? 'button'}
+        onClick={onClick}
+        disabled={disabled}
+        style={{
+          background: 'transparent', border: 'none', padding: 0,
+          cursor: disabled ? 'default' : 'pointer',
+          fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
+          fontSize: 10, fontWeight: 700, letterSpacing: '0.18em',
+          textTransform: 'uppercase',
+          color: danger ? '#D93A35' : ink,
+          textDecoration: 'underline',
+          textUnderlineOffset: 3,
+          textDecorationThickness: 1.5,
+          opacity: disabled ? 0.4 : 1,
+        }}
+      >{children}</button>
     );
   }
 
   function LinkCard({ href, title, subtitle }: { href: string; title: string; subtitle: string }) {
     return (
-      <a href={href} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
-        <div className="card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '12px 16px', cursor: 'pointer' }}>
+      <a
+        href={href} target="_blank" rel="noopener noreferrer"
+        style={{ textDecoration: 'none', display: 'block' }}
+      >
+        <div style={{
+          background: '#fff', border: `1px solid ${ink}`,
+          padding: '14px 16px',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+        }}>
           <div>
-            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#111', marginBottom: 2 }}>{title}</div>
-            <div style={{ fontSize: 11, color: '#aaa' }}>{subtitle}</div>
+            <div style={{
+              fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
+              fontSize: 11, fontWeight: 700, letterSpacing: '0.18em',
+              textTransform: 'uppercase', color: ink,
+            }}>{title}</div>
+            <div style={{
+              fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
+              fontSize: 11, color: muted, marginTop: 4,
+            }}>{subtitle}</div>
           </div>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#aaa" strokeWidth="2">
-            <path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
-          </svg>
+          <span style={{ fontSize: 18, color: ink }} aria-hidden>↗</span>
         </div>
       </a>
     );
   }
 
-  return (
-    <div style={{ maxWidth: 600, margin: '0 auto', padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
+  // ─── Render ────────────────────────────────────────────
 
-      <div style={{ paddingBottom: 16, borderBottom: '1px solid #111', marginBottom: 4 }}>
-        <div className="page-title">My Profile</div>
+  return (
+    <div style={{ maxWidth: 720, margin: '0 auto', padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+
+      {/* Header */}
+      <div style={{ borderBottom: `2px solid ${ink}`, paddingBottom: 16, marginBottom: 4 }}>
+        <div style={{
+          fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
+          fontSize: 10, fontWeight: 700, letterSpacing: '0.22em',
+          textTransform: 'uppercase', color: muted,
+        }}>Account</div>
+        <h1 style={{
+          margin: '8px 0 0',
+          fontFamily: 'var(--font-display, Alexandria, sans-serif)',
+          fontWeight: 900, fontSize: 56, lineHeight: 0.92,
+          letterSpacing: '-0.03em', textTransform: 'uppercase', color: ink,
+        }}>My Profile<span style={{ color: '#D93A35' }}>.</span></h1>
+        {profile?.company_name && (
+          <div style={{
+            marginTop: 12,
+            fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
+            fontSize: 12, color: ink,
+          }}>
+            {profile.company_name}
+            {profile.tipo_cliente === 'wholesale' && (
+              <span style={{
+                marginLeft: 10,
+                background: '#876693', color: '#fff', padding: '3px 8px',
+                fontSize: 10, fontWeight: 700, letterSpacing: '0.14em',
+              }}>WHOLESALE</span>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Account card */}
-      <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-        <CardHeader title="Account" onEdit={startEdit} />
-        <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 0 }}>
-          <InfoRow label="Company" value={profile?.company_name ?? ''} />
-          <InfoRow label="Email" value={profile?.email ?? ''} />
-          <InfoRow label="Tax ID" value={profile?.nif_cif ?? ''} />
-          <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid #f0f0f0', display: 'flex', flexDirection: 'column', gap: 0 }}>
-            {!editing ? (
-              <>
-                <InfoRow label="Name" value={profile?.first_name ? `${profile.first_name} ${profile.last_name ?? ''}`.trim() : profile?.contacto_nombre ?? ''} />
-                <InfoRow label="Phone" value={profile?.telefono ?? ''} />
-              </>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, paddingTop: 4 }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                  <label style={lbl}>Name *</label>
-                  <input type="text" value={draft.contacto_nombre}
-                    onChange={e => setDraft(d => ({ ...d, contacto_nombre: e.target.value }))}
-                    placeholder="Your name" style={inp} />
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                  <label style={lbl}>Phone</label>
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    <select value={draft.telefono_prefix}
-                      onChange={e => setDraft(d => ({ ...d, telefono_prefix: e.target.value }))}
-                      style={{ ...inp, width: 110, flexShrink: 0 }}>
-                      {PHONE_PREFIXES.map(p => <option key={p.code} value={p.code}>{p.label}</option>)}
-                    </select>
-                    <input type="tel" value={draft.telefono_number}
-                      onChange={e => setDraft(d => ({ ...d, telefono_number: e.target.value }))}
-                      placeholder="612 345 678" style={inp} />
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-          {profileFeedback && <div style={{ marginTop: 8 }}><Feedback fb={profileFeedback} /></div>}
-        </div>
-      </div>
-
-      {/* Shipping address card */}
-      <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-        <CardHeader title="Shipping Address" onEdit={startEdit} />
-        <div style={{ padding: '12px 16px' }}>
-          {!editing ? (
-            (profile?.ship_street1 || profile?.direccion_envio) ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-                <InfoRow label="Street" value={profile.ship_street1 ?? profile.direccion_envio?.street ?? ''} />
-                <InfoRow label="City" value={profile.ship_city ?? profile.direccion_envio?.city ?? ''} />
-                <InfoRow label="Postal code" value={profile.ship_postal_code ?? profile.direccion_envio?.postal_code ?? ''} />
-                <InfoRow label="Country" value={profile.ship_country ?? profile.direccion_envio?.country ?? ''} />
-              </div>
-            ) : (
-              <div style={{ fontSize: 12, color: '#aaa' }}>No shipping address on file.</div>
-            )
+      <Card
+        title="Account · Contact"
+        action={
+          editing ? (
+            <div style={{ display: 'flex', gap: 14 }}>
+              <ActionBtn onClick={cancelEdit}>Cancel</ActionBtn>
+              <ActionBtn onClick={saveProfile} danger disabled={savingProfile}>
+                {savingProfile ? 'Saving…' : 'Save'}
+              </ActionBtn>
+            </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <label style={lbl}>Street</label>
-                <input type="text" value={draft.street} onChange={e => setDraft(d => ({ ...d, street: e.target.value }))} placeholder="Gran Vía 14, 3º" style={inp} />
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                  <label style={lbl}>City</label>
-                  <input type="text" value={draft.city} onChange={e => setDraft(d => ({ ...d, city: e.target.value }))} placeholder="Madrid" style={inp} />
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                  <label style={lbl}>Postal code *</label>
-                  <input type="text" value={draft.postal_code} onChange={e => setDraft(d => ({ ...d, postal_code: e.target.value }))} placeholder="28013" style={inp} />
-                </div>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <label style={lbl}>Country *</label>
-                <input type="text" value={draft.country} onChange={e => setDraft(d => ({ ...d, country: e.target.value }))} placeholder="ES" style={inp} />
+            <ActionBtn onClick={startEdit} danger>Edit</ActionBtn>
+          )
+        }
+      >
+        <InfoRow label="COMPANY" value={profile?.company_name ?? ''} />
+        <InfoRow label="EMAIL" value={profile?.email ?? ''} />
+        <InfoRow label="TAX ID" value={profile?.nif_cif ?? ''} />
+
+        {!editing ? (
+          <>
+            <InfoRow label="NAME" value={profile?.first_name ? `${profile.first_name} ${profile.last_name ?? ''}`.trim() : profile?.contacto_nombre ?? ''} />
+            <InfoRow label="PHONE" value={profile?.telefono ?? ''} />
+          </>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14, paddingTop: 16 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <FieldLabel>Name *</FieldLabel>
+              <input type="text" value={draft.contacto_nombre}
+                onChange={e => setDraft(d => ({ ...d, contacto_nombre: e.target.value }))}
+                placeholder="Your name" style={inp} />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <FieldLabel>Phone</FieldLabel>
+              <div style={{ display: 'flex', gap: 6 }}>
+                <select value={draft.telefono_prefix}
+                  onChange={e => setDraft(d => ({ ...d, telefono_prefix: e.target.value }))}
+                  style={{ ...inp, width: 130, flexShrink: 0 }}>
+                  {PHONE_PREFIXES.map(p => <option key={p.code} value={p.code}>{p.label}</option>)}
+                </select>
+                <input type="tel" value={draft.telefono_number}
+                  onChange={e => setDraft(d => ({ ...d, telefono_number: e.target.value }))}
+                  placeholder="612 345 678" style={inp} />
               </div>
             </div>
-          )}
-        </div>
-      </div>
+          </div>
+        )}
 
-      {/* Brand assets */}
+        {profileFeedback && <div style={{ marginTop: 12 }}><Feedback fb={profileFeedback} /></div>}
+      </Card>
+
+      {/* Shipping address */}
+      <Card title="Shipping Address">
+        {!editing ? (
+          (profile?.ship_street1 || profile?.direccion_envio) ? (
+            <>
+              <InfoRow label="STREET" value={profile.ship_street1 ?? profile.direccion_envio?.street ?? ''} />
+              <InfoRow label="CITY" value={profile.ship_city ?? profile.direccion_envio?.city ?? ''} />
+              <InfoRow label="POSTAL" value={profile.ship_postal_code ?? profile.direccion_envio?.postal_code ?? ''} />
+              <InfoRow label="COUNTRY" value={profile.ship_country ?? profile.direccion_envio?.country ?? ''} />
+            </>
+          ) : (
+            <div style={{
+              fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
+              fontSize: 12, color: muted,
+            }}>No shipping address on file.</div>
+          )
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <FieldLabel>Street</FieldLabel>
+              <input type="text" value={draft.street}
+                onChange={e => setDraft(d => ({ ...d, street: e.target.value }))}
+                placeholder="Gran Vía 14, 3º" style={inp} />
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <FieldLabel>City</FieldLabel>
+                <input type="text" value={draft.city}
+                  onChange={e => setDraft(d => ({ ...d, city: e.target.value }))}
+                  placeholder="Madrid" style={inp} />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <FieldLabel>Postal *</FieldLabel>
+                <input type="text" value={draft.postal_code}
+                  onChange={e => setDraft(d => ({ ...d, postal_code: e.target.value }))}
+                  placeholder="28013" style={inp} />
+              </div>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <FieldLabel>Country *</FieldLabel>
+              <input type="text" value={draft.country}
+                onChange={e => setDraft(d => ({ ...d, country: e.target.value }))}
+                placeholder="ES" style={inp} />
+            </div>
+          </div>
+        )}
+      </Card>
+
+      {/* External link cards */}
       <LinkCard
         href="https://drive.google.com/drive/u/4/folders/1ViJQ_IF1PyuzF779usnfcHmHkshhggUx"
         title="Brand Assets"
         subtitle="Logos, fonts and graphic materials"
       />
-
-      {/* Export docs */}
       <LinkCard
         href="https://drive.google.com/drive/folders/1SdTWawU8cUDBqlZ940ZRJvdR5txKBbmS?usp=drive_link"
         title="Export Documentation"
@@ -371,25 +496,29 @@ export default function PerfilPage() {
       />
 
       {/* Security */}
-      <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-        <div style={{ padding: '11px 16px', borderBottom: '1px solid #eee', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.22em', textTransform: 'uppercase', color: '#111' }}>Security</span>
-          <button
+      <Card
+        title="Security · Password"
+        action={
+          <ActionBtn
+            danger
             onClick={() => { setShowPwd(v => !v); setPwdFeedback(null); setNewPwd(''); setConfirmPwd(''); }}
-            style={{ background: 'transparent', border: 'none', boxShadow: 'none', fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#D93A35', padding: 0 }}
           >
-            {showPwd ? 'Cancel' : 'Change password'}
-          </button>
-        </div>
-
+            {showPwd ? 'Cancel' : 'Change'}
+          </ActionBtn>
+        }
+      >
         {!showPwd ? (
-          <div style={{ padding: '12px 16px', fontSize: 12, color: '#aaa' }}>Password managed securely.</div>
+          <div style={{
+            fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
+            fontSize: 12, color: muted,
+          }}>
+            Password managed securely. Change it any time.
+          </div>
         ) : (
-          <form onSubmit={savePassword} style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <form onSubmit={savePassword} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
 
-            {/* New password */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <label style={lbl}>New Password *</label>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <FieldLabel>New Password *</FieldLabel>
               <div style={{ position: 'relative' }}>
                 <input
                   type={showNewPwd ? 'text' : 'password'}
@@ -397,37 +526,42 @@ export default function PerfilPage() {
                   onChange={e => setNewPwd(e.target.value)}
                   placeholder="Minimum 8 characters"
                   autoComplete="new-password"
-                  style={{ ...inp, paddingRight: 36 }}
+                  style={{ ...inp, paddingRight: 40 }}
                 />
                 <button
                   type="button"
                   onClick={() => setShowNewPwd(v => !v)}
-                  style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: '#aaa', display: 'flex', alignItems: 'center' }}
+                  style={{
+                    position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
+                    background: 'none', border: 'none', padding: 0, cursor: 'pointer',
+                    color: muted, display: 'flex', alignItems: 'center',
+                  }}
                 >
-                  {showNewPwd ? <EyeOff size={15} /> : <Eye size={15} />}
+                  {showNewPwd ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
 
-              {/* Strength bar */}
               {newPwd.length > 0 && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, paddingTop: 2 }}>
-                  <div style={{ display: 'flex', gap: 3 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 4 }}>
+                  <div style={{ display: 'flex', gap: 4 }}>
                     {[1, 2, 3, 4].map(i => (
                       <div key={i} style={{
-                        height: 3, flex: 1,
-                        background: i <= strength.score ? strength.color : '#eee',
-                        transition: 'background 0.2s',
+                        height: 4, flex: 1,
+                        background: i <= strength.score ? strength.color : '#e5e2da',
                       }} />
                     ))}
                   </div>
-                  <span style={{ fontSize: 10, fontWeight: 700, color: strength.color }}>{strength.label}</span>
+                  <span style={{
+                    fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
+                    fontSize: 10, fontWeight: 700, letterSpacing: '0.14em',
+                    textTransform: 'uppercase', color: strength.color,
+                  }}>{strength.label}</span>
                 </div>
               )}
             </div>
 
-            {/* Confirm password */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <label style={lbl}>Confirm Password *</label>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <FieldLabel>Confirm Password *</FieldLabel>
               <div style={{ position: 'relative' }}>
                 <input
                   type={showConfirmPwd ? 'text' : 'password'}
@@ -435,29 +569,46 @@ export default function PerfilPage() {
                   onChange={e => setConfirmPwd(e.target.value)}
                   placeholder="Repeat new password"
                   autoComplete="new-password"
-                  style={{ ...inp, paddingRight: 36 }}
+                  style={{ ...inp, paddingRight: 40 }}
                 />
                 <button
                   type="button"
                   onClick={() => setShowConfirmPwd(v => !v)}
-                  style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: '#aaa', display: 'flex', alignItems: 'center' }}
+                  style={{
+                    position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
+                    background: 'none', border: 'none', padding: 0, cursor: 'pointer',
+                    color: muted, display: 'flex', alignItems: 'center',
+                  }}
                 >
-                  {showConfirmPwd ? <EyeOff size={15} /> : <Eye size={15} />}
+                  {showConfirmPwd ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
             </div>
 
-            {/* Requirements */}
             <PasswordRequirements password={newPwd} />
 
             <Feedback fb={pwdFeedback} />
 
-            <button type="submit" disabled={savingPwd} className="btn-primary" style={{ justifyContent: 'center', width: '100%' }}>
-              {savingPwd ? 'Saving…' : 'Update Password'}
+            <button
+              type="submit"
+              disabled={savingPwd}
+              style={{
+                width: '100%', justifyContent: 'center',
+                fontFamily: 'var(--font-display, Alexandria, sans-serif)',
+                fontWeight: 800, fontSize: 13,
+                padding: '14px 18px',
+                background: ink, color: '#fff',
+                border: `2px solid ${ink}`,
+                cursor: savingPwd ? 'default' : 'pointer',
+                textTransform: 'uppercase', letterSpacing: '0.04em',
+                opacity: savingPwd ? 0.6 : 1,
+              }}
+            >
+              {savingPwd ? 'Saving…' : 'Update Password →'}
             </button>
           </form>
         )}
-      </div>
+      </Card>
 
     </div>
   );

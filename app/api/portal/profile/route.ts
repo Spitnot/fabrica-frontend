@@ -15,8 +15,8 @@ export async function GET() {
   const { data, error } = await supabase
     .from('customers')
     .select(`
-      first_name, last_name, contacto_nombre,
-      company_name, email, telefono, telefono_e164, nif_cif, tipo_fiscal,
+      first_name, last_name,
+      company_name, email, telefono_e164, nif_cif, tipo_fiscal,
       nombre_comercial, tipo_empresa, numero_eori, fecha_constitucion,
       tipo_cliente, zona_distribucion, marcas_comercializadas,
       volumen_estimado, num_puntos_venta,
@@ -29,11 +29,9 @@ export async function GET() {
 
   if (error || !data) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-  // Normalize for frontend — expose as flat + legacy shape for compatibility
   const normalized = {
     ...data,
-    // Legacy shape so existing UI doesn't break during migration
-    contacto_nombre: (data.contacto_nombre ?? `${data.first_name ?? ''} ${data.last_name ?? ''}`.trim()) || null,
+    contacto_nombre: `${data.first_name ?? ''} ${data.last_name ?? ''}`.trim() || null,
     direccion_envio: {
       street:      data.ship_street1 ?? '',
       street2:     data.ship_street2 ?? '',
@@ -62,23 +60,16 @@ export async function PUT(req: NextRequest) {
   const body = await req.json()
   const updates: Record<string, unknown> = {}
 
-  // New flat fields
-  if ('first_name'  in body) updates.first_name  = body.first_name
-  if ('last_name'   in body) updates.last_name    = body.last_name
-  if ('telefono_e164' in body) updates.telefono_e164 = body.telefono_e164
+  if ('first_name'    in body) updates.first_name    = body.first_name
+  if ('last_name'     in body) updates.last_name      = body.last_name
+  if ('telefono_e164' in body) updates.telefono_e164  = body.telefono_e164
 
-  // Keep legacy contacto_nombre in sync
-  if ('contacto_nombre' in body) {
-    updates.contacto_nombre = body.contacto_nombre
-    // Auto-split if first/last not provided
-    if (!('first_name' in body)) {
-      const parts = (body.contacto_nombre ?? '').trim().split(' ')
-      updates.first_name = parts[0] ?? null
-      updates.last_name  = parts.slice(1).join(' ') || null
-    }
+  if ('contacto_nombre' in body && !('first_name' in body)) {
+    const parts = (body.contacto_nombre ?? '').trim().split(' ')
+    updates.first_name = parts[0] ?? null
+    updates.last_name  = parts.slice(1).join(' ') || null
   }
 
-  // Shipping address — accept both new flat and legacy JSON
   if (body.ship_street1 !== undefined) {
     updates.ship_street1     = body.ship_street1
     updates.ship_street2     = body.ship_street2     ?? null
@@ -87,14 +78,12 @@ export async function PUT(req: NextRequest) {
     updates.ship_postal_code = body.ship_postal_code ?? null
     updates.ship_country     = body.ship_country     ?? null
   } else if (body.direccion_envio) {
-    // Legacy JSON shape — map to flat columns
     updates.ship_street1     = body.direccion_envio.street      ?? null
     updates.ship_city        = body.direccion_envio.city        ?? null
     updates.ship_postal_code = body.direccion_envio.postal_code ?? null
     updates.ship_country     = body.direccion_envio.country     ?? null
   }
 
-  // Other allowed fields
   const passthrough = [
     'company_name', 'nombre_comercial', 'tipo_empresa',
     'nif_cif', 'tipo_fiscal', 'numero_eori', 'fecha_constitucion',

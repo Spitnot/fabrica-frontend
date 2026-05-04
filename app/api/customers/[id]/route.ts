@@ -84,7 +84,7 @@ export async function PUT(req: NextRequest, { params }: Props) {
   if ('ship_country'    in body) updates.ship_country     = body.ship_country
 
   // Legacy fields still allowed during migration
-  const allowed = ['contacto_nombre', 'company_name', 'telefono', 'nif_cif', 'estado', 'tarifa_id', 'descuento_pct']
+  const allowed = ['company_name', 'nif_cif', 'estado', 'tarifa_id', 'descuento_pct']
   for (const key of allowed) {
     if (key in body) updates[key] = body[key]
   }

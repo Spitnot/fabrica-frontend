@@ -1,20 +1,33 @@
+// app/(dashboard)/produccion/page.tsx
+// Client component — fetch, filter, expand state, CSV export logic preserved 1:1.
+// JSX restructured to match Foundry mockup: dark hero, fungible KPIs with
+// Alexandria 56, dark-headed expandable SKU rows.
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
+import { PageHeader, FR } from '@/components/fr/Atoms';
+import { StatusChip, FRStatus } from '@/components/fr/StatusChip';
 
 interface PedidoRef { id: string; status: string; cantidad: number; created_at: string; cliente: string }
 interface SkuFungible { id: string; nombre: string; unidad: string; total: number }
 interface StockItem { sku: string; nombre_producto: string; unidades: number; fungibles: SkuFungible[]; pedidos: PedidoRef[] }
 interface FungibleTotal { id: string; nombre: string; unidad: string; total: number }
 
-const STATUS_COLORS: Record<string, string> = {
-  confirmado: '#0087B8', produccion: '#E6883E', listo_envio: '#876693',
+const monoLabel: React.CSSProperties = {
+  fontFamily: 'JetBrains Mono, ui-monospace, monospace',
+  fontWeight: 700, fontSize: 9, letterSpacing: '0.18em',
+  textTransform: 'uppercase', color: '#888',
 };
-const STATUS_LABELS: Record<string, string> = {
-  confirmado: 'Confirmed', produccion: 'In Production', listo_envio: 'Ready to Ship',
+
+const sectionHeader: React.CSSProperties = {
+  padding: '12px 16px', background: '#111', color: '#fff',
+  fontFamily: 'JetBrains Mono, ui-monospace, monospace',
+  fontWeight: 700, fontSize: 10, letterSpacing: '0.18em',
+  textTransform: 'uppercase',
+  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
 };
-const SKU_COLORS = ['#D93A35','#E6883E','#0DA265','#0087B8','#876693','#111','#b8a800'];
 
 export default function ProduccionPage() {
   const [stock, setStock]           = useState<StockItem[]>([]);
@@ -63,31 +76,57 @@ export default function ProduccionPage() {
   }
 
   return (
-    <div style={{ padding: 16, maxWidth: 1100, margin: '0 auto' }}>
+    <div style={{ padding: '24px 28px', maxWidth: 1280, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 16 }}>
 
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', paddingBottom: 16, borderBottom: '1px solid #111', marginBottom: 16, flexWrap: 'wrap', gap: 12 }}>
-        <div>
-          <div className="page-title">Production Stock</div>
-          <div style={{ fontSize: 10, color: '#aaa', marginTop: 3 }}>Units pending · fungible totals from active orders</div>
+      <PageHeader
+        eyebrow="● PRODUCTION FLOOR / LIVE"
+        title="STOCK"
+        count="UNITS PENDING · MATERIALS FROM ACTIVE ORDERS"
+        actions={<>
+          <button onClick={load} className="btn-ghost">↻ REFRESH</button>
+          <button onClick={exportCSV} className="btn-ghost">↓ CSV</button>
+        </>}
+      />
+
+      {/* Top KPI row: SKUs / Units */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
+        <div style={{ background: '#111', color: '#fff', padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={{ ...monoLabel, color: FR.yellow }}>SKUS PENDING</div>
+          <div style={{ fontFamily: 'var(--font-alexandria), Alexandria, sans-serif', fontWeight: 900, fontSize: 56, lineHeight: 0.9, letterSpacing: '-0.04em' }}>
+            {filtered.length}
+          </div>
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <button onClick={load} className="btn-ghost">↻ Refresh</button>
-          <button onClick={exportCSV} className="btn-ghost">↓ Export CSV</button>
+        <div style={{ background: '#fff', border: 'var(--border-dash)', padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={monoLabel}>TOTAL UNITS</div>
+          <div style={{ fontFamily: 'var(--font-alexandria), Alexandria, sans-serif', fontWeight: 900, fontSize: 56, lineHeight: 0.9, letterSpacing: '-0.04em' }}>
+            {totalUnidades.toLocaleString()}
+          </div>
         </div>
       </div>
 
       {/* Fungible totals */}
       {fungTotals.length > 0 && (
-        <div style={{ marginBottom: 16 }}>
-          <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: '#aaa', marginBottom: 8 }}>Materials needed</div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: 8 }}>
-            {fungTotals.map(f => (
-              <div key={f.id} className="card" style={{ borderLeft: '3px solid #E6883E' }}>
-                <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#aaa', marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.nombre}</div>
-                <div style={{ fontSize: 22, fontWeight: 900, color: '#E6883E', lineHeight: 1 }}>
+        <div style={{ border: 'var(--border-dash)', background: '#fff' }}>
+          <div style={sectionHeader}>
+            <span>▲ MATERIALS NEEDED</span>
+            <span style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 10, color: FR.yellow }}>{fungTotals.length} TYPES</span>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))' }}>
+            {fungTotals.map((f, i) => (
+              <div key={f.id} style={{
+                padding: '16px 18px',
+                borderRight: 'var(--border-light)',
+                borderBottom: i >= fungTotals.length - (fungTotals.length % (Math.floor(1280/140)) || 1) ? 'none' : 'var(--border-light)',
+                display: 'flex', flexDirection: 'column', gap: 6,
+              }}>
+                <div style={monoLabel}>{f.nombre.toUpperCase()}</div>
+                <div style={{
+                  fontFamily: 'var(--font-alexandria), Alexandria, sans-serif',
+                  fontWeight: 900, fontSize: 32, lineHeight: 1, letterSpacing: '-0.04em',
+                  color: '#111', fontVariantNumeric: 'tabular-nums',
+                }}>
                   {f.total.toLocaleString()}
-                  <span style={{ fontSize: 9, fontWeight: 400, color: '#aaa', marginLeft: 3 }}>{f.unidad}</span>
+                  <span style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 11, fontWeight: 500, color: '#888', marginLeft: 4 }}>{f.unidad}</span>
                 </div>
               </div>
             ))}
@@ -95,101 +134,114 @@ export default function ProduccionPage() {
         </div>
       )}
 
-      {/* Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 16 }}>
-        <div className="card" style={{ borderLeft: '3px solid #D93A35' }}>
-          <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#aaa', marginBottom: 4 }}>SKUs Pending</div>
-          <div style={{ fontSize: 26, fontWeight: 900, color: '#D93A35', lineHeight: 1 }}>{filtered.length}</div>
-        </div>
-        <div className="card" style={{ borderLeft: '3px solid #0087B8' }}>
-          <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#aaa', marginBottom: 4 }}>Total Units</div>
-          <div style={{ fontSize: 26, fontWeight: 900, color: '#0087B8', lineHeight: 1 }}>{totalUnidades.toLocaleString()}</div>
-        </div>
-      </div>
-
       {/* Search */}
-      <div style={{ marginBottom: 12 }}>
+      <div>
         <input
           value={search} onChange={e => setSearch(e.target.value)}
-          placeholder="Search SKU or product…"
-          style={{ maxWidth: 280, width: '100%', fontFamily: 'var(--font-main)', fontSize: 12, border: '1px solid #111', borderRadius: 0, padding: '7px 10px', background: '#fff', color: '#111', outline: 'none' }}
+          placeholder="SEARCH SKU OR PRODUCT…"
+          style={{
+            maxWidth: 320, width: '100%',
+            fontFamily: 'JetBrains Mono, ui-monospace, monospace',
+            fontSize: 11, fontWeight: 500, letterSpacing: '0.06em',
+            border: 'var(--border-dash)', borderRadius: 0,
+            padding: '10px 14px', background: '#fff', color: '#111', outline: 'none',
+          }}
         />
       </div>
 
-      {/* SKU list — expandable cards, NO table */}
+      {/* SKU expandable rows */}
       {loading ? (
-        <div style={{ padding: '48px 0', textAlign: 'center', fontSize: 12, color: '#aaa' }}>Loading…</div>
+        <div style={{ padding: '60px 0', textAlign: 'center', fontSize: 12, color: '#888' }}>Loading…</div>
       ) : filtered.length === 0 ? (
-        <div style={{ padding: '48px 0', textAlign: 'center', fontSize: 12, color: '#aaa' }}>
+        <div style={{ padding: '60px 0', textAlign: 'center', fontSize: 12, color: '#888' }}>
           {search ? 'No SKUs match the search.' : 'No pending production.'}
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <div style={{ border: 'var(--border-dash)', background: '#fff' }}>
+          <div style={sectionHeader}>
+            <span>▣ SKU QUEUE</span>
+            <span style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 10, color: FR.yellow }}>{filtered.length} ITEMS</span>
+          </div>
           {filtered.map((item, idx) => {
             const isOpen = expanded === item.sku;
-            const color = SKU_COLORS[idx % SKU_COLORS.length];
             const barPct = Math.round((item.unidades / maxUnidades) * 100);
 
             return (
-              <div key={item.sku} className="card" style={{ padding: 0, overflow: 'hidden' }}>
+              <div key={item.sku} style={{ borderBottom: idx < filtered.length - 1 ? 'var(--border-light)' : 'none' }}>
 
-                {/* Main row — clickable */}
+                {/* Main row */}
                 <div
                   onClick={() => setExpanded(isOpen ? null : item.sku)}
-                  style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}
+                  style={{ padding: '16px 18px', display: 'flex', alignItems: 'center', gap: 16, cursor: 'pointer', background: isOpen ? '#f6efdf' : 'transparent' }}
                 >
-                  <div style={{ width: 10, height: 10, background: color, border: '1px solid #111', flexShrink: 0 }} />
+                  {/* Index */}
+                  <div style={{
+                    fontFamily: 'JetBrains Mono, ui-monospace, monospace',
+                    fontSize: 10, color: '#888', fontWeight: 700,
+                    width: 24, flexShrink: 0,
+                  }}>
+                    {String(idx + 1).padStart(2, '0')}
+                  </div>
 
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: '#111', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {item.nombre_producto}
                     </div>
-                    <div style={{ fontSize: 9, color: '#aaa', fontFamily: 'monospace', marginTop: 1 }}>{item.sku}</div>
-                  </div>
-
-                  {/* Fungible quick summary */}
-                  {item.fungibles.length > 0 && (
-                    <div style={{ display: 'flex', gap: 6, flexShrink: 0 }} className="fr-fung-summary">
-                      <style>{`@media(max-width:480px){.fr-fung-summary{display:none!important}}`}</style>
-                      {item.fungibles.slice(0, 2).map(f => (
-                        <div key={f.id} style={{ fontSize: 9, color: '#aaa', fontFamily: 'monospace' }}>
-                          <span style={{ fontWeight: 700, color: '#E6883E' }}>{f.total}</span>{f.unidad}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Bar */}
-                  <div style={{ width: 80, flexShrink: 0 }} className="fr-bar">
-                    <style>{`@media(max-width:360px){.fr-bar{display:none!important}}`}</style>
-                    <div style={{ height: 3, background: '#eee' }}>
-                      <div style={{ height: '100%', width: `${barPct}%`, background: color }} />
+                    <div style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 10, color: '#888', marginTop: 2 }}>
+                      {item.sku}
                     </div>
                   </div>
 
-                  <div style={{ flexShrink: 0, textAlign: 'right', minWidth: 44 }}>
-                    <div style={{ fontSize: 20, fontWeight: 900, color, lineHeight: 1 }}>{item.unidades}</div>
-                    <div style={{ fontSize: 7, color: '#aaa', letterSpacing: '0.1em', textTransform: 'uppercase' }}>units</div>
+                  {/* Bar — desktop only */}
+                  <div className="fr-bar" style={{ width: 120, flexShrink: 0 }}>
+                    <style>{`@media(max-width:560px){.fr-bar{display:none!important}}`}</style>
+                    <div style={{ height: 4, background: '#ddd6c8', position: 'relative' }}>
+                      <div style={{ position: 'absolute', inset: 0, width: `${barPct}%`, background: '#111' }} />
+                    </div>
+                    <div style={{ ...monoLabel, marginTop: 4, fontSize: 8 }}>{barPct}%</div>
                   </div>
 
-                  <div style={{ fontSize: 12, color: '#ccc', transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s', flexShrink: 0 }}>↓</div>
+                  {/* Quantity */}
+                  <div style={{ flexShrink: 0, textAlign: 'right', minWidth: 80 }}>
+                    <div style={{
+                      fontFamily: 'var(--font-alexandria), Alexandria, sans-serif',
+                      fontWeight: 900, fontSize: 32, lineHeight: 1,
+                      letterSpacing: '-0.04em', color: '#111',
+                      fontVariantNumeric: 'tabular-nums',
+                    }}>
+                      {item.unidades.toLocaleString()}
+                    </div>
+                    <div style={{ ...monoLabel, marginTop: 2 }}>UNITS</div>
+                  </div>
+
+                  {/* Caret */}
+                  <div style={{
+                    fontFamily: 'JetBrains Mono, ui-monospace, monospace',
+                    fontSize: 14, color: '#111',
+                    transform: isOpen ? 'rotate(180deg)' : 'none',
+                    transition: 'transform 0.15s', flexShrink: 0,
+                  }}>↓</div>
                 </div>
 
                 {/* Expanded */}
                 {isOpen && (
-                  <div style={{ borderTop: '1px solid #eee', background: '#fafafa' }}>
+                  <div style={{ borderTop: 'var(--border-dash)', background: '#111', color: '#fff' }}>
 
                     {/* Fungibles */}
                     {item.fungibles.length > 0 && (
-                      <div style={{ padding: '10px 16px', borderBottom: '1px solid #f0f0f0' }}>
-                        <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#aaa', marginBottom: 8 }}>Materials</div>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                      <div style={{ padding: '14px 18px', borderBottom: '1px solid #333' }}>
+                        <div style={{ ...monoLabel, color: FR.yellow, marginBottom: 10 }}>MATERIALS</div>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 14 }}>
                           {item.fungibles.map(f => (
-                            <div key={f.id} style={{ background: '#fff', border: '1px solid #eee', padding: '6px 10px' }}>
-                              <div style={{ fontSize: 8, color: '#aaa', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>{f.nombre}</div>
-                              <div style={{ fontSize: 16, fontWeight: 900, color: '#E6883E' }}>
+                            <div key={f.id} style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                              <div style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 9, color: '#888', textTransform: 'uppercase', letterSpacing: '0.14em' }}>{f.nombre}</div>
+                              <div style={{
+                                fontFamily: 'var(--font-alexandria), Alexandria, sans-serif',
+                                fontWeight: 900, fontSize: 22, lineHeight: 1,
+                                letterSpacing: '-0.04em', color: FR.yellow,
+                              }}>
                                 {f.total % 1 === 0 ? f.total : f.total.toFixed(1)}
-                                <span style={{ fontSize: 9, fontWeight: 400, color: '#aaa', marginLeft: 2 }}>{f.unidad}</span>
+                                <span style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 10, fontWeight: 500, color: '#aaa', marginLeft: 3 }}>{f.unidad}</span>
                               </div>
                             </div>
                           ))}
@@ -199,20 +251,32 @@ export default function ProduccionPage() {
 
                     {/* Orders */}
                     {item.pedidos.length > 0 && (
-                      <div style={{ padding: '10px 16px' }}>
-                        <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#aaa', marginBottom: 8 }}>Orders</div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                      <div style={{ padding: '14px 18px' }}>
+                        <div style={{ ...monoLabel, color: FR.yellow, marginBottom: 10 }}>ORDERS · {item.pedidos.length}</div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                           {item.pedidos.map(p => (
-                            <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', background: '#fff', border: '1px solid #eee', flexWrap: 'wrap' }}>
-                              <Link href={`/pedidos/${p.id}`} style={{ fontSize: 10, fontWeight: 700, color: '#D93A35', fontFamily: 'monospace', textDecoration: 'none' }}>
+                            <Link
+                              key={p.id}
+                              href={`/pedidos/${p.id}`}
+                              style={{
+                                display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
+                                padding: '10px 12px', background: '#1a1a1a', border: '1px solid #333',
+                                color: '#fff', textDecoration: 'none',
+                              }}
+                            >
+                              <span style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 11, color: FR.red, fontWeight: 700 }}>
                                 #{p.id.slice(0, 8).toUpperCase()}
-                              </Link>
-                              <span className="badge" style={{ background: STATUS_COLORS[p.status] ?? '#999', fontSize: 7 }}>
-                                {STATUS_LABELS[p.status] ?? p.status}
                               </span>
-                              <div style={{ fontSize: 11, color: '#555', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.cliente}</div>
-                              <div style={{ fontSize: 12, fontWeight: 900, color: '#111', flexShrink: 0 }}>{p.cantidad}u</div>
-                            </div>
+                              <StatusChip status={p.status as FRStatus} size="sm" />
+                              <div style={{ fontSize: 12, color: '#ddd', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.cliente}</div>
+                              <div style={{
+                                fontFamily: 'var(--font-alexandria), Alexandria, sans-serif',
+                                fontWeight: 900, fontSize: 18, color: FR.yellow,
+                                letterSpacing: '-0.03em',
+                              }}>
+                                {p.cantidad}<span style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 9, fontWeight: 500, color: '#888' }}>u</span>
+                              </div>
+                            </Link>
                           ))}
                         </div>
                       </div>
@@ -224,17 +288,19 @@ export default function ProduccionPage() {
           })}
 
           {/* Totals footer */}
-          <div className="card" style={{ background: '#111', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
-            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: '#666' }}>Totals</div>
-            <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-              <div>
-                <span style={{ fontSize: 9, color: '#666', marginRight: 6 }}>Units</span>
-                <span style={{ fontSize: 14, fontWeight: 900, color: '#fff' }}>{totalUnidades.toLocaleString()}</span>
+          <div style={{ background: '#111', color: '#fff', padding: '16px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
+            <div style={{ ...monoLabel, color: '#666' }}>TOTALS</div>
+            <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', alignItems: 'baseline' }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+                <span style={{ ...monoLabel, color: '#666' }}>UNITS</span>
+                <span style={{ fontFamily: 'var(--font-alexandria), Alexandria, sans-serif', fontWeight: 900, fontSize: 22, color: '#fff', letterSpacing: '-0.04em' }}>{totalUnidades.toLocaleString()}</span>
               </div>
               {fungTotals.map(f => (
-                <div key={f.id}>
-                  <span style={{ fontSize: 9, color: '#666', marginRight: 4 }}>{f.nombre}</span>
-                  <span style={{ fontSize: 14, fontWeight: 900, color: '#E6883E' }}>{f.total.toLocaleString()}{f.unidad}</span>
+                <div key={f.id} style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+                  <span style={{ ...monoLabel, color: '#666' }}>{f.nombre.toUpperCase()}</span>
+                  <span style={{ fontFamily: 'var(--font-alexandria), Alexandria, sans-serif', fontWeight: 900, fontSize: 22, color: FR.yellow, letterSpacing: '-0.04em' }}>
+                    {f.total.toLocaleString()}<span style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 10, fontWeight: 500, color: '#888' }}>{f.unidad}</span>
+                  </span>
                 </div>
               ))}
             </div>
