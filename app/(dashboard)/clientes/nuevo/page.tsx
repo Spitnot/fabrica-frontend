@@ -210,40 +210,40 @@ export default function NuevoClientePage() {
           <Section n={1} title="Datos Jurídicos" />
           <div className="fr-card" style={{ padding: 16, display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
             <div style={{ gridColumn: "1 / -1", display: "flex", flexDirection: "column", gap: 6 }}>
-              <labelclassName="fr-label">Razón social {req}</label>
+              <label className="fr-label">Razón social {req}</label>
               <input type="text" value={form.company_name} onChange={e => set('company_name', e.target.value)}
                 placeholder="Distribuciones Fashion SL" />
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              <labelclassName="fr-label">Nombre comercial</label>
+              <label className="fr-label">Nombre comercial</label>
               <input type="text" value={form.nombre_comercial} onChange={e => set('nombre_comercial', e.target.value)}
                 placeholder="Fashion Dist." />
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              <labelclassName="fr-label">Tipo de empresa</label>
+              <label className="fr-label">Tipo de empresa</label>
               <select value={form.tipo_empresa} onChange={e => set('tipo_empresa', e.target.value)}>
                 <option value="">— Seleccionar —</option>
                 {TIPOS_EMPRESA.map(t => <option key={t} value={t}>{t}</option>)}
               </select>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              <labelclassName="fr-label">Tipo de identificación fiscal {req}</label>
+              <label className="fr-label">Tipo de identificación fiscal {req}</label>
               <select value={form.tipo_fiscal} onChange={e => set('tipo_fiscal', e.target.value)}>
                 {TIPOS_FISCAL.map(t => <option key={t} value={t}>{t}</option>)}
               </select>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              <labelclassName="fr-label">Número de identificación fiscal {req}</label>
+              <label className="fr-label">Número de identificación fiscal {req}</label>
               <input type="text" value={form.nif_cif} onChange={e => set('nif_cif', e.target.value)}
                 placeholder="B12345678" />
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              <labelclassName="fr-label">Número EORI</label>
+              <label className="fr-label">Número EORI</label>
               <input type="text" value={form.numero_eori} onChange={e => set('numero_eori', e.target.value)}
                 placeholder="ES12345678" />
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              <labelclassName="fr-label">Fecha de constitución</label>
+              <label className="fr-label">Fecha de constitución</label>
               <input type="date" value={form.fecha_constitucion} onChange={e => set('fecha_constitucion', e.target.value)}
                 />
             </div>
@@ -255,27 +255,27 @@ export default function NuevoClientePage() {
           <Section n={2} title="Dirección Fiscal" />
           <div className="fr-card" style={{ padding: 16, display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
             <div style={{ gridColumn: "1 / -1", display: "flex", flexDirection: "column", gap: 6 }}>
-              <labelclassName="fr-label">Calle y número {req}</label>
+              <label className="fr-label">Calle y número {req}</label>
               <input type="text" value={form.fiscal_street} onChange={e => set('fiscal_street', e.target.value)}
                 placeholder="Gran Vía 14, 3º" />
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              <labelclassName="fr-label">Ciudad {req}</label>
+              <label className="fr-label">Ciudad {req}</label>
               <input type="text" value={form.fiscal_city} onChange={e => set('fiscal_city', e.target.value)}
                 placeholder="Madrid" />
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              <labelclassName="fr-label">Estado / Provincia</label>
+              <label className="fr-label">Estado / Provincia</label>
               <input type="text" value={form.fiscal_state} onChange={e => set('fiscal_state', e.target.value)}
                 placeholder="Madrid" />
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              <labelclassName="fr-label">Código postal {req}</label>
+              <label className="fr-label">Código postal {req}</label>
               <input type="text" value={form.fiscal_postal_code} onChange={e => set('fiscal_postal_code', e.target.value)}
                 placeholder="28013" />
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              <labelclassName="fr-label">País {req}</label>
+              <label className="fr-label">País {req}</label>
               <input type="text" value={form.fiscal_country} onChange={e => set('fiscal_country', e.target.value)}
                 placeholder="ES" />
             </div>
@@ -296,22 +296,22 @@ export default function NuevoClientePage() {
             {!sameAddress && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div style={{ gridColumn: "1 / -1", display: "flex", flexDirection: "column", gap: 6 }}>
-                  <labelclassName="fr-label">Calle y número {req}</label>
+                  <label className="fr-label">Calle y número {req}</label>
                   <input type="text" value={form.street} onChange={e => set('street', e.target.value)}
                     placeholder="Calle Ejemplo 1" />
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                  <labelclassName="fr-label">Ciudad {req}</label>
+                  <label className="fr-label">Ciudad {req}</label>
                   <input type="text" value={form.city} onChange={e => set('city', e.target.value)}
                     placeholder="Barcelona" />
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                  <labelclassName="fr-label">Código postal {req}</label>
+                  <label className="fr-label">Código postal {req}</label>
                   <input type="text" value={form.postal_code} onChange={e => set('postal_code', e.target.value)}
                     placeholder="08001" />
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                  <labelclassName="fr-label">País {req}</label>
+                  <label className="fr-label">País {req}</label>
                   <input type="text" value={form.country} onChange={e => set('country', e.target.value)}
                     placeholder="ES" />
                 </div>
@@ -325,17 +325,17 @@ export default function NuevoClientePage() {
           <Section n={4} title="Persona de Contacto" />
           <div className="fr-card" style={{ padding: 16, display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              <labelclassName="fr-label">Nombre completo {req}</label>
+              <label className="fr-label">Nombre completo {req}</label>
               <input type="text" value={form.contacto_nombre} onChange={e => set('contacto_nombre', e.target.value)}
                 placeholder="Carlos Mendez" />
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              <labelclassName="fr-label">Email {req}</label>
+              <label className="fr-label">Email {req}</label>
               <input type="email" value={form.email} onChange={e => set('email', e.target.value)}
                 placeholder="carlos@empresa.com" />
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              <labelclassName="fr-label">Teléfono {req}</label>
+              <label className="fr-label">Teléfono {req}</label>
               <div style={{ display: "flex", gap: 8 }}>
                 <select value={form.telefono_prefijo} onChange={e => set('telefono_prefijo', e.target.value)}
                   style={{ width: 110, flexShrink: 0 }}>
@@ -355,29 +355,29 @@ export default function NuevoClientePage() {
           <Section n={5} title="Perfil Comercial" />
           <div className="fr-card" style={{ padding: 16, display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              <labelclassName="fr-label">Tipo de cliente</label>
+              <label className="fr-label">Tipo de cliente</label>
               <select value={form.tipo_cliente} onChange={e => set('tipo_cliente', e.target.value)}>
                 <option value="">— Seleccionar —</option>
                 {TIPOS_CLIENTE.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
               </select>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              <labelclassName="fr-label">Número de puntos de venta</label>
+              <label className="fr-label">Número de puntos de venta</label>
               <input type="number" min="0" value={form.num_puntos_venta} onChange={e => set('num_puntos_venta', e.target.value)}
                 placeholder="0" />
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              <labelclassName="fr-label">Zona geográfica de distribución</label>
+              <label className="fr-label">Zona geográfica de distribución</label>
               <input type="text" value={form.zona_distribucion} onChange={e => set('zona_distribucion', e.target.value)}
                 placeholder="España, Portugal" />
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              <labelclassName="fr-label">Volumen estimado de compra</label>
+              <label className="fr-label">Volumen estimado de compra</label>
               <input type="text" value={form.volumen_estimado} onChange={e => set('volumen_estimado', e.target.value)}
                 placeholder="50.000 € / año" />
             </div>
             <div style={{ gridColumn: "1 / -1", display: "flex", flexDirection: "column", gap: 6 }}>
-              <labelclassName="fr-label">Marcas que comercializa</label>
+              <label className="fr-label">Marcas que comercializa</label>
               <input type="text" value={form.marcas_comercializadas} onChange={e => set('marcas_comercializadas', e.target.value)}
                 placeholder="Marca A, Marca B, Marca C" />
             </div>
@@ -414,7 +414,7 @@ export default function NuevoClientePage() {
           <Section n={7} title="Condiciones Comerciales — Interno" />
           <div className="fr-card" style={{ padding: 16, display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              <labelclassName="fr-label">Lista de precios {req}</label>
+              <label className="fr-label">Lista de precios {req}</label>
               <select value={form.tarifa_id} onChange={e => set('tarifa_id', e.target.value)}>
                 <option value="">— Sin tarifa —</option>
                 {tarifas.map(t => (
@@ -423,13 +423,13 @@ export default function NuevoClientePage() {
               </select>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              <labelclassName="fr-label">Descuento acordado (%)</label>
+              <label className="fr-label">Descuento acordado (%)</label>
               <input type="number" min="0" max="100" step="0.5" value={form.descuento_pct}
                 onChange={e => set('descuento_pct', e.target.value)} placeholder="0" />
               <p className="fr-label">Aplicado sobre la tarifa. 0 = sin descuento adicional.</p>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              <labelclassName="fr-label">Forma de pago</label>
+              <label className="fr-label">Forma de pago</label>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {FORMAS_PAGO.map(fp => (
                   <label key={fp.value} style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
@@ -443,7 +443,7 @@ export default function NuevoClientePage() {
               </div>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              <labelclassName="fr-label">Condiciones de pago</label>
+              <label className="fr-label">Condiciones de pago</label>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {CONDICIONES_PAGO.map(cp => (
                   <label key={cp.value} style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
@@ -457,7 +457,7 @@ export default function NuevoClientePage() {
               </div>
             </div>
             <div style={{ gridColumn: "1 / -1", display: "flex", flexDirection: "column", gap: 6 }}>
-              <labelclassName="fr-label">Condiciones comerciales especiales</label>
+              <label className="fr-label">Condiciones comerciales especiales</label>
               <textarea value={form.notas_especiales} onChange={e => set('notas_especiales', e.target.value)}
                 rows={3} placeholder="Notas internas, condiciones negociadas, excepciones…"
                 >
