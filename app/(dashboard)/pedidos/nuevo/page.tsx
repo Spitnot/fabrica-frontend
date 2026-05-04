@@ -142,7 +142,7 @@ function NuevoPedidoContent() {
     if (!canConfirm || !client) return;
     setConfirming(true); setError('');
     try {
-      const res = await fetch('/api/orders', {
+      const res = await fetch('/api/pedidos', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
