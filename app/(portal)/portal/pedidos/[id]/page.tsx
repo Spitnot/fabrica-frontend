@@ -218,11 +218,11 @@ export default async function PortalPedidoDetallePage({ params }: Props) {
             <div className="fr-card" style={{ overflow: 'hidden' }}>
               <div className="fr-section-head">LOGISTICS</div>
               <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {[
+                {([
                   order.coste_envio_estimado && ['EST. SHIPPING', fmt(order.coste_envio_estimado)],
                   order.coste_envio_final    && ['FINAL SHIPPING', fmt(order.coste_envio_final)],
                   order.packlink_shipment_id && ['SHIPMENT ID', order.packlink_shipment_id],
-                ].filter(Boolean).map(([label, value]) => (
+                ].filter(Boolean) as [string, string][]).map(([label, value]) => (
                   <div key={String(label)} style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                     <span className="fr-label">{label}</span>
                     <span style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 11, wordBreak: 'break-all' }}>{value}</span>
