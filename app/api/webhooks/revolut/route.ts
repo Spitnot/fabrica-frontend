@@ -146,16 +146,15 @@ async function handleOrderCompleted(
 
     console.log('[Webhook] Payment marked as completed:', payment.id);
 
-    // 3. Actualizar estado de orden
-    // Pasar de 'confirmado' a 'produccion' (iniciamos producción)
+    // 3. Actualizar estado de orden: listo_envio → enviado
     const { data: updatedOrder, error: orderUpdateError } = await supabase
       .from('orders')
       .update({
-        estado: 'produccion',
+        status: 'enviado',
         updated_at: new Date().toISOString(),
       })
       .eq('id', payment.order_id)
-      .eq('estado', 'confirmado') // Solo si está en estado confirmado
+      .eq('status', 'listo_envio')
       .select();
 
     if (orderUpdateError) {
@@ -164,9 +163,9 @@ async function handleOrderCompleted(
     }
 
     if (updatedOrder && updatedOrder.length > 0) {
-      console.log('[Webhook] Order transitioned to produccion:', payment.order_id);
+      console.log('[Webhook] Order transitioned to enviado:', payment.order_id);
     } else {
-      console.log('[Webhook] Order was not in confirmado state, not transitioning');
+      console.log('[Webhook] Order was not in listo_envio state, not transitioning');
     }
 
     // 4. (OPCIONAL) Aquí podrías enviar email de confirmación
@@ -227,25 +226,9 @@ async function handleOrderCancelled(
       return;
     }
 
-    // 3. Cancelar orden si está en estado confirmado
-    const { data: cancelledOrders, error: cancelOrderError } = await supabase
-      .from('orders')
-      .update({
-        estado: 'cancelado',
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', payment.order_id)
-      .in('estado', ['confirmado']) // Solo si está confirmada
-      .select();
-
-    if (cancelOrderError) {
-      console.error('[Webhook] Failed to cancel order:', cancelOrderError);
-      return;
-    }
-
-    if (cancelledOrders && cancelledOrders.length > 0) {
-      console.log('[Webhook] Order cancelled:', payment.order_id);
-    }
+    // El pago se activa en listo_envio — si se cancela NO cancelamos el pedido,
+    // el cliente puede reintentar el pago desde el portal.
+    console.log('[Webhook] Payment cancelled/failed at listo_envio, order kept intact:', payment.order_id);
   } catch (error) {
     console.error('[Webhook] Error in handleOrderCancelled:', error);
   }
