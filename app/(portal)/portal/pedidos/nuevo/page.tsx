@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabaseClient } from '@/lib/supabase/client';
 import { getColorHex, parseVariant } from '@/lib/colors';
 import { FR } from '@/components/fr/Atoms';
 import Link from 'next/link';
@@ -44,17 +43,10 @@ export default function NewOrderPage() {
   const [error, setError]                     = useState('');
 
   useEffect(() => {
-    async function loadData() {
-      const { data: { user } } = await supabaseClient.auth.getUser();
-      if (!user) return;
-      const { data: cust } = await supabaseClient
-        .from('customers')
-        .select('id, contacto_nombre, first_name, last_name, company_name, descuento_pct, ship_street1, ship_city, ship_postal_code, ship_country, direccion_envio, tarifa:tarifa_id(nombre, multiplicador, pack_size, minimum_order_value, hidden_products, precios:tarifas_precios(sku, precio, pack_size))')
-        .eq('auth_user_id', user.id)
-        .single();
-      if (cust) setCustomer(cust as unknown as Customer);
-    }
-    loadData();
+    fetch('/api/portal/me')
+      .then(r => r.json())
+      .then(d => { if (d.data) setCustomer(d.data as Customer); })
+      .catch(() => {});
     fetch('/api/products')
       .then(r => r.json())
       .then(d => { setProducts(d.data ?? []); setLoadingProducts(false); })
