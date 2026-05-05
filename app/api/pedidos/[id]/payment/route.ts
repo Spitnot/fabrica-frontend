@@ -7,7 +7,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { createSupabaseServerClient, supabaseAdmin } from '@/lib/supabase/server';
 import { createRevolutOrder } from '@/lib/revolut/revolutService';
 import { RevolutOrderPayload } from '@/lib/types/revolut';
 
@@ -16,12 +16,10 @@ export async function POST(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    // ARREGLADO: Await params porque es Promise en Next.js 16
     const { id: orderId } = await context.params;
 
+    // 1. Verificar usuario autenticado (con sesión del cliente)
     const supabase = await createSupabaseServerClient();
-
-    // 1. Verificar usuario autenticado
     const { data: userData, error: userError } = await supabase.auth.getUser();
     if (userError || !userData.user) {
       return NextResponse.json(
@@ -30,10 +28,10 @@ export async function POST(
       );
     }
 
-    // 2. Obtener orden desde BD
-    const { data: order, error: orderError } = await supabase
+    // 2. Obtener orden desde BD (supabaseAdmin para saltar RLS)
+    const { data: order, error: orderError } = await supabaseAdmin
       .from('orders')
-      .select('id, customer_id, total_amount, currency, reference')
+      .select('id, customer_id, total_productos, status')
       .eq('id', orderId)
       .single();
 
@@ -45,8 +43,8 @@ export async function POST(
       );
     }
 
-    // 3. Obtener customer - ARREGLADO: nombre_empresa → company_name
-    const { data: customer } = await supabase
+    // 3. Obtener customer
+    const { data: customer } = await supabaseAdmin
       .from('customers')
       .select('id, email, company_name')
       .eq('id', order.customer_id)
@@ -71,7 +69,7 @@ export async function POST(
     }
 
     // 5. Verificar si ya existe un pago pendiente
-    const { data: existingPayment } = await supabase
+    const { data: existingPayment } = await supabaseAdmin
       .from('revolut_payments')
       .select('id, status, checkout_url')
       .eq('order_id', orderId)
@@ -94,17 +92,17 @@ export async function POST(
     // 6. Crear orden en Revolut
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://b2b.firmarollers.com';
     const revolutPayload: RevolutOrderPayload = {
-      amount: Math.round(order.total_amount * 100), // En centavos
-      currency: order.currency || 'EUR',
-      description: `Pedido ${order.reference}`,
+      amount: Math.round(order.total_productos * 100),
+      currency: 'EUR',
+      description: `Pedido ${orderId.slice(0, 8).toUpperCase()}`,
       customer: {
         email: customer.email,
       },
       merchant_order_data: {
-        reference: order.id, // ID de Firma Rollers
+        reference: orderId,
       },
       redirect_url: `${appUrl}/portal/pedidos/${orderId}/payment-confirmed`,
-      expire_pending_after: 'PT24H', // 24 horas
+      expire_pending_after: 'PT24H',
     };
 
     console.log('[Payment API] Creating Revolut order:', {
@@ -116,14 +114,14 @@ export async function POST(
     const revolutOrder = await createRevolutOrder(revolutPayload);
 
     // 7. Guardar en revolut_payments
-    const { error: insertError } = await supabase
+    const { error: insertError } = await supabaseAdmin
       .from('revolut_payments')
       .insert({
         order_id: orderId,
         customer_id: order.customer_id,
         revolut_order_id: revolutOrder.id,
-        amount: order.total_amount,
-        currency: order.currency || 'EUR',
+        amount: order.total_productos,
+        currency: 'EUR',
         status: 'pending',
         checkout_url: revolutOrder.checkout_url,
         merchant_reference: order.id,
