@@ -25,6 +25,7 @@ export type OrderStatus =
   | 'confirmado'
   | 'produccion'
   | 'listo_envio'
+  | 'esperando_pago'
   | 'enviado'
   | 'cancelado';
 

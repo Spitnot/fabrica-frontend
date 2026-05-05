@@ -22,9 +22,9 @@ async function getOrder(id: string): Promise<OrderFull | null> {
 
 const STATUS_LABELS: Record<string, string> = {
   draft: 'Draft', confirmado: 'Confirmed', produccion: 'In Production',
-  listo_envio: 'Ready to Ship', enviado: 'Shipped', cancelado: 'Cancelled',
+  listo_envio: 'Ready to Ship', esperando_pago: 'Awaiting Payment', enviado: 'Shipped', cancelado: 'Cancelled',
 };
-const STATUS_ORDER = ['draft', 'confirmado', 'produccion', 'listo_envio', 'enviado'];
+const STATUS_ORDER = ['draft', 'confirmado', 'produccion', 'listo_envio', 'esperando_pago', 'enviado'];
 
 const fmt = (n: number) =>
   new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n);

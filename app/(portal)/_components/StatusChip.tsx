@@ -7,21 +7,23 @@
  */
 
 const STATUS_LABELS: Record<string, string> = {
-  draft: 'Draft',
-  confirmado: 'Confirmed',
-  produccion: 'In Production',
-  listo_envio: 'Ready to Ship',
-  enviado: 'Shipped',
-  cancelado: 'Cancelled',
+  draft:          'Draft',
+  confirmado:     'Confirmed',
+  produccion:     'In Production',
+  listo_envio:    'Ready to Ship',
+  esperando_pago: 'Awaiting Payment',
+  enviado:        'Shipped',
+  cancelado:      'Cancelled',
 };
 
 const STATUS_DOT: Record<string, string> = {
-  draft:       '#E6883E',
-  confirmado:  '#0087B8',
-  produccion:  '#876693',
-  listo_envio: '#F6E451',
-  enviado:     '#0DA265',
-  cancelado:   '#D93A35',
+  draft:          '#E6883E',
+  confirmado:     '#0087B8',
+  produccion:     '#876693',
+  listo_envio:    '#F6E451',
+  esperando_pago: '#E6883E',
+  enviado:        '#0DA265',
+  cancelado:      '#D93A35',
 };
 
 export function StatusChip({ status }: { status: string }) {

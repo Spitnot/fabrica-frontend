@@ -146,7 +146,7 @@ async function handleOrderCompleted(
 
     console.log('[Webhook] Payment marked as completed:', payment.id);
 
-    // 3. Actualizar estado de orden: listo_envio → enviado
+    // 3. Actualizar estado de orden: esperando_pago → enviado
     const { data: updatedOrder, error: orderUpdateError } = await supabase
       .from('orders')
       .update({
@@ -154,7 +154,7 @@ async function handleOrderCompleted(
         updated_at: new Date().toISOString(),
       })
       .eq('id', payment.order_id)
-      .eq('status', 'listo_envio')
+      .eq('status', 'esperando_pago')
       .select();
 
     if (orderUpdateError) {

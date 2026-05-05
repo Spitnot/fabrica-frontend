@@ -7,7 +7,7 @@ import { StatusChip, FRStatus } from '@/components/fr/StatusChip';
 
 const STATUS_LABELS: Record<string, string> = {
   draft: 'Draft', confirmado: 'Confirmed', produccion: 'In Production',
-  listo_envio: 'Ready to Ship', enviado: 'Shipped', cancelado: 'Cancelled',
+  listo_envio: 'Ready to Ship', esperando_pago: 'Awaiting Payment', enviado: 'Shipped', cancelado: 'Cancelled',
 };
 
 const fmt = (n: number) =>
@@ -64,7 +64,8 @@ function PortalOrdersInner() {
     { id: 'draft',       label: 'Draft',     count: statusCounts.draft ?? 0 },
     { id: 'confirmado',  label: 'Confirmed', count: statusCounts.confirmado ?? 0 },
     { id: 'produccion',  label: 'In Prod',   count: statusCounts.produccion ?? 0 },
-    { id: 'listo_envio', label: 'Ready',     count: statusCounts.listo_envio ?? 0 },
+    { id: 'listo_envio',    label: 'Ready',    count: statusCounts.listo_envio ?? 0 },
+    { id: 'esperando_pago', label: 'Pay Now',  count: statusCounts.esperando_pago ?? 0 },
     { id: 'enviado',     label: 'Shipped',   count: statusCounts.enviado ?? 0 },
   ];
 

@@ -3,16 +3,17 @@ import { supabaseAdmin } from '@/lib/supabase/server'
 import type { OrderStatus } from '@/types'
 
 const VALID_STATUSES: OrderStatus[] = [
-  'draft', 'confirmado', 'produccion', 'listo_envio', 'enviado', 'cancelado'
+  'draft', 'confirmado', 'produccion', 'listo_envio', 'esperando_pago', 'enviado', 'cancelado'
 ]
 
 const ALLOWED_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
-  draft:       ['confirmado', 'cancelado'],
-  confirmado:  ['produccion', 'cancelado'],
-  produccion:  ['listo_envio', 'cancelado'],
-  listo_envio: ['enviado', 'cancelado'],
-  enviado:     [],
-  cancelado:   [],
+  draft:          ['confirmado', 'cancelado'],
+  confirmado:     ['produccion', 'cancelado'],
+  produccion:     ['listo_envio', 'cancelado'],
+  listo_envio:    ['cancelado'],
+  esperando_pago: ['cancelado'],
+  enviado:        [],
+  cancelado:      [],
 }
 
 interface Props { params: Promise<{ id: string }> }

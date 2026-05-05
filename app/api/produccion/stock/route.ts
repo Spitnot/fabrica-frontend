@@ -13,7 +13,7 @@ export async function GET() {
         cantidad,
         order:orders!inner(id, status, created_at, customer:customers(contacto_nombre, first_name, last_name, company_name))
       `)
-      .in('orders.status', ['confirmado', 'produccion', 'listo_envio']);
+      .in('orders.status', ['confirmado', 'produccion', 'listo_envio', 'esperando_pago']);
 
     if (error) throw error;
 

@@ -120,6 +120,51 @@ export async function sendTeamInviteEmail(to: string, name: string, link: string
   }
 }
 
+// ─── Pedido listo para pagar ──────────────────────────────────────────────────
+export async function sendOrderReadyToPayEmail(
+  to: string,
+  name: string,
+  orderRef: string,
+  totalProductos: number,
+  costeEnvio: number,
+  portalUrl: string,
+  customerId?: string,
+  orderId?: string,
+) {
+  const subject = `Tu pedido ${orderRef} está listo — Procede al pago`
+  const total = totalProductos + costeEnvio
+  const fmt = (n: number) =>
+    new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n)
+  try {
+    await getResend().emails.send({
+      from: FROM,
+      to,
+      subject,
+      html: `
+        <div style="font-family:sans-serif;color:#333;max-width:600px;margin:auto">
+          <h2 style="color:#D93A35">¡Tu pedido está listo para enviar!</h2>
+          <p>Hola ${name},</p>
+          <p>Tu pedido <strong>${orderRef}</strong> ha sido preparado y el envío ya está programado.</p>
+          <div style="background:#f5f5f5;padding:16px;margin:16px 0">
+            <p style="margin:0;font-size:13px;color:#666">Productos: <strong>${fmt(totalProductos)}</strong></p>
+            <p style="margin:8px 0 0;font-size:13px;color:#666">Envío: <strong>${fmt(costeEnvio)}</strong></p>
+            <p style="margin:8px 0 0;font-size:15px;color:#111;font-weight:bold">Total: ${fmt(total)}</p>
+          </div>
+          <p>Accede a tu portal para completar el pago de forma segura:</p>
+          <a href="${portalUrl}" style="display:inline-block;padding:12px 24px;background:#D93A35;color:white;text-decoration:none;font-weight:bold;margin:16px 0">
+            Pagar ahora →
+          </a>
+          <p style="font-size:12px;color:#999;margin-top:24px">Firma Rollers B2B</p>
+        </div>
+      `,
+    })
+    await logEmail({ type: 'order_ready_to_pay', recipient: to, subject, status: 'sent', customerId, orderId })
+  } catch (e: any) {
+    await logEmail({ type: 'order_ready_to_pay', recipient: to, subject, status: 'failed', error: e.message, customerId, orderId })
+    throw e
+  }
+}
+
 // ─── Notificación de envío ────────────────────────────────────────────────────
 export async function sendShippingEmail(
   to: string,

@@ -41,7 +41,7 @@ export function OrderActions({ orderId, status }: Props) {
           {loading === 'listo_envio' ? 'Updating…' : '→ Ready to Ship'}
         </button>
       )}
-      {status !== 'cancelado' && status !== 'enviado' && status !== 'listo_envio' && (
+      {status !== 'cancelado' && status !== 'enviado' && status !== 'listo_envio' && status !== 'esperando_pago' && (
         <button
           onClick={() => advance('cancelado')}
           disabled={loading !== null}

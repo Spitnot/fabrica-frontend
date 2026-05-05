@@ -15,7 +15,7 @@ const fmt = (n: number) =>
 
 const STATUS_LABELS: Record<string, string> = {
   draft: 'Draft', confirmado: 'Confirmed', produccion: 'In Production',
-  listo_envio: 'Ready to Ship', enviado: 'Shipped', cancelado: 'Cancelled',
+  listo_envio: 'Ready to Ship', esperando_pago: 'Awaiting Payment', enviado: 'Shipped', cancelado: 'Cancelled',
 };
 
 export async function GET(_req: NextRequest, { params }: Props) {

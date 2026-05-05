@@ -6,11 +6,11 @@ import Link from 'next/link';
 
 const STATUS_COLORS: Record<string, string> = {
   draft: '#876693', confirmado: '#0087B8', produccion: '#E6883E',
-  listo_envio: '#0DA265', enviado: '#111', cancelado: '#111',
+  listo_envio: '#0DA265', esperando_pago: '#E6883E', enviado: '#111', cancelado: '#111',
 };
 const STATUS_LABELS: Record<string, string> = {
   draft: 'Draft', confirmado: 'Confirmed', produccion: 'In Production',
-  listo_envio: 'Ready to Ship', enviado: 'Shipped', cancelado: 'Cancelled',
+  listo_envio: 'Ready to Ship', esperando_pago: 'Awaiting Payment', enviado: 'Shipped', cancelado: 'Cancelled',
 };
 const TARIFA_COLORS: Record<string, string> = { retail: '#0087B8', wholesale: '#876693' };
 

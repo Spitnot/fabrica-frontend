@@ -23,9 +23,9 @@ async function getOrder(id: string): Promise<OrderFull | null> {
 
 const STATUS_LABELS: Record<string, string> = {
   draft: 'Draft', confirmado: 'Confirmed', produccion: 'In Production',
-  listo_envio: 'Ready to Ship', enviado: 'Shipped', cancelado: 'Cancelled',
+  listo_envio: 'Ready to Ship', esperando_pago: 'Awaiting Payment', enviado: 'Shipped', cancelado: 'Cancelled',
 };
-const STATUS_ORDER = ['draft', 'confirmado', 'produccion', 'listo_envio', 'enviado'];
+const STATUS_ORDER = ['draft', 'confirmado', 'produccion', 'listo_envio', 'esperando_pago', 'enviado'];
 
 const fmt = (n: number) =>
   new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n);
@@ -179,7 +179,7 @@ export default async function PedidoDetallePage({ params }: Props) {
             </div>
           </div>
 
-          {/* Shipment panel */}
+          {/* Shipment panel — solo disponible en listo_envio */}
           {order.status === 'listo_envio' && (
             <div className="fr-card" style={{ overflow: 'hidden' }}>
               <div className="fr-section-head" style={{ background: FR.red, color: '#fff', borderBottom: `1px solid ${FR.red}` }}>
@@ -187,6 +187,18 @@ export default async function PedidoDetallePage({ params }: Props) {
               </div>
               <div style={{ padding: 16 }}>
                 <ShipmentPanel orderId={id} pesoTotal={order.peso_total} destination={address} />
+              </div>
+            </div>
+          )}
+
+          {/* Aviso cuando el cliente ya ha sido notificado */}
+          {order.status === 'esperando_pago' && (
+            <div className="fr-card" style={{ overflow: 'hidden' }}>
+              <div className="fr-section-head" style={{ background: '#E6883E', color: '#fff', borderBottom: '1px solid #E6883E' }}>
+                ◎ AWAITING CLIENT PAYMENT
+              </div>
+              <div style={{ padding: '14px 16px', fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 11, color: '#111', lineHeight: 1.6 }}>
+                El cliente ha sido notificado por email. El pedido pasará a <strong>SHIPPED</strong> automáticamente cuando complete el pago.
               </div>
             </div>
           )}
