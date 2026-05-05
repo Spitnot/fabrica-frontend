@@ -187,9 +187,9 @@ export default function StorefrontShell({ children }: { children: React.ReactNod
         :root {
           --fr-ink: #111;
           --fr-paper: #fff;
-          --fr-muted: #888;
+          --fr-muted: #111;
           --fr-line: #111;
-          --fr-line-soft: #e7e5e0;
+          --fr-line-soft: #111;
           --fr-red: #D93A35;
           --fr-purple: #6B5BD5;
           --fr-yellow: #F4D03F;
@@ -289,24 +289,24 @@ export default function StorefrontShell({ children }: { children: React.ReactNod
         .fr-context {
           display: flex; align-items: center; gap: 10px;
           padding: 7px 24px;
-          background: #f7f6f1;
-          border-bottom: 1px solid var(--fr-line-soft);
-          font-family: var(--fr-mono); font-size: 11px; color: #555;
+          background: #F7F7F2;
+          border-bottom: 1px solid #111;
+          font-family: var(--fr-mono); font-size: 11px; color: #111;
         }
         .fr-context__tag {
           background: var(--fr-red); color: #fff;
           padding: 2px 7px; font-weight: 700; letter-spacing: 0.08em;
         }
-        .fr-context__sep { color: #ccc; }
+        .fr-context__sep { color: rgba(17,17,17,0.3); }
         .fr-context__name { font-weight: 700; color: #111; letter-spacing: 0.04em; }
         .fr-context__tier { letter-spacing: 0.06em; }
         .fr-context__logout {
           margin-left: auto;
           background: transparent; border: 0; cursor: pointer;
           font-family: var(--fr-mono); font-size: 11px;
-          letter-spacing: 0.1em; color: #888;
+          letter-spacing: 0.1em; color: #111;
         }
-        .fr-context__logout:hover { color: #111; }
+        .fr-context__logout:hover { opacity: 0.6; }
         @media (max-width: 768px) { .fr-context { padding: 7px 16px; flex-wrap: wrap; } }
 
         /* Main */

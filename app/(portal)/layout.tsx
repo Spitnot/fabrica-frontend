@@ -90,7 +90,7 @@ function SidebarContent({ onClose }: { onClose: () => void }) {
         <Link href="/portal" onClick={onClose}>
           <FRLogoSVG width={110} />
         </Link>
-        <div style={{ marginTop: 8, fontSize: 8, fontWeight: 700, letterSpacing: '0.3em', textTransform: 'uppercase', color: '#D93A35', borderTop: '1px solid #eee', paddingTop: 6 }}>
+        <div style={{ marginTop: 8, fontSize: 8, fontWeight: 700, letterSpacing: '0.3em', textTransform: 'uppercase', color: '#D93A35', borderTop: '1px solid #111', paddingTop: 6 }}>
           Customer Portal
         </div>
       </div>

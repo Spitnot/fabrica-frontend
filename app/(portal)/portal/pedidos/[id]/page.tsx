@@ -48,9 +48,9 @@ const fmt = (n: number) =>
 
 // ─── Atoms ─────────────────────────────────────────────────
 
-const ink = '#000';
-const muted = '#6a6660';
-const line = '#e5e2da';
+const ink = '#111';
+const muted = '#111';
+const line = '#111';
 
 function MonoLabel({ children }: { children: React.ReactNode }) {
   return (
@@ -192,7 +192,7 @@ export default async function PedidoDetallePage({ params }: Props) {
             title="Commercial Info"
             action={
               <Link
-                href={`/api/orders/${order.id}/invoice`}
+                href={`/api/pedidos/${order.id}/invoice`}
                 target="_blank"
                 style={{
                   fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
@@ -350,13 +350,13 @@ export default async function PedidoDetallePage({ params }: Props) {
                     <div style={{
                       position: 'absolute', left: 5, top: 18,
                       width: 1, height: 'calc(100% + 4px)',
-                      background: isDone ? color : '#cfcbc0',
+                      background: isDone ? color : 'rgba(17,17,17,0.2)',
                     }} />
                   )}
                   <div style={{
                     width: 11, height: 11,
                     background: isCurrent ? color : isDone ? color : '#fff',
-                    border: `2px solid ${isCurrent || isDone ? color : '#cfcbc0'}`,
+                    border: `2px solid ${isCurrent || isDone ? color : 'rgba(17,17,17,0.2)'}`,
                     flexShrink: 0, marginTop: 4, position: 'relative', zIndex: 1,
                   }} />
                   <div style={{
@@ -376,7 +376,7 @@ export default async function PedidoDetallePage({ params }: Props) {
             title="Logistics"
             action={
               order.status === 'enviado' && order.packlink_shipment_id ? (
-                <form action={`/api/orders/${id}/tracking`} method="POST">
+                <form action={`/api/pedidos/${id}/tracking`} method="POST">
                   <button type="submit" style={{
                     background: 'transparent', border: 'none', padding: 0,
                     cursor: 'pointer',
