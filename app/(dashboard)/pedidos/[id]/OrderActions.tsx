@@ -12,7 +12,7 @@ export function OrderActions({ orderId, status }: Props) {
   async function advance(newStatus: string) {
     setLoading(newStatus);
     const body = new URLSearchParams({ status: newStatus });
-    await fetch(`/api/orders/${orderId}/status`, {
+    await fetch(`/api/pedidos/${orderId}/status`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: body.toString(),

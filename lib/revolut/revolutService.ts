@@ -3,25 +3,22 @@
  * Cliente para Revolut Merchant API
  */
 
+import { createHmac } from 'crypto';
 import {
   RevolutOrderPayload,
   RevolutOrderResponse,
 } from '@/lib/types/revolut';
 
-const REVOLUT_BASE_URL =
-  process.env.NEXT_PUBLIC_REVOLUT_ENVIRONMENT === 'production'
+function getBaseUrl() {
+  return process.env.NEXT_PUBLIC_REVOLUT_ENVIRONMENT === 'production'
     ? 'https://merchant.revolut.com'
     : 'https://sandbox-merchant.revolut.com';
-
-const REVOLUT_SECRET_KEY = process.env.REVOLUT_SECRET_KEY;
-const REVOLUT_MERCHANT_ID = process.env.REVOLUT_MERCHANT_ID;
-
-if (!REVOLUT_SECRET_KEY) {
-  throw new Error('REVOLUT_SECRET_KEY is not defined');
 }
 
-if (!REVOLUT_MERCHANT_ID) {
-  throw new Error('REVOLUT_MERCHANT_ID is not defined');
+function getSecretKey(): string {
+  const key = process.env.REVOLUT_SECRET_KEY;
+  if (!key) throw new Error('REVOLUT_SECRET_KEY is not defined');
+  return key;
 }
 
 /**
@@ -31,10 +28,10 @@ if (!REVOLUT_MERCHANT_ID) {
 export async function createRevolutOrder(
   payload: RevolutOrderPayload,
 ): Promise<RevolutOrderResponse> {
-  const url = `${REVOLUT_BASE_URL}/api/orders`;
+  const url = `${getBaseUrl()}/api/orders`;
 
   const headers = {
-    'Authorization': `Bearer ${REVOLUT_SECRET_KEY}`,
+    'Authorization': `Bearer ${getSecretKey()}`,
     'Revolut-Api-Version': '2024-01-01',
     'Content-Type': 'application/json',
     'Idempotency-Key': `${Date.now()}-${Math.random()}`,
@@ -70,10 +67,10 @@ export async function createRevolutOrder(
 export async function getRevolutOrder(
   orderId: string,
 ): Promise<RevolutOrderResponse> {
-  const url = `${REVOLUT_BASE_URL}/api/orders/${orderId}`;
+  const url = `${getBaseUrl()}/api/orders/${orderId}`;
 
   const headers = {
-    'Authorization': `Bearer ${REVOLUT_SECRET_KEY}`,
+    'Authorization': `Bearer ${getSecretKey()}`,
     'Revolut-Api-Version': '2024-01-01',
   };
 
@@ -103,10 +100,10 @@ export async function getRevolutOrder(
  * Cancelar una orden
  */
 export async function cancelRevolutOrder(orderId: string): Promise<void> {
-  const url = `${REVOLUT_BASE_URL}/api/orders/${orderId}/cancel`;
+  const url = `${getBaseUrl()}/api/orders/${orderId}/cancel`;
 
   const headers = {
-    'Authorization': `Bearer ${REVOLUT_SECRET_KEY}`,
+    'Authorization': `Bearer ${getSecretKey()}`,
     'Revolut-Api-Version': '2024-01-01',
     'Content-Type': 'application/json',
   };
@@ -146,11 +143,6 @@ export function verifyRevolutWebhookSignature(
     return false;
   }
 
-  const crypto = require('crypto');
-  const hash = crypto
-    .createHmac('sha256', webhookSecret)
-    .update(payload)
-    .digest('hex');
-
+  const hash = createHmac('sha256', webhookSecret).update(payload).digest('hex');
   return hash === signature;
 }

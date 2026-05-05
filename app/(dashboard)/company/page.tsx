@@ -238,10 +238,10 @@ function BrandingTab({ s, set }: { s: CompanySettings; set: (k: keyof CompanySet
       <div className="fr-card" style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 12 }}>
         <p style={{ fontSize: 11, color: '#111' }}>Los PDFs se generan con los datos fiscales y de branding guardados. Guarda los cambios antes de previsualizar.</p>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          <a href="/api/orders/preview/invoice" target="_blank" rel="noopener noreferrer">
+          <a href="/api/pedidos/preview/invoice" target="_blank" rel="noopener noreferrer">
             <button className="btn-ghost">Preview Invoice</button>
           </a>
-          <a href="/api/orders/preview/packslip" target="_blank" rel="noopener noreferrer">
+          <a href="/api/pedidos/preview/packslip" target="_blank" rel="noopener noreferrer">
             <button className="btn-ghost">Preview Packslip</button>
           </a>
         </div>

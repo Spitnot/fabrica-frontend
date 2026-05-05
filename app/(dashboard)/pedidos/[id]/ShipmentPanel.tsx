@@ -52,7 +52,7 @@ export function ShipmentPanel({ orderId, pesoTotal, destination }: Props) {
     if (!selectedQuote) return;
     setGenerating(true); setError('');
     try {
-      const res = await fetch(`/api/orders/${orderId}/shipment`, {
+      const res = await fetch(`/api/pedidos/${orderId}/shipment`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ service_id: selectedQuote.service_id, coste_envio_final: selectedQuote.price, ancho: parseFloat(ancho), alto: parseFloat(alto), largo: parseFloat(largo) }),

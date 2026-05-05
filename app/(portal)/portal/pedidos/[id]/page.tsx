@@ -1,13 +1,10 @@
-// ─────────────────────────────────────────────────────────────
-// PORTAL · ORDER DETAIL
-// Server component — data logic preserved 1:1 from FIRMA_FRESH.
-// Storefront-faithful surface: hairline rules, mono labels, red accent.
-// ─────────────────────────────────────────────────────────────
-
 import { notFound } from 'next/navigation';
-import Link from 'next/link';
 import { supabaseAdmin } from '@/lib/supabase/server';
 import type { Order, Customer, OrderItem } from '@/types';
+import Link from 'next/link';
+import { FR, BackLink } from '@/components/fr/Atoms';
+import { StatusChip, FRStatus } from '@/components/fr/StatusChip';
+import { PaymentPanel } from './PaymentPanel';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,7 +13,7 @@ type OrderFull = Order & { customer: Customer; order_items: OrderItem[] };
 async function getOrder(id: string): Promise<OrderFull | null> {
   const { data, error } = await supabaseAdmin
     .from('orders')
-    .select(`*, customer:customers(*), order_items(*)`)
+    .select('*, customer:customers(*), order_items(*)')
     .eq('id', id)
     .single();
   if (error) return null;
@@ -27,431 +24,252 @@ const STATUS_LABELS: Record<string, string> = {
   draft: 'Draft', confirmado: 'Confirmed', produccion: 'In Production',
   listo_envio: 'Ready to Ship', enviado: 'Shipped', cancelado: 'Cancelled',
 };
-
-const STATUS_COLOR: Record<string, string> = {
-  draft:       '#E6883E',
-  confirmado:  '#0087B8',
-  produccion:  '#876693',
-  listo_envio: '#F6E451',
-  enviado:     '#0DA265',
-  cancelado:   '#D93A35',
-};
-const STATUS_FG: Record<string, string> = {
-  draft: '#fff', confirmado: '#fff', produccion: '#fff',
-  listo_envio: '#000', enviado: '#fff', cancelado: '#fff',
-};
-
 const STATUS_ORDER = ['draft', 'confirmado', 'produccion', 'listo_envio', 'enviado'];
 
 const fmt = (n: number) =>
-  new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'EUR' }).format(n);
-
-// ─── Atoms ─────────────────────────────────────────────────
-
-const ink = '#111';
-const muted = '#111';
-const line = '#111';
-
-function MonoLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <span style={{
-      fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
-      fontSize: 10, fontWeight: 700, letterSpacing: '0.22em',
-      textTransform: 'uppercase', color: muted,
-    }}>{children}</span>
-  );
-}
-
-function StatusChip({ status }: { status: string }) {
-  return (
-    <span style={{
-      display: 'inline-flex', alignItems: 'center', gap: 6,
-      padding: '4px 10px',
-      background: STATUS_COLOR[status],
-      color: STATUS_FG[status],
-      fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
-      fontWeight: 700, fontSize: 11, letterSpacing: '0.12em',
-      textTransform: 'uppercase',
-    }}>
-      <span style={{
-        width: 6, height: 6, borderRadius: 0,
-        background: STATUS_FG[status], opacity: 0.9,
-      }} />
-      {STATUS_LABELS[status]}
-    </span>
-  );
-}
-
-function Card({ title, action, children }: {
-  title: string; action?: React.ReactNode; children: React.ReactNode;
-}) {
-  return (
-    <section style={{ background: '#fff', border: `1px solid ${ink}` }}>
-      <div style={{
-        padding: '12px 16px',
-        borderBottom: `1px solid ${ink}`,
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      }}>
-        <MonoLabel>{title}</MonoLabel>
-        {action}
-      </div>
-      <div style={{ padding: 16 }}>{children}</div>
-    </section>
-  );
-}
-
-function InfoRow({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
-  return (
-    <div style={{
-      display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
-      gap: 12, padding: '8px 0', borderBottom: `1px solid ${line}`,
-    }}>
-      <span style={{
-        fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
-        fontSize: 11, color: muted, letterSpacing: '0.06em',
-      }}>{label}</span>
-      <span style={{
-        fontFamily: mono
-          ? 'var(--font-mono, "JetBrains Mono", monospace)'
-          : 'var(--font-mono, "JetBrains Mono", monospace)',
-        fontSize: 12, color: ink, fontWeight: 500, textAlign: 'right',
-      }}>{value || '—'}</span>
-    </div>
-  );
-}
+  new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n);
 
 interface Props { params: Promise<{ id: string }> }
 
-export default async function PedidoDetallePage({ params }: Props) {
+export default async function PortalPedidoDetallePage({ params }: Props) {
   const { id } = await params;
   const order = await getOrder(id);
   if (!order) notFound();
 
   const currentIdx = STATUS_ORDER.indexOf(order.status);
-  const c = order.customer as any;
-  const address = c?.ship_street1
-    ? { street: c.ship_street1, city: c.ship_city, postal_code: c.ship_postal_code, country: c.ship_country }
-    : c?.direccion_envio as any;
-  const contactName = c?.first_name ? `${c.first_name} ${c.last_name ?? ''}`.trim() : c?.contacto_nombre ?? '—';
+  const customer = order.customer as any;
+  const address = customer?.ship_street1
+    ? { street: customer.ship_street1, city: customer.ship_city, postal_code: customer.ship_postal_code, country: customer.ship_country }
+    : customer?.direccion_envio as any;
+  const contactName = customer?.first_name
+    ? `${customer.first_name} ${customer.last_name ?? ''}`.trim()
+    : customer?.contacto_nombre ?? '—';
+  const ref = id.slice(0, 8).toUpperCase();
+  const dateStr = new Date(order.created_at).toLocaleDateString('es-ES', {
+    day: '2-digit', month: 'short', year: 'numeric',
+  }).toUpperCase();
 
   return (
-    <div style={{ maxWidth: 1100, margin: '0 auto', padding: 16, display: 'flex', flexDirection: 'column', gap: 16 }}>
+    <div style={{ padding: '24px 28px', maxWidth: 1280, margin: '0 auto' }}>
 
-      {/* Back link */}
-      <Link
-        href="/portal"
-        style={{
-          fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
-          fontSize: 10, fontWeight: 700, letterSpacing: '0.22em',
-          textTransform: 'uppercase', color: ink,
-          textDecoration: 'underline', textUnderlineOffset: 3,
-          textDecorationThickness: 1.5,
-        }}>← My Orders</Link>
+      <BackLink href="/portal">ALL ORDERS</BackLink>
 
-      {/* Header */}
-      <header style={{ borderBottom: `2px solid ${ink}`, paddingBottom: 16 }}>
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
-          marginBottom: 12,
-        }}>
-          <span style={{
-            fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
-            fontSize: 10, fontWeight: 700, letterSpacing: '0.18em',
-            color: muted,
-          }}>FILE / {order.id.slice(0, 8).toUpperCase()}</span>
-          <StatusChip status={order.status} />
-        </div>
-        <h1 style={{
-          margin: 0,
-          fontFamily: 'var(--font-display, Alexandria, sans-serif)',
-          fontWeight: 900, fontSize: 'clamp(40px, 7vw, 84px)',
-          lineHeight: 0.86, letterSpacing: '-0.04em',
-          textTransform: 'uppercase', color: ink,
-        }}>
-          Order<span style={{ color: '#D93A35' }}>.</span>
-        </h1>
-        <div style={{
-          marginTop: 12,
-          fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
-          fontSize: 12, color: ink,
-        }}>
-          {contactName} · {order.customer?.company_name} ·{' '}
-          {new Date(order.created_at).toLocaleDateString('en-GB', {
-            day: '2-digit', month: 'short', year: 'numeric',
-          })}
-        </div>
-      </header>
-
-      {/* Layout */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 320px', gap: 16 }} className="fr-detail-grid">
-
-        {/* LEFT — items */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16, minWidth: 0 }}>
-
-          <Card
-            title="Commercial Info"
-            action={
-              <Link
-                href={`/api/pedidos/${order.id}/invoice`}
-                target="_blank"
-                style={{
-                  fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
-                  fontSize: 10, fontWeight: 700, letterSpacing: '0.18em',
-                  textTransform: 'uppercase', color: '#D93A35',
-                  textDecoration: 'underline', textUnderlineOffset: 3,
-                  textDecorationThickness: 1.5,
-                }}
-              >↓ Invoice</Link>
-            }
-          >
+      {/* Hero header */}
+      <div style={{
+        marginTop: 12, background: '#111', color: '#fff',
+        padding: '24px 28px',
+        display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start',
+        justifyContent: 'space-between', gap: 16,
+      }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontWeight: 700, fontSize: 9, letterSpacing: '0.18em', textTransform: 'uppercase', color: FR.yellow }}>
+            ● ORDER · {dateStr}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 14, flexWrap: 'wrap' }}>
             <div style={{
-              display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16, marginBottom: 20,
+              fontFamily: 'var(--font-alexandria), Alexandria, sans-serif',
+              fontWeight: 900, fontSize: 56, lineHeight: 0.9,
+              letterSpacing: '-0.04em', color: '#fff',
             }}>
-              {[
-                ['Client', contactName ?? '—'],
-                ['Company', order.customer?.company_name ?? '—'],
-                ['Total Weight', `${order.peso_total} kg`],
-                ['Created', new Date(order.created_at).toLocaleDateString('en-GB')],
-              ].map(([label, value]) => (
-                <div key={label}>
-                  <div style={{
-                    fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
-                    fontSize: 9, fontWeight: 700, letterSpacing: '0.18em',
-                    textTransform: 'uppercase', color: muted, marginBottom: 4,
-                  }}>{label}</div>
-                  <div style={{
-                    fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
-                    fontSize: 13, fontWeight: 600, color: ink,
-                  }}>{value as string}</div>
+              #{ref}
+            </div>
+            <StatusChip status={order.status as FRStatus} size="lg" />
+          </div>
+          <div style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 11, color: 'rgba(255,255,255,0.6)', letterSpacing: '0.06em' }}>
+            {contactName.toUpperCase()} · {(order.customer?.company_name ?? '').toUpperCase()}
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+          <a
+            href={`/api/pedidos/${id}/packslip`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn-ghost"
+            style={{ background: 'transparent', border: '2px solid #fff', color: '#fff', fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 10, letterSpacing: '0.14em', padding: '8px 14px', textDecoration: 'none' }}
+          >
+            ↓ PACKSLIP
+          </a>
+        </div>
+      </div>
+
+      {/* Two-column grid */}
+      <div className="fr-order-grid" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 12, marginTop: 12 }}>
+        <style>{`@media(min-width:900px){.fr-order-grid{grid-template-columns:1fr 320px!important}}`}</style>
+
+        {/* LEFT */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+
+          {/* Order items */}
+          <div className="fr-card" style={{ overflow: 'hidden' }}>
+            <div className="fr-section-head">▣ ORDER ITEMS / {order.order_items?.length ?? 0}</div>
+
+            {/* Mobile: cards */}
+            <div className="fr-items-mobile">
+              <style>{`@media(min-width:600px){.fr-items-mobile{display:none!important}.fr-items-table{display:block!important}}`}</style>
+              {order.order_items?.map((item, i) => (
+                <div key={item.id} style={{
+                  padding: '14px 16px',
+                  borderBottom: i < order.order_items.length - 1 ? '1px solid #111' : 'none',
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12,
+                }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700 }}>{item.nombre_producto}</div>
+                    <div style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 10, color: '#111', marginTop: 2 }}>
+                      {item.sku} · {item.peso_unitario}KG/U
+                    </div>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontFamily: 'var(--font-alexandria), Alexandria, sans-serif', fontWeight: 900, fontSize: 22, letterSpacing: '-0.04em' }}>
+                      {fmt(item.cantidad * item.precio_unitario)}
+                    </div>
+                    <div style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 10, color: '#111' }}>
+                      {item.cantidad} × {fmt(item.precio_unitario)}
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>
 
-            {/* Items table */}
-            <div style={{ borderTop: `1px solid ${ink}`, marginTop: 4 }}>
-              {/* Desktop header */}
-              <div className="fr-table-head" style={{
-                display: 'grid',
-                gridTemplateColumns: '1.5fr 1fr 60px 80px 90px 100px',
-                gap: 12, padding: '10px 0',
-                borderBottom: `1px solid ${ink}`,
-              }}>
-                {['Product', 'SKU', 'Qty', 'Weight', 'Unit', 'Subtotal'].map(h => (
-                  <div key={h} style={{
-                    fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
-                    fontSize: 9, fontWeight: 700, letterSpacing: '0.18em',
-                    textTransform: 'uppercase', color: muted,
-                    textAlign: ['Qty', 'Weight', 'Unit'].includes(h) ? 'center' :
-                              h === 'Subtotal' ? 'right' : 'left',
-                  }}>{h}</div>
+            {/* Desktop: table */}
+            <div className="fr-items-table" style={{ display: 'none' }}>
+              <div className="fr-table-head" style={{ gridTemplateColumns: '2fr 110px 60px 80px 110px 130px' }}>
+                {['PRODUCT', 'SKU', 'QTY', 'WEIGHT', 'UNIT', 'SUBTOTAL'].map(h => (
+                  <div key={h} className="fr-label">{h}</div>
                 ))}
               </div>
-
-              {/* Rows */}
-              {order.order_items?.map(item => (
-                <div key={item.id}
-                  className="fr-row"
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: '1.5fr 1fr 60px 80px 90px 100px',
-                    gap: 12, padding: '12px 0',
-                    borderBottom: `1px solid ${line}`, alignItems: 'center',
+              {order.order_items?.map((item, i) => (
+                <div key={item.id} style={{
+                  display: 'grid',
+                  gridTemplateColumns: '2fr 110px 60px 80px 110px 130px',
+                  padding: '14px 16px', gap: 12, alignItems: 'center',
+                  borderBottom: i < order.order_items.length - 1 ? '1px solid #111' : 'none',
                 }}>
-                  <div style={{
-                    fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
-                    fontSize: 13, fontWeight: 600, color: ink,
-                  }}>{item.nombre_producto}</div>
-                  <div style={{
-                    fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
-                    fontSize: 11, color: muted,
-                  }}>{item.sku}</div>
-                  <div style={{
-                    fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
-                    fontSize: 13, fontWeight: 700, color: ink, textAlign: 'center',
-                    fontVariantNumeric: 'tabular-nums',
-                  }}>{item.cantidad}</div>
-                  <div style={{
-                    fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
-                    fontSize: 11, color: muted, textAlign: 'center',
-                    fontVariantNumeric: 'tabular-nums',
-                  }}>{item.peso_unitario} kg</div>
-                  <div style={{
-                    fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
-                    fontSize: 12, color: ink, textAlign: 'center',
-                    fontVariantNumeric: 'tabular-nums',
-                  }}>{fmt(item.precio_unitario)}</div>
-                  <div style={{
-                    fontFamily: 'var(--font-display, Alexandria, sans-serif)',
-                    fontWeight: 800, fontSize: 16, color: ink, textAlign: 'right',
-                    fontVariantNumeric: 'tabular-nums',
-                  }}>{fmt(item.cantidad * item.precio_unitario)}</div>
+                  <div style={{ fontSize: 13, fontWeight: 700 }}>{item.nombre_producto}</div>
+                  <div style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 10, color: '#111' }}>{item.sku}</div>
+                  <div style={{ fontFamily: 'var(--font-alexandria), Alexandria, sans-serif', fontWeight: 900, fontSize: 18 }}>{item.cantidad}</div>
+                  <div style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 11 }}>{item.peso_unitario}KG</div>
+                  <div style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 11 }}>{fmt(item.precio_unitario)}</div>
+                  <div style={{ fontFamily: 'var(--font-alexandria), Alexandria, sans-serif', fontWeight: 900, fontSize: 20, letterSpacing: '-0.04em', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                    {fmt(item.cantidad * item.precio_unitario)}
+                  </div>
                 </div>
               ))}
             </div>
 
-            {/* Totals */}
-            <div style={{ marginTop: 16, paddingTop: 16, borderTop: `1px solid ${ink}` }}>
+            {/* Totals strip */}
+            <div style={{ background: '#111', color: '#fff', padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 8 }}>
               {[
-                ['Product Subtotal', fmt(order.total_productos)],
-                ['Estimated Shipping', order.coste_envio_estimado ? fmt(order.coste_envio_estimado) : '—'],
-                ...(order.coste_envio_final ? [['Final Shipping', fmt(order.coste_envio_final)]] : []),
+                ['PRODUCT SUBTOTAL', fmt(order.total_productos)],
+                ['EST. SHIPPING', order.coste_envio_estimado ? fmt(order.coste_envio_estimado) : '—'],
+                ...(order.coste_envio_final ? [['FINAL SHIPPING', fmt(order.coste_envio_final)]] : []),
               ].map(([label, value]) => (
-                <div key={label as string} style={{
-                  display: 'flex', justifyContent: 'space-between', padding: '6px 0',
-                }}>
-                  <span style={{
-                    fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
-                    fontSize: 12, color: muted,
-                  }}>{label}</span>
-                  <span style={{
-                    fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
-                    fontSize: 12, color: ink, fontWeight: 500,
-                    fontVariantNumeric: 'tabular-nums',
-                  }}>{value}</span>
+                <div key={String(label)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                  <span style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 10, color: 'rgba(255,255,255,0.5)', letterSpacing: '0.14em' }}>{label}</span>
+                  <span style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 12, color: '#fff' }}>{value}</span>
                 </div>
               ))}
-              <div style={{
-                display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
-                paddingTop: 12, marginTop: 8, borderTop: `2px solid ${ink}`,
-              }}>
-                <span style={{
-                  fontFamily: 'var(--font-display, Alexandria, sans-serif)',
-                  fontSize: 14, fontWeight: 800, color: ink,
-                  textTransform: 'uppercase', letterSpacing: '0.04em',
-                }}>Total</span>
-                <span style={{
-                  fontFamily: 'var(--font-display, Alexandria, sans-serif)',
-                  fontWeight: 900, fontSize: 32, color: '#D93A35',
-                  letterSpacing: '-0.03em',
-                  fontVariantNumeric: 'tabular-nums',
-                }}>{fmt(order.total_productos)}</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', paddingTop: 10, marginTop: 4, borderTop: '1px solid rgba(255,255,255,0.15)' }}>
+                <span style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 11, color: FR.yellow, letterSpacing: '0.18em' }}>TOTAL</span>
+                <span style={{ fontFamily: 'var(--font-alexandria), Alexandria, sans-serif', fontWeight: 900, fontSize: 36, letterSpacing: '-0.04em', color: FR.yellow }}>
+                  {fmt(order.total_productos)}
+                </span>
               </div>
             </div>
-          </Card>
+          </div>
         </div>
 
         {/* RIGHT — sidebar */}
-        <aside style={{ display: 'flex', flexDirection: 'column', gap: 16, minWidth: 0 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
 
           {/* Status timeline */}
-          <Card title="Status">
-            {STATUS_ORDER.map((s, i) => {
-              const isDone = i < currentIdx;
-              const isCurrent = i === currentIdx;
-              const color = STATUS_COLOR[s];
-              const isLast = i === STATUS_ORDER.length - 1;
-              return (
-                <div key={s} style={{
-                  display: 'flex', alignItems: 'flex-start', gap: 12,
-                  padding: '6px 0',
-                  position: 'relative',
-                }}>
-                  {!isLast && (
+          <div className="fr-card" style={{ overflow: 'hidden' }}>
+            <div className="fr-section-head">◷ STATUS</div>
+            <div style={{ padding: '16px 18px' }}>
+              {STATUS_ORDER.map((s, i) => {
+                const isDone = i < currentIdx;
+                const isCurrent = i === currentIdx;
+                const dotBg = isCurrent ? FR.red : isDone ? '#111' : '#fff';
+                return (
+                  <div key={s} style={{ display: 'flex', alignItems: 'center', gap: 12, paddingBottom: 12, position: 'relative' }}>
+                    {i < STATUS_ORDER.length - 1 && (
+                      <div style={{ position: 'absolute', left: 5, top: 14, width: 2, height: '100%', background: isDone ? '#111' : 'rgba(17,17,17,0.15)' }} />
+                    )}
                     <div style={{
-                      position: 'absolute', left: 5, top: 18,
-                      width: 1, height: 'calc(100% + 4px)',
-                      background: isDone ? color : 'rgba(17,17,17,0.2)',
+                      width: 12, height: 12, flexShrink: 0,
+                      border: '1px solid #111', background: dotBg,
+                      position: 'relative', zIndex: 1,
                     }} />
-                  )}
-                  <div style={{
-                    width: 11, height: 11,
-                    background: isCurrent ? color : isDone ? color : '#fff',
-                    border: `2px solid ${isCurrent || isDone ? color : 'rgba(17,17,17,0.2)'}`,
-                    flexShrink: 0, marginTop: 4, position: 'relative', zIndex: 1,
-                  }} />
-                  <div style={{
-                    fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
-                    fontSize: 12, fontWeight: isCurrent ? 700 : 500,
-                    color: isCurrent ? color : isDone ? ink : muted,
-                    letterSpacing: '0.04em',
-                    paddingTop: 1,
-                  }}>{STATUS_LABELS[s]}</div>
-                </div>
-              );
-            })}
-          </Card>
+                    <div style={{
+                      fontFamily: 'JetBrains Mono, ui-monospace, monospace',
+                      fontSize: 11, fontWeight: isCurrent ? 700 : 500,
+                      letterSpacing: '0.14em', textTransform: 'uppercase',
+                      color: isCurrent ? '#111' : isDone ? '#111' : 'rgba(17,17,17,0.35)',
+                    }}>
+                      {STATUS_LABELS[s]}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
 
           {/* Logistics */}
-          <Card
-            title="Logistics"
-            action={
-              order.status === 'enviado' && order.packlink_shipment_id ? (
-                <form action={`/api/pedidos/${id}/tracking`} method="POST">
-                  <button type="submit" style={{
-                    background: 'transparent', border: 'none', padding: 0,
-                    cursor: 'pointer',
-                    fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
-                    fontSize: 10, fontWeight: 700, letterSpacing: '0.18em',
-                    textTransform: 'uppercase', color: '#D93A35',
-                    textDecoration: 'underline', textUnderlineOffset: 3,
-                    textDecorationThickness: 1.5,
-                  }}>↻ Update</button>
-                </form>
-              ) : null
-            }
-          >
-            <InfoRow
-              label="EST. SHIPPING"
-              value={order.coste_envio_estimado ? fmt(order.coste_envio_estimado) : '—'}
-              mono
-            />
-            <InfoRow
-              label="FINAL SHIPPING"
-              value={order.coste_envio_final ? fmt(order.coste_envio_final) : '—'}
-              mono
-            />
-            <InfoRow
-              label="SHIPMENT ID"
-              value={order.packlink_shipment_id ?? '—'}
-              mono
-            />
-            {order.tracking_url && (
-              <div style={{ paddingTop: 12, marginTop: 4, borderTop: `1px solid ${ink}` }}>
-                <a href={order.tracking_url} target="_blank" rel="noopener noreferrer" style={{
-                  fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
-                  fontSize: 11, fontWeight: 700, color: '#0087B8',
-                  textDecoration: 'underline', textUnderlineOffset: 3,
-                  textDecorationThickness: 1.5, letterSpacing: '0.04em',
-                }}>View tracking →</a>
-              </div>
-            )}
-          </Card>
+          <div className="fr-card" style={{ overflow: 'hidden' }}>
+            <div className="fr-section-head">◈ LOGISTICS</div>
+            <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {[
+                ['EST. SHIPPING', order.coste_envio_estimado ? fmt(order.coste_envio_estimado) : '—'],
+                ['FINAL SHIPPING', order.coste_envio_final ? fmt(order.coste_envio_final) : '—'],
+                ['SHIPMENT ID', order.packlink_shipment_id ?? '—'],
+              ].map(([label, value]) => (
+                <div key={String(label)} style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  <span className="fr-label">{label}</span>
+                  <span style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 11, color: '#111', wordBreak: 'break-all' }}>{value}</span>
+                </div>
+              ))}
+              {order.tracking_url && (
+                <div style={{ paddingTop: 10, borderTop: '1px solid #111' }}>
+                  <a href={order.tracking_url} target="_blank" rel="noopener noreferrer" style={{
+                    fontFamily: 'JetBrains Mono, ui-monospace, monospace',
+                    fontSize: 10, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase',
+                    color: FR.red,
+                  }}>
+                    VIEW TRACKING ↗
+                  </a>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Payment */}
+          <PaymentPanel
+            orderId={id}
+            orderState={order.status}
+            totalAmount={order.total_productos}
+            currency="EUR"
+            orderReference={ref}
+          />
 
           {/* Client */}
-          <Card title="Client">
-            <InfoRow label="NAME" value={contactName ?? '—'} />
-            <InfoRow label="COMPANY" value={order.customer?.company_name ?? '—'} />
-            <InfoRow label="EMAIL" value={order.customer?.email ?? '—'} />
-            <InfoRow label="PHONE" value={order.customer?.telefono ?? '—'} />
-            <InfoRow
-              label="ADDRESS"
-              value={address ? `${address.street}, ${address.postal_code} ${address.city}` : '—'}
-            />
-          </Card>
-        </aside>
+          <div className="fr-card" style={{ overflow: 'hidden' }}>
+            <div className="fr-section-head">◉ MY ACCOUNT</div>
+            <div style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {[
+                ['NAME', contactName ?? '—'],
+                ['COMPANY', order.customer?.company_name ?? '—'],
+                ['EMAIL', order.customer?.email ?? '—'],
+                ['PHONE', order.customer?.telefono ?? '—'],
+                ['ADDRESS', address ? `${address.street}, ${address.postal_code} ${address.city}` : '—'],
+              ].map(([label, value]) => (
+                <div key={String(label)} style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  <span className="fr-label">{label}</span>
+                  <span style={{ fontSize: 12, color: '#111', fontWeight: 500 }}>{value}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
-
-      {/* Mobile rules — collapse to single column under 900px */}
-      <style>{`
-        @media (max-width: 900px) {
-          .fr-detail-grid { grid-template-columns: 1fr !important; }
-          .fr-table-head { display: none !important; }
-          .fr-row {
-            grid-template-columns: 1fr auto !important;
-            grid-template-areas:
-              "name subtotal"
-              "sku  qty"
-              "weight unit" !important;
-            row-gap: 4px !important;
-          }
-          .fr-row > *:nth-child(1) { grid-area: name; }
-          .fr-row > *:nth-child(2) { grid-area: sku; }
-          .fr-row > *:nth-child(3) { grid-area: qty; text-align: right !important; }
-          .fr-row > *:nth-child(4) { grid-area: weight; text-align: left !important; }
-          .fr-row > *:nth-child(5) { grid-area: unit; text-align: right !important; }
-          .fr-row > *:nth-child(6) { grid-area: subtotal; }
-        }
-      `}</style>
     </div>
   );
 }

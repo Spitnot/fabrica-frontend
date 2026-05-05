@@ -38,7 +38,7 @@ function PedidosInner() {
     async function load() {
       setLoading(true);
       try {
-        const [oRes, cRes] = await Promise.all([fetch('/api/orders'), fetch('/api/customers')]);
+        const [oRes, cRes] = await Promise.all([fetch('/api/pedidos'), fetch('/api/customers')]);
         setOrders((await oRes.json()).data ?? []);
         setCustomers((await cRes.json()).data ?? []);
       } catch (e) { console.error(e); } finally { setLoading(false); }

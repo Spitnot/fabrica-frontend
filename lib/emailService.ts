@@ -1,7 +1,11 @@
 import { Resend } from 'resend'
 import { getAdminClient } from '@/lib/supabase/server'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+function getResend() {
+  const key = process.env.RESEND_API_KEY
+  if (!key) throw new Error('RESEND_API_KEY is not defined')
+  return new Resend(key)
+}
 const FROM = 'Firma Rollers B2B <noreply@firmarollers.com>'
 
 async function logEmail({
@@ -43,7 +47,7 @@ async function logEmail({
 export async function sendResetPasswordEmail(to: string, customerId?: string) {
   const subject = 'Reset your password — Firma Rollers B2B'
   try {
-    await resend.emails.send({
+    await getResend().emails.send({
       from: FROM,
       to,
       subject,
@@ -66,7 +70,7 @@ export async function sendResetPasswordEmail(to: string, customerId?: string) {
 export async function sendCustomerInviteEmail(to: string, name: string, link: string, customerId?: string) {
   const subject = 'Welcome to Firma Rollers B2B — Activate your account'
   try {
-    await resend.emails.send({
+    await getResend().emails.send({
       from: FROM,
       to,
       subject,
@@ -93,7 +97,7 @@ export async function sendCustomerInviteEmail(to: string, name: string, link: st
 export async function sendTeamInviteEmail(to: string, name: string, link: string) {
   const subject = 'You have been added to Firma Rollers B2B'
   try {
-    await resend.emails.send({
+    await getResend().emails.send({
       from: FROM,
       to,
       subject,
@@ -128,7 +132,7 @@ export async function sendShippingEmail(
 ) {
   const subject = `Your order ${orderRef} has been shipped — Firma Rollers B2B`
   try {
-    await resend.emails.send({
+    await getResend().emails.send({
       from: FROM,
       to,
       subject,

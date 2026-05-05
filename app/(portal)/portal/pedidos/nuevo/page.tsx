@@ -10,7 +10,7 @@ import Link from 'next/link';
 interface Product { sku: string; nombre_producto: string; variante?: string; precio_mayorista: number; peso_kg: number; imagen?: string; }
 interface ProductGroup { nombre: string; variantes: Product[]; imagen?: string; }
 interface TarifaPrecio { sku: string; precio?: number | null; pack_size?: number | null; }
-interface Tarifa { multiplicador: number; pack_size: number; minimum_order_value: number; hidden_products: string[]; precios?: TarifaPrecio[]; }
+interface Tarifa { multiplicador: number; pack_size: number; minimum_order_value: number; hidden_products: string[]; nombre: string; precios?: TarifaPrecio[]; }
 interface Customer {
   id: string; contacto_nombre?: string; first_name?: string; last_name?: string;
   company_name: string; descuento_pct: number;
@@ -29,13 +29,6 @@ function computePrice(sku: string, shopifyPrice: number, tarifa?: Tarifa | null,
 }
 
 const fmt = (n: number) => new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'EUR' }).format(n);
-
-const BLOCK_COLORS = ['#D93A35', '#E6883E', '#F6E451', '#0087B8', '#0DA265', '#876693', '#111111'];
-function blockFor(s: string) {
-  let h = 0;
-  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
-  return BLOCK_COLORS[Math.abs(h) % BLOCK_COLORS.length];
-}
 
 export default function NewOrderPage() {
   const router = useRouter();
@@ -56,7 +49,7 @@ export default function NewOrderPage() {
       if (!user) return;
       const { data: cust } = await supabaseClient
         .from('customers')
-        .select('id, contacto_nombre, first_name, last_name, company_name, descuento_pct, ship_street1, ship_city, ship_postal_code, ship_country, direccion_envio, tarifa:tarifa_id(multiplicador, pack_size, minimum_order_value, hidden_products, precios:tarifas_precios(sku, precio, pack_size))')
+        .select('id, contacto_nombre, first_name, last_name, company_name, descuento_pct, ship_street1, ship_city, ship_postal_code, ship_country, direccion_envio, tarifa:tarifa_id(nombre, multiplicador, pack_size, minimum_order_value, hidden_products, precios:tarifas_precios(sku, precio, pack_size))')
         .eq('auth_user_id', user.id)
         .single();
       if (cust) setCustomer(cust as unknown as Customer);
@@ -185,7 +178,17 @@ export default function NewOrderPage() {
             {(customer.first_name ?? customer.contacto_nombre ?? '?')[0].toUpperCase()}
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 13, fontWeight: 700 }}>{`${customer.first_name ?? customer.contacto_nombre ?? ''} ${customer.last_name ?? ''}`.trim()}</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 13, fontWeight: 700 }}>{`${customer.first_name ?? customer.contacto_nombre ?? ''} ${customer.last_name ?? ''}`.trim()}</span>
+              {customer.tarifa && (
+                <span style={{ padding: '2px 8px', border: '1px solid #111', fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontWeight: 700, fontSize: 9, letterSpacing: '0.14em', textTransform: 'uppercase', background: '#111', color: FR.yellow }}>
+                  {customer.tarifa.nombre}
+                </span>
+              )}
+              {(customer.descuento_pct ?? 0) > 0 && (
+                <span style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 10, color: FR.red, fontWeight: 700 }}>−{customer.descuento_pct}%</span>
+              )}
+            </div>
             <div style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 10, color: '#111', marginTop: 1 }}>
               {customer.company_name}
               {clientAddress && ` · ${clientAddress.postal_code} ${clientAddress.city}`}
@@ -199,100 +202,86 @@ export default function NewOrderPage() {
         </div>
       )}
 
-      {/* Main grid — stacks on mobile */}
+      {/* Main grid */}
       <div className="portal-nuevo-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: 16, alignItems: 'start' }}>
         <style>{`@media(max-width:800px){.portal-nuevo-grid{grid-template-columns:1fr!important}}`}</style>
 
         {/* LEFT: Catalogue */}
-        <div className="fr-card" style={{ overflow: 'hidden' }}>
-          <div className="fr-section-head">
-            <span>CATALOGUE</span>
-            <span>{productGroups.length} PRODUCTS</span>
-          </div>
-          <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <input
-              type="text" value={search} onChange={e => setSearch(e.target.value)}
-              placeholder="Search by name, SKU or variant…"
-              style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 11, border: '1px solid #111', borderRadius: 0, padding: '8px 12px', background: '#fff', outline: 'none', width: '100%' }}
-            />
-            {loadingProducts ? (
-              <div style={{ padding: '32px 0', textAlign: 'center', fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 11, color: '#111' }}>LOADING CATALOGUE…</div>
-            ) : productGroups.length === 0 ? (
-              <div style={{ padding: '32px 0', textAlign: 'center', fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 11, color: '#111' }}>No products found.</div>
-            ) : (
-              <div className="portal-prod-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 8 }}>
-                <style>{`@media(max-width:480px){.portal-prod-grid{grid-template-columns:1fr!important}}`}</style>
-                {productGroups.map(group => {
-                  const block = blockFor(group.nombre);
-                  const first = group.variantes[0];
-                  const price = computePrice(first.sku, first.precio_mayorista, customer?.tarifa, customer?.descuento_pct);
-                  return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+          <div className="fr-card" style={{ overflow: 'hidden' }}>
+            <div className="fr-section-head">
+              <span>CATALOGUE</span>
+              <span>{productGroups.length} PRODUCTS</span>
+            </div>
+            <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <input
+                type="text" value={search} onChange={e => setSearch(e.target.value)}
+                placeholder="Search by name, SKU or variant…"
+                style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 11, border: '1px solid #111', borderRadius: 0, padding: '8px 12px', background: '#fff', outline: 'none', width: '100%' }}
+              />
+
+              {loadingProducts ? (
+                <div style={{ padding: '32px 0', textAlign: 'center', fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 11, color: '#111' }}>LOADING CATALOGUE…</div>
+              ) : productGroups.length === 0 ? (
+                <div style={{ padding: '32px 0', textAlign: 'center', fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 11, color: '#111' }}>
+                  {search.length >= 2 ? 'No products match.' : 'No products found.'}
+                </div>
+              ) : (
+                <div className="portal-prod-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
+                  <style>{`@media(max-width:480px){.portal-prod-grid{grid-template-columns:1fr!important}}`}</style>
+                  {productGroups.map(group => (
                     <div key={group.nombre} className="fr-card" style={{ overflow: 'hidden' }}>
-                      <div style={{ background: block, aspectRatio: '4/3', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        {group.imagen ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={group.imagen} alt={group.nombre} style={{ width: '100%', height: '100%', objectFit: 'contain', mixBlendMode: 'multiply' }} />
-                        ) : (
-                          <span style={{ fontFamily: 'var(--font-alexandria), Alexandria, sans-serif', fontWeight: 900, fontSize: 22, color: 'rgba(255,255,255,0.9)', letterSpacing: '0.02em', textAlign: 'center', padding: '0 8px' }}>
-                            {group.nombre.split(' ')[0]}
-                          </span>
-                        )}
-                      </div>
+                      {group.imagen && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={group.imagen} alt={group.nombre} style={{ width: '100%', height: 120, objectFit: 'cover', display: 'block', borderBottom: '1px solid #111' }} />
+                      )}
                       <div style={{ padding: 12 }}>
-                        <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{group.nombre}</div>
-                        <div style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 11, color: customer?.tarifa ? FR.red : '#111', marginBottom: 8, fontWeight: 700 }}>
-                          {fmt(price)}
-                        </div>
-                        {/* Variant dots */}
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
+                        <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 8 }}>{group.nombre}</div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                           {group.variantes.map(v => {
                             const qty = getQty(v.sku);
                             const { color } = parseVariant(v.variante);
                             const colorHex = color ? getColorHex(color) : null;
                             return (
-                              <button
-                                key={v.sku}
-                                onClick={() => addProduct(v)}
-                                title={`${v.variante ?? v.sku} — tap to add`}
-                                style={{ position: 'relative', background: 'transparent', border: 0, padding: 0, cursor: 'pointer', boxShadow: 'none' }}
-                              >
-                                {colorHex ? (
-                                  <div style={{ width: 24, height: 24, borderRadius: '50%', background: colorHex, border: qty > 0 ? '2.5px solid #111' : '1px solid rgba(0,0,0,0.2)' }} />
-                                ) : (
-                                  <span style={{ display: 'inline-block', fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 9, padding: '3px 6px', border: '1px solid #111', background: qty > 0 ? '#111' : '#fff', color: qty > 0 ? '#fff' : '#111' }}>
-                                    {v.variante ?? v.sku.slice(-3)}
-                                  </span>
-                                )}
-                                {qty > 0 && (
-                                  <span style={{ position: 'absolute', top: -7, right: -7, background: FR.red, color: '#fff', fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 8, fontWeight: 700, padding: '1px 3px', minWidth: 14, textAlign: 'center', lineHeight: 1.5 }}>
-                                    {qty}
-                                  </span>
-                                )}
-                              </button>
+                              <div key={v.sku} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                                <div style={{ minWidth: 0 }}>
+                                  {v.variante && (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                      {colorHex && <span style={{ width: 8, height: 8, background: colorHex, border: '1px solid rgba(0,0,0,0.15)', flexShrink: 0 }} />}
+                                      <div style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 10, color: '#111', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{v.variante}</div>
+                                    </div>
+                                  )}
+                                  <div style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 9, color: '#111' }}>{v.sku}</div>
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+                                  {qty > 0 ? (
+                                    <>
+                                      <button onClick={() => removeProduct(v)} style={{ width: 24, height: 24, border: '1px solid #111', background: '#fff', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: 'none' }}>−</button>
+                                      <span style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 12, fontWeight: 700, color: FR.red, width: 20, textAlign: 'center' }}>{qty}</span>
+                                      <button onClick={() => addProduct(v)} style={{ width: 24, height: 24, border: '1px solid #111', background: '#fff', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: 'none' }}>+</button>
+                                    </>
+                                  ) : (
+                                    <button onClick={() => addProduct(v)} style={{ padding: '3px 10px', border: '1px solid #111', background: '#fff', fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', cursor: 'pointer', boxShadow: 'none' }}>+ ADD</button>
+                                  )}
+                                </div>
+                              </div>
                             );
                           })}
                         </div>
-                        {/* In-cart qty controls */}
-                        {group.variantes.some(v => getQty(v.sku) > 0) && (
-                          <div style={{ borderTop: '1px solid #111', paddingTop: 8, display: 'flex', flexDirection: 'column', gap: 4 }}>
-                            {group.variantes.filter(v => getQty(v.sku) > 0).map(v => (
-                              <div key={v.sku} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
-                                <span style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 9, color: '#111', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{v.variante ?? v.sku}</span>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
-                                  <button onClick={() => removeProduct(v)} style={{ width: 22, height: 22, border: '1px solid #111', background: '#fff', fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: 'none' }}>−</button>
-                                  <span style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 11, fontWeight: 700, color: FR.red, width: 18, textAlign: 'center' }}>{getQty(v.sku)}</span>
-                                  <button onClick={() => addProduct(v)} style={{ width: 22, height: 22, border: '1px solid #111', background: '#fff', fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: 'none' }}>+</button>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
+                        <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid #111', display: 'flex', justifyContent: 'space-between' }}>
+                          <span style={{ fontFamily: 'Alexandria, sans-serif', fontWeight: 900, fontSize: 14, letterSpacing: '-0.02em', color: customer?.tarifa ? FR.red : '#111' }}>
+                            {fmt(computePrice(group.variantes[0].sku, group.variantes[0].precio_mayorista, customer?.tarifa, customer?.descuento_pct))}
+                            {customer?.tarifa && <span style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontWeight: 500, fontSize: 9, color: '#111', marginLeft: 4 }}>{customer.tarifa.nombre}</span>}
+                          </span>
+                          <span style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 9, color: '#111' }}>{group.variantes[0].peso_kg} kg/u</span>
+                        </div>
                       </div>
                     </div>
-                  );
-                })}
-              </div>
-            )}
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -305,7 +294,7 @@ export default function NewOrderPage() {
             <div style={{ padding: 16 }}>
               {lineItems.length === 0 ? (
                 <div style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 10, color: '#111', textAlign: 'center', padding: '16px 0' }}>
-                  No products yet — tap a variant to add.
+                  No products yet
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 12 }}>
@@ -334,7 +323,7 @@ export default function NewOrderPage() {
                 ))}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', paddingTop: 8, borderTop: '1px solid #111', marginTop: 4 }}>
                   <span className="fr-label">TOTAL</span>
-                  <span style={{ fontFamily: 'var(--font-alexandria), Alexandria, sans-serif', fontWeight: 900, fontSize: 28, letterSpacing: '-0.04em', color: FR.red }}>{fmt(total)}</span>
+                  <span style={{ fontFamily: 'Alexandria, sans-serif', fontWeight: 900, fontSize: 28, letterSpacing: '-0.04em', color: FR.red }}>{fmt(total)}</span>
                 </div>
               </div>
 
@@ -388,7 +377,7 @@ export default function NewOrderPage() {
                     <div style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 9, color: '#111' }}>{q.service_name}{q.estimated_days ? ` · ${q.estimated_days}d` : ''}</div>
                   </div>
                   <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontFamily: 'var(--font-alexandria), Alexandria, sans-serif', fontWeight: 900, fontSize: 18, letterSpacing: '-0.03em', color: FR.red }}>{fmt(q.price)}</div>
+                    <div style={{ fontFamily: 'Alexandria, sans-serif', fontWeight: 900, fontSize: 18, letterSpacing: '-0.03em', color: FR.red }}>{fmt(q.price)}</div>
                     {selectedQuote?.service_id === q.service_id && (
                       <div style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 9, color: FR.green, fontWeight: 700 }}>✓ SELECTED</div>
                     )}
