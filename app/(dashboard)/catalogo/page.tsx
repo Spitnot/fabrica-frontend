@@ -149,18 +149,18 @@ export default function CatalogoPage() {
               {fungibles.length === 0 ? (
                 <div style={{ padding: '24px 16px', textAlign: 'center', fontSize: 11, color: '#111' }}>No materials yet</div>
               ) : fungibles.map(f => (
-                <div key={f.id} style={{ padding: '10px 16px', borderBottom: '1px solid #f5f5f5', display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div key={f.id} style={{ padding: '10px 16px', borderBottom: '1px solid #111', display: 'flex', alignItems: 'center', gap: 10 }}>
                   <span style={{ flex: 1, fontSize: 12, fontWeight: 700, color: '#111' }}>{f.nombre}</span>
-                  <span style={{ fontFamily: 'monospace', fontSize: 10, color: '#111', background: '#f7f7f2', padding: '2px 6px', border: '1px solid #eee' }}>{f.unidad}</span>
+                  <span style={{ fontFamily: 'monospace', fontSize: 10, color: '#111', background: '#F7F7F2', padding: '2px 6px', border: '1px solid #111' }}>{f.unidad}</span>
                   <button
                     onClick={() => deleteFungible(f.id)}
-                    style={{ background: 'transparent', border: 'none', boxShadow: 'none', color: '#ddd', padding: '2px 4px', minHeight: 'auto', fontSize: 16 }}
+                    style={{ background: 'transparent', border: 'none', boxShadow: 'none', color: 'rgba(17,17,17,0.3)', padding: '2px 4px', minHeight: 'auto', fontSize: 16 }}
                   >×</button>
                 </div>
               ))}
             </div>
 
-            <div style={{ padding: '14px 16px', borderTop: '1px solid #eee', display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div style={{ padding: '14px 16px', borderTop: '1px solid #111', display: 'flex', flexDirection: 'column', gap: 10 }}>
               <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#111' }}>Add new material</div>
               <div style={{ display: 'flex', gap: 8 }}>
                 <input
@@ -192,11 +192,11 @@ export default function CatalogoPage() {
             <div key={product.id} className="card" style={{ padding: 0, overflow: 'hidden' }}>
 
               {/* Product header */}
-              <div style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12, borderBottom: '1px solid #f0f0f0', background: '#fafafa' }}>
+              <div style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12, borderBottom: '1px solid #111', background: '#F7F7F2' }}>
                 {product.image ? (
-                  <img src={product.image} alt={product.title} style={{ width: 32, height: 32, objectFit: 'cover', border: '1px solid #eee', flexShrink: 0 }} />
+                  <img src={product.image} alt={product.title} style={{ width: 32, height: 32, objectFit: 'cover', border: '1px solid #111', flexShrink: 0 }} />
                 ) : (
-                  <div style={{ width: 32, height: 32, background: '#eee', border: '1px solid #ddd', flexShrink: 0 }} />
+                  <div style={{ width: 32, height: 32, background: 'rgba(17,17,17,0.08)', border: '1px solid #111', flexShrink: 0 }} />
                 )}
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 12, fontWeight: 900, color: '#111', textTransform: 'uppercase', letterSpacing: '0.06em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -221,14 +221,14 @@ export default function CatalogoPage() {
                         style={{
                           display: 'flex', alignItems: 'center', gap: 10,
                           padding: '9px 16px', cursor: 'pointer',
-                          borderBottom: '1px solid #f5f5f5',
+                          borderBottom: '1px solid #111',
                           background: isOpen ? '#f7f7f2' : '#fff',
                         }}
                       >
                         {colorHex ? (
                           <div style={{ width: 12, height: 12, background: colorHex, border: '1px solid rgba(0,0,0,0.15)', flexShrink: 0 }} />
                         ) : (
-                          <div style={{ width: 12, height: 12, border: '1px solid #ddd', flexShrink: 0 }} />
+                          <div style={{ width: 12, height: 12, border: '1px solid #111', flexShrink: 0 }} />
                         )}
 
                         <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
@@ -250,9 +250,9 @@ export default function CatalogoPage() {
 
                       {/* SKU fungibles editor */}
                       {isOpen && (
-                        <div style={{ borderBottom: '1px solid #eee', background: '#fafafa', padding: '12px 16px' }}>
+                        <div style={{ borderBottom: '1px solid #111', background: '#F7F7F2', padding: '12px 16px' }}>
                           <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#111', marginBottom: 10 }}>
-                            Recipe for <span style={{ fontFamily: 'monospace', color: '#555' }}>{variant.sku}</span>
+                            Recipe for <span style={{ fontFamily: 'monospace', color: '#111' }}>{variant.sku}</span>
                           </div>
 
                           {skuLoading ? (
