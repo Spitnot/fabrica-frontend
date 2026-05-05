@@ -19,6 +19,7 @@ interface Customer {
   direccion_envio?: { street: string; city: string; postal_code: string; country: string; };
 }
 interface LineItem { sku: string; nombre_producto: string; variante?: string; cantidad: number; precio_unitario: number; peso_unitario: number; }
+interface Quote { service_id: string; carrier: string; service_name: string; price: number; estimated_days: number; }
 
 function computePrice(sku: string, shopifyPrice: number, tarifa?: Tarifa | null, descuento_pct?: number): number {
   if (!tarifa) return shopifyPrice;
@@ -38,13 +39,16 @@ function blockFor(s: string) {
 
 export default function NewOrderPage() {
   const router = useRouter();
-  const [customer, setCustomer]         = useState<Customer | null>(null);
-  const [products, setProducts]         = useState<Product[]>([]);
+  const [customer, setCustomer]               = useState<Customer | null>(null);
+  const [products, setProducts]               = useState<Product[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
-  const [search, setSearch]             = useState('');
-  const [lineItems, setLineItems]       = useState<LineItem[]>([]);
-  const [confirming, setConfirming]     = useState(false);
-  const [error, setError]               = useState('');
+  const [search, setSearch]                   = useState('');
+  const [lineItems, setLineItems]             = useState<LineItem[]>([]);
+  const [quotes, setQuotes]                   = useState<Quote[]>([]);
+  const [selectedQuote, setSelectedQuote]     = useState<Quote | null>(null);
+  const [quotesLoading, setQuotesLoading]     = useState(false);
+  const [confirming, setConfirming]           = useState(false);
+  const [error, setError]                     = useState('');
 
   useEffect(() => {
     async function loadData() {
@@ -67,6 +71,11 @@ export default function NewOrderPage() {
   const hiddenProducts: string[] = customer?.tarifa?.hidden_products ?? [];
   const minimumOrderValue: number = customer?.tarifa?.minimum_order_value ?? 0;
 
+  const clientAddress = customer?.ship_street1
+    ? { street: customer.ship_street1, city: customer.ship_city ?? '', postal_code: customer.ship_postal_code ?? '', country: customer.ship_country ?? '' }
+    : customer?.direccion_envio;
+  const clientAddressOk = !!(clientAddress?.country && clientAddress?.postal_code);
+
   const productGroups = useMemo<ProductGroup[]>(() => {
     const visible = products.filter(p => !hiddenProducts.includes(p.nombre_producto));
     const filtered = search.length >= 2
@@ -82,6 +91,7 @@ export default function NewOrderPage() {
 
   const subtotal    = lineItems.reduce((s, i) => s + i.cantidad * i.precio_unitario, 0);
   const totalWeight = lineItems.reduce((s, i) => s + i.peso_unitario * i.cantidad, 0);
+  const total       = subtotal + (selectedQuote?.price ?? 0);
   const itemCount   = lineItems.reduce((s, i) => s + i.cantidad, 0);
   const belowMinimum = minimumOrderValue > 0 && subtotal < minimumOrderValue;
   const canConfirm  = !!customer && lineItems.length > 0 && !belowMinimum;
@@ -101,6 +111,7 @@ export default function NewOrderPage() {
       const precio = computePrice(p.sku, p.precio_mayorista, customer?.tarifa, customer?.descuento_pct);
       return [...prev, { sku: p.sku, nombre_producto: p.nombre_producto, variante: p.variante, cantidad: step, precio_unitario: precio, peso_unitario: p.peso_kg }];
     });
+    setSelectedQuote(null); setQuotes([]);
   }
   function removeProduct(p: Product) {
     const step = getPackStep(p.sku);
@@ -110,6 +121,23 @@ export default function NewOrderPage() {
       if (ex.cantidad <= step) return prev.filter(i => i.sku !== p.sku);
       return prev.map(i => i.sku === p.sku ? { ...i, cantidad: i.cantidad - step } : i);
     });
+    setSelectedQuote(null); setQuotes([]);
+  }
+
+  async function requestQuotes() {
+    if (!lineItems.length || !customer) return;
+    setQuotesLoading(true); setQuotes([]); setSelectedQuote(null);
+    try {
+      const res = await fetch('/api/quotes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ peso: totalWeight, ancho: 30, alto: 20, largo: 30, destination: clientAddress }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? 'Error quoting');
+      setQuotes(data.data ?? []);
+    } catch (err: any) { setError(err.message); }
+    finally { setQuotesLoading(false); }
   }
 
   async function handleConfirm() {
@@ -128,7 +156,7 @@ export default function NewOrderPage() {
             precio_unitario: i.precio_unitario,
             peso_unitario: i.peso_unitario,
           })),
-          coste_envio_estimado: null,
+          coste_envio_estimado: selectedQuote?.price ?? null,
         }),
       });
       const data = await res.json();
@@ -156,12 +184,15 @@ export default function NewOrderPage() {
           <div style={{ width: 32, height: 32, background: '#111', color: FR.yellow, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Alexandria, sans-serif', fontWeight: 900, fontSize: 13, flexShrink: 0 }}>
             {(customer.first_name ?? customer.contacto_nombre ?? '?')[0].toUpperCase()}
           </div>
-          <div>
+          <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 13, fontWeight: 700 }}>{`${customer.first_name ?? customer.contacto_nombre ?? ''} ${customer.last_name ?? ''}`.trim()}</div>
-            <div style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 10, color: '#111', marginTop: 1 }}>{customer.company_name}</div>
+            <div style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 10, color: '#111', marginTop: 1 }}>
+              {customer.company_name}
+              {clientAddress && ` · ${clientAddress.postal_code} ${clientAddress.city}`}
+            </div>
           </div>
           {minimumOrderValue > 0 && (
-            <div style={{ marginLeft: 'auto', fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 10, color: belowMinimum && lineItems.length > 0 ? FR.orange : '#111' }}>
+            <div style={{ marginLeft: 'auto', fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 10, color: belowMinimum && lineItems.length > 0 ? FR.orange : '#111', flexShrink: 0 }}>
               MIN. {fmt(minimumOrderValue)}
             </div>
           )}
@@ -197,7 +228,6 @@ export default function NewOrderPage() {
                   const price = computePrice(first.sku, first.precio_mayorista, customer?.tarifa, customer?.descuento_pct);
                   return (
                     <div key={group.nombre} className="fr-card" style={{ overflow: 'hidden' }}>
-                      {/* Color block / image */}
                       <div style={{ background: block, aspectRatio: '4/3', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         {group.imagen ? (
                           // eslint-disable-next-line @next/next/no-img-element
@@ -266,8 +296,10 @@ export default function NewOrderPage() {
           </div>
         </div>
 
-        {/* RIGHT: Order Summary */}
+        {/* RIGHT: Summary + Shipping */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12, position: 'sticky', top: 16 }}>
+
+          {/* Order summary */}
           <div className="fr-card" style={{ overflow: 'hidden' }}>
             <div className="fr-section-head">ORDER SUMMARY</div>
             <div style={{ padding: 16 }}>
@@ -293,6 +325,7 @@ export default function NewOrderPage() {
                 {[
                   ['WEIGHT', `${totalWeight.toFixed(2)} kg`],
                   ['SUBTOTAL', fmt(subtotal)],
+                  ['SHIPPING', selectedQuote ? fmt(selectedQuote.price) : '—'],
                 ].map(([label, value]) => (
                   <div key={label} style={{ display: 'flex', justifyContent: 'space-between' }}>
                     <span className="fr-label">{label}</span>
@@ -301,7 +334,7 @@ export default function NewOrderPage() {
                 ))}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', paddingTop: 8, borderTop: '1px solid #111', marginTop: 4 }}>
                   <span className="fr-label">TOTAL</span>
-                  <span style={{ fontFamily: 'var(--font-alexandria), Alexandria, sans-serif', fontWeight: 900, fontSize: 28, letterSpacing: '-0.04em', color: FR.red }}>{fmt(subtotal)}</span>
+                  <span style={{ fontFamily: 'var(--font-alexandria), Alexandria, sans-serif', fontWeight: 900, fontSize: 28, letterSpacing: '-0.04em', color: FR.red }}>{fmt(total)}</span>
                 </div>
               </div>
 
@@ -310,6 +343,58 @@ export default function NewOrderPage() {
                   ⚠ MINIMUM ORDER {fmt(minimumOrderValue)}. ADD {fmt(minimumOrderValue - subtotal)} MORE.
                 </div>
               )}
+            </div>
+          </div>
+
+          {/* Shipping / Packlink */}
+          <div className="fr-card" style={{ overflow: 'hidden' }}>
+            <div className="fr-section-head">
+              <span>SHIPPING · PACKLINK</span>
+              <button
+                onClick={requestQuotes}
+                disabled={!lineItems.length || !clientAddressOk || quotesLoading}
+                title={customer && !clientAddressOk ? 'Your account has no country or postal code — contact us.' : undefined}
+                style={{ padding: '3px 10px', border: '1px solid #111', background: '#fff', color: '#111', fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 9, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', cursor: 'pointer', boxShadow: 'none' }}
+              >
+                QUOTE
+              </button>
+            </div>
+            <div style={{ padding: 16 }}>
+              {quotesLoading && (
+                <div style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 10, color: '#111', padding: '8px 0' }}>QUERYING PACKLINK…</div>
+              )}
+              {customer && !clientAddressOk && (
+                <div style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 10, color: FR.red, padding: '4px 0' }}>
+                  ✕ YOUR ACCOUNT HAS NO SHIPPING ADDRESS SET
+                </div>
+              )}
+              {!quotesLoading && quotes.length === 0 && clientAddressOk && (
+                <div style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 10, color: '#111', textAlign: 'center', padding: '8px 0' }}>Add products and quote</div>
+              )}
+              {quotes.map((q, i) => (
+                <button
+                  key={q.service_id}
+                  onClick={() => setSelectedQuote(q)}
+                  style={{
+                    width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    padding: '10px 12px', marginBottom: i < quotes.length - 1 ? 6 : 0,
+                    border: '1px solid #111',
+                    background: selectedQuote?.service_id === q.service_id ? '#F7F7F2' : '#fff',
+                    cursor: 'pointer', textAlign: 'left', boxShadow: 'none',
+                  }}
+                >
+                  <div>
+                    <div style={{ fontSize: 12, fontWeight: 700 }}>{q.carrier}</div>
+                    <div style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 9, color: '#111' }}>{q.service_name}{q.estimated_days ? ` · ${q.estimated_days}d` : ''}</div>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontFamily: 'var(--font-alexandria), Alexandria, sans-serif', fontWeight: 900, fontSize: 18, letterSpacing: '-0.03em', color: FR.red }}>{fmt(q.price)}</div>
+                    {selectedQuote?.service_id === q.service_id && (
+                      <div style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 9, color: FR.green, fontWeight: 700 }}>✓ SELECTED</div>
+                    )}
+                  </div>
+                </button>
+              ))}
             </div>
           </div>
 
@@ -328,7 +413,7 @@ export default function NewOrderPage() {
             {confirming ? 'CREATING ORDER…' : 'CONFIRM ORDER'}
           </button>
           <div style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 9, color: '#111', textAlign: 'center' }}>
-            Prices locked on confirmation
+            Prices locked on confirmation · Shipping optional
           </div>
         </div>
       </div>
@@ -336,7 +421,7 @@ export default function NewOrderPage() {
       {/* Mobile sticky bar */}
       <div className="portal-mob-bar">
         <div>
-          <div style={{ fontFamily: 'var(--font-alexandria), Alexandria, sans-serif', fontWeight: 900, fontSize: 22, color: '#111', letterSpacing: '-0.02em' }}>{fmt(subtotal)}</div>
+          <div style={{ fontFamily: 'var(--font-alexandria), Alexandria, sans-serif', fontWeight: 900, fontSize: 22, color: '#111', letterSpacing: '-0.02em' }}>{fmt(total)}</div>
           <div style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 10, color: '#111' }}>{itemCount} item{itemCount !== 1 ? 's' : ''}</div>
         </div>
         <button
