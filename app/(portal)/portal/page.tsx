@@ -76,18 +76,10 @@ function PortalOrdersInner() {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
         <div>
-          <div style={{ fontFamily: 'var(--font-alexandria), Alexandria, sans-serif', fontWeight: 900, fontSize: 38, lineHeight: 0.95, letterSpacing: '-0.04em', textTransform: 'uppercase' }}>
-            MY ORDERS<span style={{ color: '#D93A35' }}>.</span>
-          </div>
-          {!loading && (
-            <div style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 10, color: 'rgba(17,17,17,0.5)', letterSpacing: '0.1em', marginTop: 6 }}>
-              {filtered.length} {filtered.length !== orders.length ? `of ${orders.length} ` : ''}ORDER{orders.length !== 1 ? 'S' : ''}
-            </div>
-          )}
+          <div className="fr-label">{loading ? '—' : `${filtered.length} of ${orders.length} records`}</div>
+          <h1 style={{ fontSize: 28, fontWeight: 700, marginTop: 4 }}>Orders</h1>
         </div>
-        <Link href="/portal/pedidos/nuevo">
-          <button className="btn-primary">+ NEW ORDER</button>
-        </Link>
+        <Link href="/portal/pedidos/nuevo"><button className="btn-primary">+ New Order</button></Link>
       </div>
 
       {/* Status tabs */}
@@ -102,15 +94,13 @@ function PortalOrdersInner() {
                 padding: '10px 16px', border: 'none', boxShadow: 'none',
                 borderBottom: active ? '2px solid #111' : '2px solid transparent',
                 background: 'transparent', color: '#111',
-                fontFamily: 'JetBrains Mono, ui-monospace, monospace',
-                fontWeight: active ? 700 : 500, fontSize: 10, letterSpacing: '0.1em',
-                textTransform: 'uppercase',
+                fontWeight: active ? 700 : 500, fontSize: 12, letterSpacing: '0.03em',
                 display: 'flex', gap: 6, alignItems: 'baseline',
-                marginBottom: -1, cursor: 'pointer',
+                marginBottom: -1,
               }}
             >
               {t.label}
-              <span style={{ fontSize: 9, color: active ? '#111' : 'rgba(17,17,17,0.4)' }}>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: '#111' }}>
                 {t.count}
               </span>
             </button>
@@ -121,68 +111,55 @@ function PortalOrdersInner() {
       {/* Date filters */}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'flex-end' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <label style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 9, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(17,17,17,0.5)' }}>From</label>
-          <input type="date" value={fromParam} onChange={e => setParam('from', e.target.value)} style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 11, border: '1px solid #111', borderRadius: 0, padding: '6px 10px', background: '#fff', outline: 'none', width: 160 }} />
+          <label className="fr-label">From</label>
+          <input type="date" value={fromParam} onChange={e => setParam('from', e.target.value)} style={{ width: 160 }} />
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <label style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 9, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(17,17,17,0.5)' }}>To</label>
-          <input type="date" value={toParam} onChange={e => setParam('to', e.target.value)} style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 11, border: '1px solid #111', borderRadius: 0, padding: '6px 10px', background: '#fff', outline: 'none', width: 160 }} />
+          <label className="fr-label">To</label>
+          <input type="date" value={toParam} onChange={e => setParam('to', e.target.value)} style={{ width: 160 }} />
         </div>
         {hasFilters && (
-          <button onClick={() => router.replace(pathname, { scroll: false })} className="btn-ghost" style={{ alignSelf: 'flex-end' }}>
+          <button onClick={() => router.replace(pathname, { scroll: false })} className="btn-ghost">
             Clear ×
           </button>
         )}
       </div>
 
-      {/* Orders list */}
-      {loading ? (
-        <div style={{ padding: '48px 0', textAlign: 'center', fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 11, color: 'rgba(17,17,17,0.4)' }}>
-          LOADING…
-        </div>
-      ) : filtered.length === 0 ? (
-        <div style={{ padding: '48px 0', textAlign: 'center', fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 11, color: 'rgba(17,17,17,0.4)' }}>
-          {hasFilters ? 'No orders match the filters.' : 'No orders yet.'}
-        </div>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-          {filtered.map(o => {
-            const dateStr = new Date(o.created_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase();
-            return (
-              <Link
-                key={o.id}
-                href={`/portal/pedidos/${o.id}`}
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: '80px 1fr auto',
-                  gap: 16, alignItems: 'center',
-                  padding: '16px 0',
-                  borderBottom: '1px solid rgba(17,17,17,0.1)',
-                  textDecoration: 'none', color: 'inherit',
-                }}
-              >
-                <div style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontWeight: 700, fontSize: 13, color: '#D93A35', letterSpacing: '0.04em' }}>
-                  #{o.id.slice(0, 8).toUpperCase()}
+      {/* Table */}
+      <div className="fr-card" style={{ overflow: 'hidden' }}>
+        <div style={{ overflowX: 'auto' }}>
+          <div style={{ minWidth: 500 }}>
+            <div className="fr-table-head" style={{ gridTemplateColumns: cols }}>
+              {['ID', 'Status', 'Weight', 'Amount', 'Date'].map(h => (
+                <div key={h} className="fr-label">{h}</div>
+              ))}
+            </div>
+            {loading ? (
+              <div style={{ padding: '48px 16px', textAlign: 'center', fontSize: 12, color: '#111' }}>Loading…</div>
+            ) : filtered.length === 0 ? (
+              <div style={{ padding: '48px 16px', textAlign: 'center', fontSize: 12, color: '#111' }}>
+                {hasFilters ? 'No orders match the filters.' : 'No orders yet.'}
+              </div>
+            ) : filtered.map(o => (
+              <Link key={o.id} href={`/portal/pedidos/${o.id}`} className="fr-row" style={{ gridTemplateColumns: cols }}>
+                <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 11, color: '#D93A35' }}>
+                  {o.id.slice(0, 8).toUpperCase()}
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <StatusChip status={o.status as FRStatus} size="sm" />
-                    <span style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 10, color: 'rgba(17,17,17,0.45)' }}>
-                      {dateStr}
-                    </span>
-                  </div>
-                  <div style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 10, color: 'rgba(17,17,17,0.5)' }}>
-                    {o.peso_total} kg
-                  </div>
+                <StatusChip status={o.status as FRStatus} size="sm" />
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}>
+                  {o.peso_total}<span style={{ fontSize: 9, color: '#111', marginLeft: 2 }}>kg</span>
                 </div>
-                <div style={{ fontFamily: 'var(--font-alexandria), Alexandria, sans-serif', fontWeight: 900, fontSize: 22, letterSpacing: '-0.03em', fontVariantNumeric: 'tabular-nums' }}>
+                <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 18, fontVariantNumeric: 'tabular-nums' }}>
                   {fmt(o.total_productos)}
                 </div>
+                <div className="fr-label" style={{ color: '#111' }}>
+                  {new Date(o.created_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }).toUpperCase()}
+                </div>
               </Link>
-            );
-          })}
+            ))}
+          </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }
