@@ -40,7 +40,7 @@ export default async function PedidoDetallePage({ params }: Props) {
   const currentIdx = STATUS_ORDER.indexOf(order.status);
   const customer = order.customer as any;
   const address = customer?.ship_street1
-    ? { street: customer.ship_street1, city: customer.ship_city, postal_code: customer.ship_postal_code, country: customer.ship_country }
+    ? { street: customer.ship_street1 ?? '', city: customer.ship_city ?? '', postal_code: customer.ship_postal_code ?? '', country: customer.ship_country ?? 'ES' }
     : customer?.direccion_envio as any;
   const contactName = customer?.first_name
     ? `${customer.first_name} ${customer.last_name ?? ''}`.trim()

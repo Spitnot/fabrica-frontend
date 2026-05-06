@@ -26,17 +26,25 @@ export async function POST(req: NextRequest) {
   if (!peso || !ancho || !alto || !largo || !destination) {
     return NextResponse.json({ error: 'Missing data for shipping quote' }, { status: 400 });
   }
-  if (!destination.country || !destination.postal_code) {
+
+  const fromZip = (FROM_POSTAL_CODE ?? '').trim();
+  const toZip   = (destination.postal_code ?? '').toString().trim();
+  const toCountryRaw = (destination.country ?? '').toString().trim();
+
+  if (!fromZip) {
+    return NextResponse.json({ error: 'PACKLINK_FROM_POSTAL_CODE env var is not set' }, { status: 500 });
+  }
+  if (!toZip || !toCountryRaw) {
     return NextResponse.json({ error: 'Client has no country or postal code in their shipping address' }, { status: 400 });
   }
 
-  const countryCode = normalizeCountry(destination.country);
+  const countryCode = normalizeCountry(toCountryRaw);
 
   const params = new URLSearchParams({
-    'from[country]':       FROM_COUNTRY,
-    'from[zip]':           FROM_POSTAL_CODE,
+    'from[country]':       (FROM_COUNTRY ?? '').trim(),
+    'from[zip]':           fromZip,
     'to[country]':         countryCode,
-    'to[zip]':             destination.postal_code,
+    'to[zip]':             toZip,
     'packages[0][weight]': String(parseFloat(Number(peso).toFixed(2))),
     'packages[0][width]':  String(Math.round(Number(ancho))),
     'packages[0][height]': String(Math.round(Number(alto))),
