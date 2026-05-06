@@ -8,7 +8,7 @@ import Link from 'next/link';
 
 interface Product { sku: string; nombre_producto: string; variante?: string; precio_mayorista: number; peso_kg: number; imagen?: string; }
 interface ProductGroup { nombre: string; variantes: Product[]; imagen?: string; }
-interface TarifaPrecio { sku: string; precio?: number | null; pack_size?: number | null; }
+interface TarifaPrecio { sku: string; precio?: number | null; }
 interface Tarifa { multiplicador: number; pack_size: number; minimum_order_value: number; hidden_products: string[]; nombre: string; precios?: TarifaPrecio[]; }
 interface Customer {
   id: string; contacto_nombre?: string; first_name?: string; last_name?: string;
@@ -82,9 +82,7 @@ export default function NewOrderPage() {
   const canConfirm  = !!customer && lineItems.length > 0 && !belowMinimum;
 
   function getQty(sku: string) { return lineItems.find(i => i.sku === sku)?.cantidad ?? 0; }
-  function getPackStep(sku: string): number {
-    const skuPs = customer?.tarifa?.precios?.find(pr => pr.sku === sku)?.pack_size;
-    if (skuPs != null && skuPs > 0) return skuPs;
+  function getPackStep(_sku: string): number {
     return customer?.tarifa?.pack_size ?? 1;
   }
 

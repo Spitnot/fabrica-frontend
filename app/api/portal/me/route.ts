@@ -21,7 +21,7 @@ export async function GET() {
       direccion_envio,
       tarifa:tarifa_id(
         nombre, multiplicador, pack_size, minimum_order_value, hidden_products,
-        precios:tarifas_precios(sku, precio, pack_size)
+        precios:tarifas_precios(sku, precio)
       )
     `)
     .eq('auth_user_id', user.id)
