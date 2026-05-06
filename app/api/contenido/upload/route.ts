@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServerClient, supabaseAdmin } from '@/lib/supabase/server'
 
-const BUCKET = 'portal-content'
+const BUCKET = 'b2bImages'
 
 async function ensureBucket() {
   const { data: buckets } = await supabaseAdmin.storage.listBuckets()
