@@ -4,6 +4,63 @@ import { useState, useEffect, useMemo, Suspense } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { StatusChip, FRStatus } from '@/components/fr/StatusChip';
+import { FR } from '@/components/fr/Atoms';
+
+// ─── Hero banner ─────────────────────────────────────────────────────────────
+
+interface HeroData {
+  active: boolean; bg_image_url: string; titulo: string;
+  descripcion: string; cta_label: string; cta_href: string;
+}
+
+function HeroBanner({ hero }: { hero: HeroData }) {
+  return (
+    <div style={{
+      position: 'relative', width: '100%', height: 280,
+      background: hero.bg_image_url
+        ? `url(${hero.bg_image_url}) center/cover no-repeat`
+        : '#111',
+      overflow: 'hidden',
+      display: 'flex', flexDirection: 'column', justifyContent: 'flex-end',
+      marginBottom: 0,
+    }}>
+      <div style={{
+        position: 'absolute', inset: 0,
+        background: 'linear-gradient(to bottom, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.7) 100%)',
+      }} />
+      <div style={{ position: 'relative', padding: '24px 20px 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {hero.titulo && (
+          <div style={{
+            fontFamily: 'var(--font-display, Alexandria, sans-serif)',
+            fontWeight: 900, fontSize: 36, lineHeight: 0.95,
+            letterSpacing: '-0.03em', textTransform: 'uppercase', color: '#fff',
+          }}>
+            {hero.titulo}<span style={{ color: FR.red }}>.</span>
+          </div>
+        )}
+        {hero.descripcion && (
+          <div style={{
+            fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
+            fontSize: 11, color: 'rgba(255,255,255,0.82)', lineHeight: 1.55, maxWidth: 380,
+          }}>
+            {hero.descripcion}
+          </div>
+        )}
+        {hero.cta_label && hero.cta_href && (
+          <div style={{ marginTop: 4 }}>
+            <Link href={hero.cta_href}>
+              <button className="btn-primary" style={{ fontSize: 10, padding: '9px 20px' }}>
+                {hero.cta_label} →
+              </button>
+            </Link>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 const STATUS_LABELS: Record<string, string> = {
   draft: 'Draft', confirmado: 'Confirmed', produccion: 'In Production',
@@ -29,12 +86,17 @@ function PortalOrdersInner() {
 
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [hero, setHero] = useState<HeroData | null>(null);
 
   useEffect(() => {
     fetch('/api/portal/orders')
       .then(r => r.json())
       .then(d => { setOrders(d.data ?? []); setLoading(false); })
       .catch(() => setLoading(false));
+    fetch('/api/contenido/hero')
+      .then(r => r.json())
+      .then(d => { if (d.data?.active) setHero(d.data); })
+      .catch(() => {});
   }, []);
 
   function setParam(key: string, value: string) {
@@ -72,10 +134,17 @@ function PortalOrdersInner() {
   const cols = '90px 140px 90px 130px 90px';
 
   return (
-    <div className="fr-page">
+    <div className="fr-page" style={{ paddingTop: hero ? 0 : undefined }}>
+
+      {/* Hero — edge-to-edge, breaks out of fr-page padding */}
+      {hero && (
+        <div style={{ margin: '0 -32px' }}>
+          <HeroBanner hero={hero} />
+        </div>
+      )}
 
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: hero ? 20 : 0 }}>
         <div>
           <div className="fr-label">{loading ? '—' : `${filtered.length} of ${orders.length} records`}</div>
           <h1 style={{ fontSize: 28, fontWeight: 700, marginTop: 4 }}>Orders</h1>
