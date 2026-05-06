@@ -116,10 +116,18 @@ export default function NewOrderPage() {
     if (!lineItems.length || !customer) return;
     setQuotesLoading(true); setQuotes([]); setSelectedQuote(null);
     try {
+      // Estimate box dimensions from weight (spray cans ≈ 0.28 kg/L packed).
+      // Proportions 3:2:3 (W:H:L). At 5 kg → 30×20×30 cm, scales with cbrt.
+      const DENSITY = 0.28;
+      const vol = Math.max(totalWeight, 0.5) / DENSITY * 1000; // cm³
+      const x   = Math.cbrt(vol / 18); // 18 = 3×2×3
+      const ancho = Math.max(15, Math.ceil(3 * x));
+      const alto  = Math.max(10, Math.ceil(2 * x));
+      const largo = Math.max(15, Math.ceil(3 * x));
       const res = await fetch('/api/quotes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ peso: totalWeight, ancho: 30, alto: 20, largo: 30, destination: clientAddress }),
+        body: JSON.stringify({ peso: totalWeight, ancho, alto, largo, destination: clientAddress }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? 'Error quoting');
