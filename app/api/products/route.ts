@@ -22,14 +22,8 @@ const QUERY = `
                 sku
                 title
                 price
-                inventoryItem {
-                  measurement {
-                    weight {
-                      value
-                      unit
-                    }
-                  }
-                }
+                weight
+                weightUnit
               }
             }
           }
@@ -72,11 +66,11 @@ export async function GET() {
       return product.variants.edges
         .filter(({ node: v }: any) => v.sku)
         .map(({ node: variant }: any) => {
-          const weightRaw = variant.inventoryItem?.measurement?.weight;
-          let peso_kg = weightRaw?.value ?? 0;
-          if (weightRaw?.unit === 'GRAMS')   peso_kg = peso_kg / 1000;
-          if (weightRaw?.unit === 'POUNDS')  peso_kg = peso_kg * 0.453592;
-          if (weightRaw?.unit === 'OUNCES')  peso_kg = peso_kg * 0.0283495;
+          let peso_kg = parseFloat(variant.weight ?? 0);
+          const unit = variant.weightUnit ?? 'KILOGRAMS';
+          if (unit === 'GRAMS')  peso_kg = peso_kg / 1000;
+          if (unit === 'POUNDS') peso_kg = peso_kg * 0.453592;
+          if (unit === 'OUNCES') peso_kg = peso_kg * 0.0283495;
 
           return {
             sku:              variant.sku,
