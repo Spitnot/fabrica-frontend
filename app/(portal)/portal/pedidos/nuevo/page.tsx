@@ -41,12 +41,18 @@ export default function NewOrderPage() {
   const [quotesLoading, setQuotesLoading]     = useState(false);
   const [confirming, setConfirming]           = useState(false);
   const [error, setError]                     = useState('');
+  const [customerLoading, setCustomerLoading] = useState(true);
+  const [customerError, setCustomerError]     = useState('');
 
   useEffect(() => {
     fetch('/api/portal/me')
       .then(r => r.json())
-      .then(d => { if (d.data) setCustomer(d.data as Customer); })
-      .catch(() => {});
+      .then(d => {
+        if (d.data) setCustomer(d.data as Customer);
+        else setCustomerError(d.error ?? 'Could not load your account data. Please refresh or contact us.');
+      })
+      .catch(() => setCustomerError('Could not load your account data. Please refresh or contact us.'))
+      .finally(() => setCustomerLoading(false));
     fetch('/api/products')
       .then(r => r.json())
       .then(d => { setProducts(d.data ?? []); setLoadingProducts(false); })
@@ -161,7 +167,17 @@ export default function NewOrderPage() {
         </div>
       </div>
 
-      {/* Client pill */}
+      {/* Client pill / error */}
+      {customerLoading && !customer && (
+        <div style={{ padding: '10px 14px', background: '#F7F7F2', border: '1px solid #111', fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 10, color: '#111' }}>
+          LOADING ACCOUNT…
+        </div>
+      )}
+      {customerError && !customer && (
+        <div style={{ padding: '10px 14px', border: `2px solid ${FR.red}`, background: '#fff', fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 10, color: FR.red }}>
+          ✕ {customerError}
+        </div>
+      )}
       {customer && (
         <div style={{ display: 'flex', gap: 12, padding: '10px 14px', background: '#F7F7F2', border: '1px solid #111', alignItems: 'center' }}>
           <div style={{ width: 32, height: 32, background: '#111', color: FR.yellow, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Alexandria, sans-serif', fontWeight: 900, fontSize: 13, flexShrink: 0 }}>
@@ -342,13 +358,21 @@ export default function NewOrderPage() {
               {quotesLoading && (
                 <div style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 10, color: '#111', padding: '8px 0' }}>QUERYING PACKLINK…</div>
               )}
-              {customer && !clientAddressOk && (
+              {!quotesLoading && !customer && !customerLoading && (
                 <div style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 10, color: FR.red, padding: '4px 0' }}>
-                  ✕ YOUR ACCOUNT HAS NO SHIPPING ADDRESS SET
+                  ✕ ACCOUNT DATA UNAVAILABLE — cannot quote shipping
                 </div>
               )}
-              {!quotesLoading && quotes.length === 0 && clientAddressOk && (
-                <div style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 10, color: '#111', textAlign: 'center', padding: '8px 0' }}>Add products and quote</div>
+              {!quotesLoading && customer && !clientAddressOk && (
+                <div style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 10, color: FR.red, padding: '4px 0' }}>
+                  ✕ NO SHIPPING ADDRESS ON YOUR ACCOUNT — contact us to add one
+                </div>
+              )}
+              {!quotesLoading && customer && clientAddressOk && !lineItems.length && (
+                <div style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 10, color: '#111', textAlign: 'center', padding: '8px 0' }}>Add products to quote shipping</div>
+              )}
+              {!quotesLoading && quotes.length === 0 && clientAddressOk && lineItems.length > 0 && (
+                <div style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 10, color: '#111', textAlign: 'center', padding: '8px 0' }}>Click QUOTE to get shipping options</div>
               )}
               {quotes.map((q, i) => (
                 <button
@@ -391,6 +415,17 @@ export default function NewOrderPage() {
           >
             {confirming ? 'CREATING ORDER…' : 'CONFIRM ORDER'}
           </button>
+          {!canConfirm && !confirming && (
+            <div style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 9, color: FR.red, textAlign: 'center' }}>
+              {!customer && !customerLoading
+                ? '✕ Account data could not be loaded — refresh the page'
+                : !lineItems.length
+                  ? '✕ Add at least one product to confirm'
+                  : belowMinimum
+                    ? `✕ Minimum order is ${fmt(minimumOrderValue)} — add ${fmt(minimumOrderValue - subtotal)} more`
+                    : null}
+            </div>
+          )}
           <div style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 9, color: '#111', textAlign: 'center' }}>
             Prices locked on confirmation · Shipping optional
           </div>
