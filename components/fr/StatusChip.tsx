@@ -10,7 +10,7 @@ const META: Record<FRStatus, { label: string; bg: string; fg: string }> = {
   confirmado:     { label: 'CONFIRMED',   bg: '#0087B8',  fg: '#fff' },
   produccion:     { label: 'IN PROD',     bg: '#876693',  fg: '#fff' },
   listo_envio:    { label: 'READY',       bg: '#F6E451',  fg: '#000' },
-  esperando_pago: { label: 'AWAITING PAY',bg: '#E6883E',  fg: '#fff' },
+  esperando_pago: { label: 'TO PAY',      bg: '#E6883E',  fg: '#fff' },
   enviado:        { label: 'SHIPPED',     bg: '#0DA265',  fg: '#fff' },
   cancelado:      { label: 'CANCELLED',   bg: '#D93A35',  fg: '#fff' },
 };

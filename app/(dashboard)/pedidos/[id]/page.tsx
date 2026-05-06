@@ -4,7 +4,7 @@ import type { Order, Customer, OrderItem } from '@/types';
 import { ShipmentPanel } from './ShipmentPanel';
 import { OrderActions } from './OrderActions';
 import Link from 'next/link';
-import { FR, BackLink } from '@/components/fr/Atoms';
+import { FR } from '@/components/fr/Atoms';
 import { StatusChip, FRStatus } from '@/components/fr/StatusChip';
 
 export const dynamic = 'force-dynamic';
@@ -51,32 +51,29 @@ export default async function PedidoDetallePage({ params }: Props) {
   }).toUpperCase();
 
   return (
-    <div style={{ padding: '24px 28px', maxWidth: 1280, margin: '0 auto' }}>
+    <div className="fr-page">
 
-      <BackLink href="/pedidos">ALL ORDERS</BackLink>
+      {/* Back */}
+      <Link
+        href="/pedidos"
+        style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontWeight: 700, fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#111', textDecoration: 'none' }}
+      >
+        ← ALL ORDERS
+      </Link>
 
-      {/* Hero header */}
-      <div style={{
-        marginTop: 12, background: '#111', color: '#fff',
-        padding: '24px 28px',
-        display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start',
-        justifyContent: 'space-between', gap: 16,
-      }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <div style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontWeight: 700, fontSize: 9, letterSpacing: '0.18em', textTransform: 'uppercase', color: FR.yellow }}>
-            ● ORDER · {dateStr}
+      {/* Header */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-end', gap: 12 }}>
+        <div>
+          <div style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 10, color: 'rgba(17,17,17,0.5)', letterSpacing: '0.1em', marginBottom: 4 }}>
+            ORDER · {dateStr}
           </div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 14, flexWrap: 'wrap' }}>
-            <div style={{
-              fontFamily: 'var(--font-alexandria), Alexandria, sans-serif',
-              fontWeight: 900, fontSize: 56, lineHeight: 0.9,
-              letterSpacing: '-0.04em', color: '#fff',
-            }}>
+            <div style={{ fontFamily: 'var(--font-alexandria), Alexandria, sans-serif', fontWeight: 900, fontSize: 48, lineHeight: 0.95, letterSpacing: '-0.04em' }}>
               #{ref}
             </div>
             <StatusChip status={order.status as FRStatus} size="lg" />
           </div>
-          <div style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 11, color: 'rgba(255,255,255,0.6)', letterSpacing: '0.06em' }}>
+          <div style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 10, color: 'rgba(17,17,17,0.5)', letterSpacing: '0.06em', marginTop: 6 }}>
             {contactName.toUpperCase()} · {(order.customer?.company_name ?? '').toUpperCase()}
           </div>
         </div>
@@ -86,7 +83,7 @@ export default async function PedidoDetallePage({ params }: Props) {
             target="_blank"
             rel="noopener noreferrer"
             className="btn-ghost"
-            style={{ background: 'transparent', border: '2px solid #fff', color: '#fff', fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 10, letterSpacing: '0.14em', padding: '8px 14px', textDecoration: 'none' }}
+            style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 10, letterSpacing: '0.14em', padding: '8px 14px', textDecoration: 'none' }}
           >
             ↓ PACKSLIP
           </a>
@@ -95,7 +92,7 @@ export default async function PedidoDetallePage({ params }: Props) {
       </div>
 
       {/* Two-column grid */}
-      <div className="fr-order-grid" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 12, marginTop: 12 }}>
+      <div className="fr-order-grid" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 12 }}>
         <style>{`@media(min-width:900px){.fr-order-grid{grid-template-columns:1fr 320px!important}}`}</style>
 
         {/* LEFT */}
@@ -159,20 +156,20 @@ export default async function PedidoDetallePage({ params }: Props) {
             </div>
 
             {/* Totals strip */}
-            <div style={{ background: '#111', color: '#fff', padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ borderTop: '1px solid #111', padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
               {[
                 ['PRODUCT SUBTOTAL', fmt(order.total_productos)],
                 ['EST. SHIPPING', order.coste_envio_estimado ? fmt(order.coste_envio_estimado) : '—'],
                 ...(order.coste_envio_final ? [['FINAL SHIPPING', fmt(order.coste_envio_final)]] : []),
               ].map(([label, value]) => (
                 <div key={String(label)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                  <span style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 10, color: 'rgba(255,255,255,0.5)', letterSpacing: '0.14em' }}>{label}</span>
-                  <span style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 12, color: '#fff' }}>{value}</span>
+                  <span style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 10, color: 'rgba(17,17,17,0.5)', letterSpacing: '0.14em' }}>{label}</span>
+                  <span style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 12, fontWeight: 700 }}>{value}</span>
                 </div>
               ))}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', paddingTop: 10, marginTop: 4, borderTop: '1px solid rgba(255,255,255,0.15)' }}>
-                <span style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 11, color: FR.yellow, letterSpacing: '0.18em' }}>TOTAL</span>
-                <span style={{ fontFamily: 'var(--font-alexandria), Alexandria, sans-serif', fontWeight: 900, fontSize: 36, letterSpacing: '-0.04em', color: FR.yellow }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', paddingTop: 10, marginTop: 2, borderTop: '1px solid rgba(17,17,17,0.15)' }}>
+                <span style={{ fontFamily: 'JetBrains Mono, ui-monospace, monospace', fontSize: 10, letterSpacing: '0.18em', color: 'rgba(17,17,17,0.5)' }}>TOTAL</span>
+                <span style={{ fontFamily: 'var(--font-alexandria), Alexandria, sans-serif', fontWeight: 900, fontSize: 32, letterSpacing: '-0.04em', color: FR.red }}>
                   {fmt(order.total_productos)}
                 </span>
               </div>
