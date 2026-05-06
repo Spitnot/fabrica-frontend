@@ -15,7 +15,6 @@ interface Customer {
   company_name: string; descuento_pct: number;
   tarifa?: Tarifa | null;
   ship_street1?: string; ship_city?: string; ship_postal_code?: string; ship_country?: string;
-  direccion_envio?: { street: string; city: string; postal_code: string; country: string; };
 }
 interface LineItem { sku: string; nombre_producto: string; variante?: string; cantidad: number; precio_unitario: number; peso_unitario: number; }
 interface Quote { service_id: string; carrier: string; service_name: string; price: number; estimated_days: number; }
@@ -64,7 +63,7 @@ export default function NewOrderPage() {
 
   const clientAddress = customer?.ship_street1
     ? { street: customer.ship_street1, city: customer.ship_city ?? '', postal_code: customer.ship_postal_code ?? '', country: customer.ship_country ?? '' }
-    : customer?.direccion_envio;
+    : undefined;
   const clientAddressOk = !!(clientAddress?.country && clientAddress?.postal_code);
 
   const productGroups = useMemo<ProductGroup[]>(() => {

@@ -16,7 +16,6 @@ export async function GET() {
     first_name, last_name, contacto_nombre,
     company_name, email, descuento_pct,
     ship_street1, ship_city, ship_postal_code, ship_country,
-    direccion_envio,
     tarifa:tarifa_id(
       nombre, multiplicador, pack_size, minimum_order_value, hidden_products,
       precios:tarifas_precios(sku, precio)
