@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { FR } from '@/components/fr/Atoms'
 import Link from 'next/link'
 
@@ -35,6 +35,23 @@ export default function ContenidoPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving]   = useState(false)
   const [feedback, setFeedback] = useState<{ type: 'ok' | 'err'; msg: string } | null>(null)
+  const [uploading, setUploading] = useState(false)
+  const fileRef = useRef<HTMLInputElement>(null)
+
+  async function uploadImage(file: File) {
+    setUploading(true)
+    const form = new FormData()
+    form.append('file', file)
+    const res = await fetch('/api/contenido/upload', { method: 'POST', body: form })
+    setUploading(false)
+    if (!res.ok) {
+      const d = await res.json()
+      setFeedback({ type: 'err', msg: d.error ?? 'Upload failed' })
+      return
+    }
+    const { url } = await res.json()
+    set('bg_image_url', url)
+  }
 
   useEffect(() => {
     fetch('/api/contenido/hero')
@@ -125,15 +142,65 @@ export default function ContenidoPage() {
           <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 16 }}>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <label className="fr-label">Background image URL</label>
+              <label className="fr-label">Background image</label>
+
+              {/* Thumbnail + upload button */}
+              <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                <div style={{
+                  width: 72, height: 48, flexShrink: 0,
+                  border: '1px solid #111',
+                  background: hero.bg_image_url
+                    ? `url(${hero.bg_image_url}) center/cover no-repeat`
+                    : '#F7F7F2',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  {!hero.bg_image_url && (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#aaa" strokeWidth="1.5">
+                      <rect x="3" y="3" width="18" height="18" rx="0"/><circle cx="8.5" cy="8.5" r="1.5"/>
+                      <path d="M21 15l-5-5L5 21"/>
+                    </svg>
+                  )}
+                </div>
+                <input
+                  ref={fileRef} type="file" accept="image/*"
+                  style={{ display: 'none' }}
+                  onChange={e => { const f = e.target.files?.[0]; if (f) uploadImage(f) }}
+                />
+                <button
+                  type="button"
+                  onClick={() => fileRef.current?.click()}
+                  disabled={uploading}
+                  style={{
+                    padding: '7px 14px', border: '1px solid #111', background: '#fff',
+                    fontFamily: 'var(--font-mono)', fontSize: 10, fontWeight: 700,
+                    letterSpacing: '0.1em', textTransform: 'uppercase',
+                    cursor: uploading ? 'not-allowed' : 'pointer', opacity: uploading ? 0.6 : 1,
+                    boxShadow: 'none',
+                  }}
+                >
+                  {uploading ? 'Uploading…' : 'Upload image'}
+                </button>
+                {hero.bg_image_url && (
+                  <button
+                    type="button"
+                    onClick={() => set('bg_image_url', '')}
+                    style={{
+                      padding: '7px 10px', border: '1px solid #111', background: '#fff',
+                      fontFamily: 'var(--font-mono)', fontSize: 10, cursor: 'pointer',
+                      boxShadow: 'none',
+                    }}
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+
+              {/* URL override */}
               <input
                 type="url" value={hero.bg_image_url} style={inp}
-                placeholder="https://…"
+                placeholder="https://… (or paste URL directly)"
                 onChange={e => set('bg_image_url', e.target.value)}
               />
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: '#111' }}>
-                Paste a direct image URL (CDN, Shopify media, etc.)
-              </span>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
