@@ -15,7 +15,7 @@ export function TarifaCard({ tarifa: t, count }: TarifaCardProps) {
     <Link href={`/tarifas/${t.id}`} style={{ textDecoration: 'none' }}>
       <div
         className="fr-card"
-        style={{ borderTop: `3px solid ${color}`, cursor: 'pointer', transition: 'transform 0.08s, box-shadow 0.08s' }}
+        style={{ borderTop: `3px solid ${color}`, padding: 20, cursor: 'pointer', transition: 'transform 0.08s, box-shadow 0.08s' }}
         onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.transform = 'translate(2px,2px)'; (e.currentTarget as HTMLDivElement).style.boxShadow = 'none'; }}
         onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.transform = 'none'; (e.currentTarget as HTMLDivElement).style.boxShadow = '2px 2px 0 #111'; }}
       >

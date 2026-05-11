@@ -20,27 +20,28 @@ export default async function TarifasPage() {
   const [tarifas, counts] = await Promise.all([getTarifas(), getCustomerCountByTarifa()]);
 
   return (
-    <div style={{ padding: '16px', maxWidth: 1100, margin: '0 auto' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 16, borderBottom: '1px solid #111', marginBottom: 16, flexWrap: 'wrap', gap: 12 }}>
+    <div className="fr-page">
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <div className="page-title">Pricing Tiers</div>
-          <div style={{ fontSize: 10, color: '#111', marginTop: 3 }}>{tarifas.length} tier{tarifas.length !== 1 ? 's' : ''} configured</div>
+          <div className="fr-label">Configuration</div>
+          <h1 style={{ fontSize: 28, fontWeight: 700, marginTop: 4 }}>Pricing Tiers</h1>
+          <div className="fr-label" style={{ marginTop: 4 }}>{tarifas.length} tier{tarifas.length !== 1 ? 's' : ''} configured</div>
         </div>
         <Link href="/tarifas/nuevo">
           <button className="btn-primary">+ New Tier</button>
         </Link>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 10 }}>
-        {tarifas.map((t: any) => (
-          <TarifaCard key={t.id} tarifa={t} count={counts[t.id] ?? 0} />
-        ))}
-      </div>
-
-      {tarifas.length === 0 && (
-        <div style={{ textAlign: 'center', padding: '64px 16px', fontSize: 12, color: '#111' }}>
-          No pricing tiers found.<br />
-          <span style={{ fontSize: 10 }}>Run the SQL migration to create Retail and Wholesale tiers.</span>
+      {tarifas.length === 0 ? (
+        <div className="fr-card" style={{ padding: '64px 24px', textAlign: 'center' }}>
+          <div style={{ fontSize: 12, color: '#111' }}>No pricing tiers found.</div>
+          <div className="fr-label" style={{ marginTop: 8 }}>Run the SQL migration to create Retail and Wholesale tiers.</div>
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16 }}>
+          {tarifas.map((t: any) => (
+            <TarifaCard key={t.id} tarifa={t} count={counts[t.id] ?? 0} />
+          ))}
         </div>
       )}
     </div>

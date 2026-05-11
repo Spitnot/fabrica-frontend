@@ -99,7 +99,7 @@ export default function ClientePerfilPage() {
   const tarifaColor = client.tarifa ? (TARIFA_COLORS[client.tarifa.nombre.toLowerCase()] ?? '#111') : '#111';
 
   return (
-    <div style={{ padding: 16, maxWidth: 1100, margin: '0 auto' }}>
+    <div className="fr-page">
 
       <Link href="/clientes" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#111', marginBottom: 16, textDecoration: 'none' }}>
         ← Clients
@@ -201,14 +201,14 @@ export default function ClientePerfilPage() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
 
           {/* Stats */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-            <div className="fr-card" style={{ borderLeft: '3px solid #0087B8' }}>
-              <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#111', marginBottom: 4 }}>Orders</div>
-              <div style={{ fontSize: 26, fontWeight: 900, color: '#0087B8', lineHeight: 1 }}>{orders.length}</div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, border: '1px solid #111', background: '#111' }}>
+            <div style={{ background: '#fff', padding: '16px 20px' }}>
+              <div className="fr-label">Orders</div>
+              <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 900, fontSize: 32, lineHeight: 1, marginTop: 6, color: '#0087B8', fontVariantNumeric: 'tabular-nums' }}>{orders.length}</div>
             </div>
-            <div className="fr-card" style={{ borderLeft: '3px solid #D93A35' }}>
-              <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', color: '#111', marginBottom: 4 }}>Billed</div>
-              <div style={{ fontSize: 16, fontWeight: 900, color: '#D93A35', lineHeight: 1 }}>{fmt(totalBilled)}</div>
+            <div style={{ background: '#fff', padding: '16px 20px' }}>
+              <div className="fr-label">Billed</div>
+              <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 900, fontSize: 20, lineHeight: 1, marginTop: 6, color: '#D93A35', fontVariantNumeric: 'tabular-nums' }}>{fmt(totalBilled)}</div>
             </div>
           </div>
 

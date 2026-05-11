@@ -28,7 +28,7 @@ async function getStats() {
 async function getRecentOrders() {
   const { data } = await supabaseAdmin
     .from('orders')
-    .select('id, status, total_productos, created_at, customer:customers(contacto_nombre, first_name, last_name, company_name)')
+    .select('id, status, total_productos, created_at, customer:customers(first_name, last_name, company_name)')
     .order('created_at', { ascending: false })
     .limit(8);
   return data ?? [];
@@ -63,15 +63,18 @@ async function getStockWidget() {
 export default async function DashboardPage() {
   const [stats, orders, stock] = await Promise.all([getStats(), getRecentOrders(), getStockWidget()]);
   const mes = new Date().toLocaleString('es-ES', { month: 'long', year: 'numeric' }).toUpperCase();
+  const today = new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' }).toUpperCase();
 
   return (
     <div className="fr-page">
 
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 16, alignItems: 'flex-end', paddingBottom: 20, borderBottom: '2px solid #111' }}>
         <div>
-          <div className="fr-label">{mes}</div>
-          <h1 style={{ fontSize: 28, fontWeight: 700, marginTop: 4 }}>Dashboard</h1>
+          <div className="fr-label" style={{ marginBottom: 6 }}>{today}</div>
+          <h1 style={{ fontFamily: 'var(--font-sans)', fontSize: 38, fontWeight: 900, lineHeight: 0.95, letterSpacing: '-0.02em' }}>
+            Dashboard<span style={{ color: '#D93A35' }}>.</span>
+          </h1>
         </div>
         <Link href="/pedidos/nuevo"><button className="btn-primary">+ New Order</button></Link>
       </div>
@@ -79,45 +82,49 @@ export default async function DashboardPage() {
       {/* KPI strip */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 1, border: '1px solid #111', background: '#111' }}>
         {[
-          { label: 'Active orders',   value: stats.activos,                   accent: '#111' },
-          { label: 'Ready to ship',   value: stats.listos,                    accent: '#0DA265' },
-          { label: `Shipped ${mes}`,  value: stats.enviados,                  accent: '#111' },
-          { label: `Revenue ${mes}`,  value: fmt(stats.facturacionMes),       accent: '#D93A35' },
+          { label: 'Active orders',  value: stats.activos,           accent: '#111',    note: 'In production or confirmed' },
+          { label: 'Ready to ship',  value: stats.listos,            accent: '#0DA265', note: 'Awaiting dispatch' },
+          { label: 'Shipped',        value: stats.enviados,          accent: '#111',    note: mes },
+          { label: 'Revenue',        value: fmt(stats.facturacionMes), accent: '#D93A35', note: mes },
         ].map(kpi => (
           <div key={kpi.label} style={{ background: '#fff', padding: '20px 24px' }}>
             <div className="fr-label">{kpi.label}</div>
-            <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 900, fontSize: 36, lineHeight: 1, marginTop: 8, color: kpi.accent, fontVariantNumeric: 'tabular-nums' }}>
+            <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 900, fontSize: 36, lineHeight: 1.05, marginTop: 8, color: kpi.accent, fontVariantNumeric: 'tabular-nums' }}>
               {kpi.value}
             </div>
+            <div className="fr-label" style={{ marginTop: 6, opacity: 0.5 }}>{kpi.note}</div>
           </div>
         ))}
       </div>
 
       {/* Two-col */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: 24 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: 20 }}>
 
         {/* Recent orders */}
-        <div className="fr-card">
+        <div className="fr-card" style={{ overflow: 'hidden' }}>
           <div className="fr-section-head">
-            <span>Recent orders</span>
+            <span>Recent Orders</span>
             <Link href="/pedidos" className="fr-label" style={{ color: '#D93A35' }}>View all →</Link>
           </div>
           {orders.length === 0 ? (
-            <div style={{ padding: '40px 16px', textAlign: 'center', fontSize: 12, color: '#111' }}>No orders yet</div>
-          ) : orders.map((o: any, i: number) => {
-            const first = o.customer?.first_name ?? o.customer?.contacto_nombre ?? '—';
-            const last = o.customer?.last_name ?? '';
+            <div style={{ padding: '48px 24px', textAlign: 'center' }}>
+              <div style={{ fontSize: 12, color: '#111' }}>No orders yet</div>
+            </div>
+          ) : orders.map((o: any) => {
+            const name = o.customer?.first_name
+              ? `${o.customer.first_name} ${o.customer.last_name ?? ''}`.trim()
+              : '—';
             return (
-              <Link key={o.id} href={`/pedidos/${o.id}`} className="fr-row" style={{ gridTemplateColumns: '1fr 130px 110px 70px' }}>
+              <Link key={o.id} href={`/pedidos/${o.id}`} className="fr-row" style={{ gridTemplateColumns: '1fr 120px 100px 64px' }}>
                 <div>
-                  <div style={{ fontSize: 13, fontWeight: 600 }}>{`${first} ${last}`.trim()}</div>
-                  <div className="fr-label" style={{ color: '#111' }}>{o.customer?.company_name}</div>
+                  <div style={{ fontSize: 13, fontWeight: 600 }}>{name}</div>
+                  <div className="fr-label" style={{ marginTop: 2 }}>{o.customer?.company_name}</div>
                 </div>
                 <StatusChip status={o.status} size="sm" />
-                <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 16, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 15, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
                   {fmt(o.total_productos)}
                 </div>
-                <div className="fr-label" style={{ color: '#111', textAlign: 'right' }}>
+                <div className="fr-label" style={{ textAlign: 'right' }}>
                   {new Date(o.created_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }).toUpperCase()}
                 </div>
               </Link>
@@ -126,21 +133,21 @@ export default async function DashboardPage() {
         </div>
 
         {/* Production */}
-        <div className="fr-card">
+        <div className="fr-card" style={{ overflow: 'hidden' }}>
           <div className="fr-section-head">
-            <span>Production floor</span>
+            <span>Production</span>
             <Link href="/produccion" className="fr-label" style={{ color: '#D93A35' }}>View →</Link>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', borderBottom: '1px solid #111' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1, background: '#111', borderBottom: '1px solid #111' }}>
             {[
-              { label: 'SKUs',   value: stock.totalSkus },
-              { label: 'Liters', value: `${stock.totalLitros}` },
-              { label: 'Alerts', value: stock.alertas, accent: stock.alertas > 0 ? '#D93A35' : '#111' },
-            ].map((s, i) => (
-              <div key={s.label} style={{ padding: '16px', borderRight: i < 2 ? '1px solid #111' : 'none' }}>
+              { label: 'SKUs',   value: stock.totalSkus,   accent: '#111' },
+              { label: 'Liters', value: stock.totalLitros, accent: '#111' },
+              { label: 'Alerts', value: stock.alertas,     accent: stock.alertas > 0 ? '#D93A35' : '#0DA265' },
+            ].map(s => (
+              <div key={s.label} style={{ background: '#fff', padding: '14px 16px' }}>
                 <div className="fr-label">{s.label}</div>
-                <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 28, lineHeight: 1, marginTop: 6, color: (s as any).accent ?? '#111', fontVariantNumeric: 'tabular-nums' }}>
+                <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 900, fontSize: 26, lineHeight: 1, marginTop: 6, color: s.accent, fontVariantNumeric: 'tabular-nums' }}>
                   {s.value}
                 </div>
               </div>
@@ -148,14 +155,16 @@ export default async function DashboardPage() {
           </div>
 
           {stock.top.length === 0 ? (
-            <div style={{ padding: '24px 16px', textAlign: 'center', fontSize: 12, color: '#111' }}>No pending stock</div>
-          ) : stock.top.map((s, i) => (
+            <div style={{ padding: '32px 16px', textAlign: 'center', fontSize: 12, color: '#111' }}>No pending stock</div>
+          ) : stock.top.map(s => (
             <div key={s.sku} className="fr-row" style={{ gridTemplateColumns: '1fr auto' }}>
               <div>
                 <div style={{ fontSize: 12, fontWeight: 600 }}>{s.nombre}</div>
-                <div className="fr-label" style={{ color: '#111' }}>{s.sku}{s.alerta && ' · LOW'}</div>
+                <div className="fr-label" style={{ marginTop: 2 }}>
+                  {s.sku}{s.alerta && <span style={{ color: '#D93A35', marginLeft: 6 }}>· LOW</span>}
+                </div>
               </div>
-              <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: 20, color: s.alerta ? '#D93A35' : '#111', fontVariantNumeric: 'tabular-nums' }}>
+              <div style={{ fontFamily: 'var(--font-sans)', fontWeight: 900, fontSize: 22, color: s.alerta ? '#D93A35' : '#111', fontVariantNumeric: 'tabular-nums' }}>
                 {s.unidades.toLocaleString()}
               </div>
             </div>
