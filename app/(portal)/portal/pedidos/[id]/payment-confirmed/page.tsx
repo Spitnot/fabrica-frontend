@@ -1,5 +1,5 @@
-import { supabaseAdmin } from '@/lib/supabase/server';
-import { notFound } from 'next/navigation';
+import { createSupabaseServerClient, supabaseAdmin } from '@/lib/supabase/server';
+import { notFound, redirect } from 'next/navigation';
 import Link from 'next/link';
 import { FR } from '@/components/fr/Atoms';
 
@@ -9,6 +9,25 @@ interface Props { params: Promise<{ id: string }> }
 
 export default async function PaymentConfirmedPage({ params }: Props) {
   const { id: orderId } = await params;
+
+  const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect('/login');
+
+  const { data: customerRow } = await supabaseAdmin
+    .from('customers')
+    .select('id')
+    .eq('auth_user_id', user.id)
+    .single();
+  if (!customerRow) notFound();
+
+  const { data: order } = await supabaseAdmin
+    .from('orders')
+    .select('id')
+    .eq('id', orderId)
+    .eq('customer_id', customerRow.id)
+    .single();
+  if (!order) notFound();
 
   const { data: payment } = await supabaseAdmin
     .from('revolut_payments')

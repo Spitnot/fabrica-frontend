@@ -6,7 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { supabaseAdmin } from '@/lib/supabase/server';
 import { verifyRevolutWebhookSignature } from '@/lib/revolut/revolutService';
 import { RevolutWebhookEvent } from '@/lib/types/revolut';
 
@@ -50,23 +50,21 @@ export async function POST(request: NextRequest) {
       orderId: event.data.order?.id,
     });
 
-    const supabase = await createSupabaseServerClient();
-
     // 3. Procesar según tipo de evento
     switch (event.event_type) {
       case 'ORDER_COMPLETED':
       case 'ORDER_AUTHORISED':
-        await handleOrderCompleted(supabase, event);
+        await handleOrderCompleted(event);
         break;
 
       case 'ORDER_CANCELLED':
       case 'ORDER_FAILED':
-        await handleOrderCancelled(supabase, event);
+        await handleOrderCancelled(event);
         break;
 
       case 'ORDER_PAYMENT_FAILED':
       case 'ORDER_PAYMENT_DECLINED':
-        await handlePaymentFailed(supabase, event);
+        await handlePaymentFailed(event);
         break;
 
       default:
@@ -88,10 +86,7 @@ export async function POST(request: NextRequest) {
  * Manejar ORDER_COMPLETED o ORDER_AUTHORISED
  * El pago fue exitoso, actualizar BD y cambiar estado de orden
  */
-async function handleOrderCompleted(
-  supabase: any,
-  event: RevolutWebhookEvent,
-) {
+async function handleOrderCompleted(event: RevolutWebhookEvent) {
   try {
     if (!event.data.order) {
       console.warn('[Webhook] ORDER_COMPLETED without order data');
@@ -105,7 +100,7 @@ async function handleOrderCompleted(
     console.log('[Webhook] Processing ORDER_COMPLETED:', revolutOrderId);
 
     // 1. Encontrar pago en BD
-    const { data: payment, error } = await supabase
+    const { data: payment, error } = await supabaseAdmin
       .from('revolut_payments')
       .select('id, order_id, status, amount')
       .eq('revolut_order_id', revolutOrderId)
@@ -137,7 +132,7 @@ async function handleOrderCompleted(
     }
 
     // 2. Actualizar revolut_payments
-    const { error: updateError } = await supabase
+    const { error: updateError } = await supabaseAdmin
       .from('revolut_payments')
       .update({
         status: 'completed',
@@ -156,7 +151,7 @@ async function handleOrderCompleted(
     console.log('[Webhook] Payment marked as completed:', payment.id);
 
     // 3. Actualizar estado de orden: esperando_pago → enviado
-    const { data: updatedOrder, error: orderUpdateError } = await supabase
+    const { data: updatedOrder, error: orderUpdateError } = await supabaseAdmin
       .from('orders')
       .update({
         status: 'enviado',
@@ -188,10 +183,7 @@ async function handleOrderCompleted(
  * Manejar ORDER_CANCELLED o ORDER_FAILED
  * El pago fue cancelado o expiró, cancelar orden
  */
-async function handleOrderCancelled(
-  supabase: any,
-  event: RevolutWebhookEvent,
-) {
+async function handleOrderCancelled(event: RevolutWebhookEvent) {
   try {
     if (!event.data.order) {
       console.warn('[Webhook] ORDER_CANCELLED without order data');
@@ -204,7 +196,7 @@ async function handleOrderCancelled(
     console.log('[Webhook] Processing ORDER_CANCELLED/FAILED:', revolutOrderId);
 
     // 1. Encontrar pago
-    const { data: payment, error: paymentError } = await supabase
+    const { data: payment, error: paymentError } = await supabaseAdmin
       .from('revolut_payments')
       .select('id, order_id')
       .eq('revolut_order_id', revolutOrderId)
@@ -221,7 +213,7 @@ async function handleOrderCancelled(
     }
 
     // 2. Actualizar revolut_payments
-    const { error: updatePaymentError } = await supabase
+    const { error: updatePaymentError } = await supabaseAdmin
       .from('revolut_payments')
       .update({
         status: 'cancelled',
@@ -248,10 +240,7 @@ async function handleOrderCancelled(
  * El intento de pago falló, registrar error pero NO cancelar orden
  * (el cliente puede reintentar con la misma checkout_url)
  */
-async function handlePaymentFailed(
-  supabase: any,
-  event: RevolutWebhookEvent,
-) {
+async function handlePaymentFailed(event: RevolutWebhookEvent) {
   try {
     if (!event.data.payment) {
       console.warn('[Webhook] ORDER_PAYMENT_FAILED without payment data');
@@ -263,7 +252,7 @@ async function handlePaymentFailed(
     console.log('[Webhook] Processing ORDER_PAYMENT_FAILED/DECLINED:', payment.id);
 
     // Encontrar pago
-    const { data: paymentRecord, error } = await supabase
+    const { data: paymentRecord, error } = await supabaseAdmin
       .from('revolut_payments')
       .select('id')
       .eq('revolut_payment_id', payment.id)
@@ -278,7 +267,7 @@ async function handlePaymentFailed(
 
     // Actualizar con error, pero mantener status como pending
     // Así el cliente puede reintentar
-    const { error: updateError } = await supabase
+    const { error: updateError } = await supabaseAdmin
       .from('revolut_payments')
       .update({
         error_message: `${event.event_type}: ${payment.state}`,

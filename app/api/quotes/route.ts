@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { requireAnyAuth } from '@/lib/auth';
 
 const PACKLINK_API_URL = process.env.PACKLINK_API_URL!;
 const PACKLINK_API_KEY = process.env.PACKLINK_API_KEY!;
@@ -21,6 +22,9 @@ function normalizeCountry(country: string): string {
 }
 
 export async function POST(req: NextRequest) {
+  const { response } = await requireAnyAuth();
+  if (response) return response;
+
   const { peso, ancho, alto, largo, destination } = await req.json();
 
   if (!peso || !ancho || !alto || !largo || !destination) {

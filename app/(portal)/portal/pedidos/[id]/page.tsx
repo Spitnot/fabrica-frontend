@@ -1,5 +1,5 @@
-import { notFound } from 'next/navigation';
-import { supabaseAdmin } from '@/lib/supabase/server';
+import { notFound, redirect } from 'next/navigation';
+import { createSupabaseServerClient, supabaseAdmin } from '@/lib/supabase/server';
 import type { Order, Customer, OrderItem } from '@/types';
 import Link from 'next/link';
 import { FR } from '@/components/fr/Atoms';
@@ -10,11 +10,12 @@ export const dynamic = 'force-dynamic';
 
 type OrderFull = Order & { customer: Customer; order_items: OrderItem[] };
 
-async function getOrder(id: string): Promise<OrderFull | null> {
+async function getOrder(id: string, customerId: string): Promise<OrderFull | null> {
   const { data, error } = await supabaseAdmin
     .from('orders')
     .select('*, customer:customers(*), order_items(*)')
     .eq('id', id)
+    .eq('customer_id', customerId)
     .single();
   if (error) return null;
   return data;
@@ -33,7 +34,19 @@ interface Props { params: Promise<{ id: string }> }
 
 export default async function PortalPedidoDetallePage({ params }: Props) {
   const { id } = await params;
-  const order = await getOrder(id);
+
+  const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect('/login');
+
+  const { data: customerRow } = await supabaseAdmin
+    .from('customers')
+    .select('id')
+    .eq('auth_user_id', user.id)
+    .single();
+  if (!customerRow) notFound();
+
+  const order = await getOrder(id, customerRow.id);
   if (!order) notFound();
 
   const currentIdx = STATUS_ORDER.indexOf(order.status);
