@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/server'
+import { requireAdminManager } from '@/lib/auth'
 import type { OrderStatus } from '@/types'
 
 const VALID_STATUSES: OrderStatus[] = [
@@ -19,6 +20,9 @@ const ALLOWED_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
 interface Props { params: Promise<{ id: string }> }
 
 export async function POST(req: NextRequest, { params }: Props) {
+  const { response } = await requireAdminManager()
+  if (response) return response
+
   const { id } = await params
   const formData = await req.formData()
   const newStatus = formData.get('status') as OrderStatus

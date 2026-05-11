@@ -1,27 +1,32 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase/server';
+import { NextRequest, NextResponse } from 'next/server'
+import { supabaseAdmin } from '@/lib/supabase/server'
+import { requireAdminManager, requireStaff } from '@/lib/auth'
 
-// GET — lista todas las tarifas activas
 export async function GET() {
+  const { response } = await requireStaff()
+  if (response) return response
+
   const { data, error } = await supabaseAdmin
     .from('tarifas')
     .select('id, nombre, descripcion, multiplicador, activo, created_at')
-    .order('nombre');
+    .order('nombre')
 
   if (error) {
-    console.error('[tarifas GET]', error.message);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error('[tarifas GET]', error.message)
+    return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
-  return NextResponse.json({ data: data ?? [] });
+  return NextResponse.json({ data: data ?? [] })
 }
 
-// POST — crear nueva tarifa
 export async function POST(req: NextRequest) {
-  const { nombre, descripcion, multiplicador, hidden_products, minimum_order_value, pack_size } = await req.json();
+  const { response } = await requireAdminManager()
+  if (response) return response
+
+  const { nombre, descripcion, multiplicador, hidden_products, minimum_order_value, pack_size } = await req.json()
 
   if (!nombre || multiplicador == null) {
-    return NextResponse.json({ error: 'nombre y multiplicador son obligatorios' }, { status: 400 });
+    return NextResponse.json({ error: 'nombre y multiplicador son obligatorios' }, { status: 400 })
   }
 
   const { data, error } = await supabaseAdmin
@@ -35,12 +40,12 @@ export async function POST(req: NextRequest) {
       pack_size:           pack_size           ?? 1,
     })
     .select('*')
-    .single();
+    .single()
 
   if (error) {
-    console.error('[tarifas POST]', error.message);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error('[tarifas POST]', error.message)
+    return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
-  return NextResponse.json(data, { status: 201 });
+  return NextResponse.json(data, { status: 201 })
 }

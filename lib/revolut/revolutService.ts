@@ -3,7 +3,7 @@
  * Cliente para Revolut Merchant API
  */
 
-import { createHmac } from 'crypto';
+import { createHmac, timingSafeEqual } from 'crypto';
 import {
   RevolutOrderPayload,
   RevolutOrderResponse,
@@ -139,10 +139,14 @@ export function verifyRevolutWebhookSignature(
 ): boolean {
   const webhookSecret = process.env.REVOLUT_WEBHOOK_SECRET;
   if (!webhookSecret) {
-    console.warn('[Revolut Webhook] REVOLUT_WEBHOOK_SECRET not configured');
+    console.error('[Revolut Webhook] REVOLUT_WEBHOOK_SECRET not configured — rejecting webhook');
     return false;
   }
 
   const hash = createHmac('sha256', webhookSecret).update(payload).digest('hex');
-  return hash === signature;
+  try {
+    return timingSafeEqual(Buffer.from(hash, 'hex'), Buffer.from(signature, 'hex'));
+  } catch {
+    return false;
+  }
 }

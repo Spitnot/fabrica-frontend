@@ -1,20 +1,27 @@
-import { sendCustomerInviteEmail } from '@/lib/emailService';
-import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase/server';
+import { sendCustomerInviteEmail } from '@/lib/emailService'
+import { NextRequest, NextResponse } from 'next/server'
+import { supabaseAdmin } from '@/lib/supabase/server'
+import { requireAdminManager, requireStaff } from '@/lib/auth'
 
 export async function GET() {
+  const { response } = await requireStaff()
+  if (response) return response
+
   const { data, error } = await supabaseAdmin
     .from('customers')
     .select('id, first_name, last_name, company_name, tarifa_id, descuento_pct, ship_street1, ship_city, ship_postal_code, ship_country, estado, created_at, onboarding_completed')
     .eq('estado', 'active')
-    .order('company_name');
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ data });
+    .order('company_name')
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json({ data })
 }
 
 export async function POST(req: NextRequest) {
+  const { response } = await requireAdminManager()
+  if (response) return response
+
   try {
-    const body = await req.json();
+    const body = await req.json()
 
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email: body.email,
@@ -24,17 +31,17 @@ export async function POST(req: NextRequest) {
         role: 'customer',
         full_name: body.contacto_nombre ?? `${body.first_name ?? ''} ${body.last_name ?? ''}`.trim(),
       },
-    });
+    })
 
     if (authError) {
-      console.error('[API] Auth Error:', authError);
+      console.error('[API] Auth Error:', authError)
       if (authError.message.includes('already been registered')) {
-        return NextResponse.json({ error: 'This email is already registered.' }, { status: 400 });
+        return NextResponse.json({ error: 'This email is already registered.' }, { status: 400 })
       }
-      return NextResponse.json({ error: `Auth Error: ${authError.message}` }, { status: 400 });
+      return NextResponse.json({ error: `Auth Error: ${authError.message}` }, { status: 400 })
     }
 
-    const userId = authData.user?.id;
+    const userId = authData.user?.id
 
     const insertData: Record<string, any> = {
       id: userId,
@@ -69,18 +76,18 @@ export async function POST(req: NextRequest) {
       fiscal_postal_code: body.fiscal_postal_code ?? null,
       fiscal_country:     (body.fiscal_country    ?? '').toUpperCase() || null,
       telefono_e164:    body.telefono?.replace(/\s+/g, '') ?? null,
-    };
+    }
 
     const { data, error: dbError } = await supabaseAdmin
       .from('customers')
       .insert(insertData)
       .select('id')
-      .single();
+      .single()
 
     if (dbError) {
-      console.error('[API] DB Insert Error:', dbError);
-      await supabaseAdmin.auth.admin.deleteUser(userId!);
-      return NextResponse.json({ error: `DB Error: ${dbError.message}` }, { status: 500 });
+      console.error('[API] DB Insert Error:', dbError)
+      await supabaseAdmin.auth.admin.deleteUser(userId!)
+      return NextResponse.json({ error: `DB Error: ${dbError.message}` }, { status: 500 })
     }
 
     const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
@@ -89,7 +96,7 @@ export async function POST(req: NextRequest) {
       options: {
         redirectTo: 'https://b2b.firmarollers.com/auth/callback?next=/reset-password',
       },
-    });
+    })
 
     if (!linkError && linkData.properties?.action_link) {
       await sendCustomerInviteEmail(
@@ -97,15 +104,14 @@ export async function POST(req: NextRequest) {
         body.contacto_nombre ?? `${body.first_name ?? ''} ${body.last_name ?? ''}`.trim(),
         linkData.properties.action_link,
         userId,
-      );
+      )
     } else {
-      console.error('[API] Failed to generate invite link:', linkError);
+      console.error('[API] Failed to generate invite link:', linkError)
     }
 
-    return NextResponse.json({ id: data.id, message: 'Customer created' }, { status: 201 });
-
+    return NextResponse.json({ id: data.id, message: 'Customer created' }, { status: 201 })
   } catch (err: any) {
-    console.error('[API] Server Error:', err);
-    return NextResponse.json({ error: `Server Error: ${err.message}` }, { status: 500 });
+    console.error('[API] Server Error:', err)
+    return NextResponse.json({ error: `Server Error: ${err.message}` }, { status: 500 })
   }
 }

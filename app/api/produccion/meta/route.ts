@@ -1,23 +1,30 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase/server';
+import { NextRequest, NextResponse } from 'next/server'
+import { supabaseAdmin } from '@/lib/supabase/server'
+import { requireAdminManager, requireStaff } from '@/lib/auth'
 
-export const dynamic = 'force-dynamic';
+export const dynamic = 'force-dynamic'
 
 export async function GET() {
+  const { response } = await requireStaff()
+  if (response) return response
+
   const { data, error } = await supabaseAdmin
     .from('product_meta')
     .select('*')
-    .order('sku');
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ data });
+    .order('sku')
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json({ data })
 }
 
 export async function PUT(req: NextRequest) {
-  const body = await req.json();
-  const rows = Array.isArray(body) ? body : [body];
+  const { response } = await requireAdminManager()
+  if (response) return response
+
+  const body = await req.json()
+  const rows = Array.isArray(body) ? body : [body]
   const { error } = await supabaseAdmin
     .from('product_meta')
-    .upsert(rows, { onConflict: 'sku' });
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ ok: true });
+    .upsert(rows, { onConflict: 'sku' })
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json({ ok: true })
 }

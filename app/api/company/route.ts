@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/server'
+import { requireAdmin, requireStaff } from '@/lib/auth'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET() {
+  const { response } = await requireStaff()
+  if (response) return response
+
   const { data, error } = await supabaseAdmin
     .from('company_settings')
     .select('*')
@@ -19,9 +23,12 @@ export async function GET() {
 }
 
 export async function PUT(req: NextRequest) {
+  // Company settings include API keys and IBAN — restrict to admin only
+  const { response } = await requireAdmin()
+  if (response) return response
+
   const body = await req.json()
 
-  // Fields allowed to update
   const allowed = [
     'razon_social', 'nombre_comercial', 'nif', 'eori',
     'direccion', 'ciudad', 'cp', 'provincia', 'pais',
@@ -41,7 +48,6 @@ export async function PUT(req: NextRequest) {
     if (key in body) updates[key] = body[key] === '' ? null : body[key]
   }
 
-  // Get the singleton row id
   const { data: existing } = await supabaseAdmin
     .from('company_settings')
     .select('id')
@@ -49,10 +55,7 @@ export async function PUT(req: NextRequest) {
     .single()
 
   if (!existing) {
-    // Create if doesn't exist
-    const { error } = await supabaseAdmin
-      .from('company_settings')
-      .insert(updates)
+    const { error } = await supabaseAdmin.from('company_settings').insert(updates)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   } else {
     const { error } = await supabaseAdmin

@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/server'
 import { sendTeamInviteEmail } from '@/lib/emailService'
+import { requireAdmin, requireStaff } from '@/lib/auth'
 
 export async function GET() {
+  const { response } = await requireStaff()
+  if (response) return response
+
   try {
     const { data, error } = await supabaseAdmin.auth.admin.listUsers()
-
     if (error) throw error
 
     const adminUsers = data.users
@@ -20,13 +23,15 @@ export async function GET() {
       }))
 
     return NextResponse.json({ data: adminUsers })
-
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 })
   }
 }
 
 export async function POST(req: NextRequest) {
+  const { response } = await requireAdmin()
+  if (response) return response
+
   try {
     const { email, full_name, role } = await req.json()
 
@@ -34,7 +39,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
     }
 
-    // 1. Crear usuario
     const { data: userData, error: userError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password: crypto.randomUUID(),
@@ -44,7 +48,6 @@ export async function POST(req: NextRequest) {
 
     if (userError) throw userError
 
-    // 2. Generar invite link con flujo PKCE
     const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
       type: 'recovery',
       email,
@@ -60,11 +63,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Could not generate invite link' }, { status: 500 })
     }
 
-    // 3. Enviar email
     await sendTeamInviteEmail(email, full_name, setupLink)
 
     return NextResponse.json({ id: userData.user?.id }, { status: 201 })
-
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 })
   }

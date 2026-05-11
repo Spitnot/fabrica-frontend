@@ -1,50 +1,55 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase/server';
+import { NextRequest, NextResponse } from 'next/server'
+import { supabaseAdmin } from '@/lib/supabase/server'
+import { requireAdminManager, requireStaff } from '@/lib/auth'
 
 interface Props { params: Promise<{ id: string }> }
 
-// GET — tarifa con sus precios por SKU (incluye pack_size por SKU)
 export async function GET(_req: NextRequest, { params }: Props) {
-  const { id } = await params;
+  const { response } = await requireStaff()
+  if (response) return response
+
+  const { id } = await params
 
   const { data, error } = await supabaseAdmin
     .from('tarifas')
     .select('*, precios:tarifas_precios(sku, precio, pack_size)')
     .eq('id', id)
-    .single();
+    .single()
 
   if (error || !data) {
-    return NextResponse.json({ error: 'Pricing tier not found' }, { status: 404 });
+    return NextResponse.json({ error: 'Pricing tier not found' }, { status: 404 })
   }
 
-  return NextResponse.json(data);
+  return NextResponse.json(data)
 }
 
-// PUT — actualizar nombre, descripcion, multiplicador y campos extendidos
 export async function PUT(req: NextRequest, { params }: Props) {
-  const { id } = await params;
-  const { nombre, descripcion, multiplicador, activo, hidden_products, minimum_order_value, pack_size } = await req.json();
+  const { response } = await requireAdminManager()
+  if (response) return response
 
-  const updates: Record<string, unknown> = {};
-  if (nombre               != null) updates.nombre               = nombre;
-  if (descripcion          != null) updates.descripcion          = descripcion;
-  if (multiplicador        != null) updates.multiplicador        = multiplicador;
-  if (activo               != null) updates.activo               = activo;
-  if (hidden_products      != null) updates.hidden_products      = hidden_products;
-  if (minimum_order_value  != null) updates.minimum_order_value  = minimum_order_value;
-  if (pack_size            != null) updates.pack_size            = pack_size;
+  const { id } = await params
+  const { nombre, descripcion, multiplicador, activo, hidden_products, minimum_order_value, pack_size } = await req.json()
+
+  const updates: Record<string, unknown> = {}
+  if (nombre               != null) updates.nombre               = nombre
+  if (descripcion          != null) updates.descripcion          = descripcion
+  if (multiplicador        != null) updates.multiplicador        = multiplicador
+  if (activo               != null) updates.activo               = activo
+  if (hidden_products      != null) updates.hidden_products      = hidden_products
+  if (minimum_order_value  != null) updates.minimum_order_value  = minimum_order_value
+  if (pack_size            != null) updates.pack_size            = pack_size
 
   const { data, error } = await supabaseAdmin
     .from('tarifas')
     .update(updates)
     .eq('id', id)
     .select('*')
-    .single();
+    .single()
 
   if (error || !data) {
-    console.error('[tarifas PUT]', error?.message);
-    return NextResponse.json({ error: error?.message ?? 'Failed to update' }, { status: 500 });
+    console.error('[tarifas PUT]', error?.message)
+    return NextResponse.json({ error: error?.message ?? 'Failed to update' }, { status: 500 })
   }
 
-  return NextResponse.json(data);
+  return NextResponse.json(data)
 }

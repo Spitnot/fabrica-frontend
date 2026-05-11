@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/server'
+import { requireAdmin, requireAdminManager, requireStaff } from '@/lib/auth'
 
 interface Props { params: Promise<{ id: string }> }
 
 export async function GET(_req: NextRequest, { params }: Props) {
+  const { response } = await requireStaff()
+  if (response) return response
+
   const { id } = await params
 
   const { data: customer, error } = await supabaseAdmin
@@ -15,11 +19,9 @@ export async function GET(_req: NextRequest, { params }: Props) {
   if (error || !customer)
     return NextResponse.json({ error: 'Client not found' }, { status: 404 })
 
-  // Normalize legacy fields for frontend compatibility
   const normalized = {
     ...customer,
     contacto_nombre: (customer.contacto_nombre ?? `${customer.first_name ?? ''} ${customer.last_name ?? ''}`.trim()) || null,
-
     direccion_envio: {
       street:      customer.ship_street1     ?? '',
       street2:     customer.ship_street2     ?? '',
@@ -48,6 +50,9 @@ export async function GET(_req: NextRequest, { params }: Props) {
 }
 
 export async function DELETE(_req: NextRequest, { params }: Props) {
+  const { response } = await requireAdmin()
+  if (response) return response
+
   const { id } = await params
 
   const { error: deleteError } = await supabaseAdmin
@@ -67,12 +72,14 @@ export async function DELETE(_req: NextRequest, { params }: Props) {
 }
 
 export async function PUT(req: NextRequest, { params }: Props) {
+  const { response } = await requireAdminManager()
+  if (response) return response
+
   const { id } = await params
   const body = await req.json()
 
   const updates: Record<string, unknown> = {}
 
-  // New flat fields
   if ('first_name'      in body) updates.first_name      = body.first_name
   if ('last_name'       in body) updates.last_name        = body.last_name
   if ('telefono_e164'   in body) updates.telefono_e164    = body.telefono_e164
@@ -83,13 +90,11 @@ export async function PUT(req: NextRequest, { params }: Props) {
   if ('ship_postal_code' in body) updates.ship_postal_code = body.ship_postal_code
   if ('ship_country'    in body) updates.ship_country     = body.ship_country
 
-  // Legacy fields still allowed during migration
   const allowed = ['company_name', 'nif_cif', 'estado', 'tarifa_id', 'descuento_pct']
   for (const key of allowed) {
     if (key in body) updates[key] = body[key]
   }
 
-  // Keep first/last in sync with contacto_nombre
   if ('contacto_nombre' in body && !('first_name' in body)) {
     const parts = (body.contacto_nombre ?? '').trim().split(' ')
     updates.first_name = parts[0] ?? null
