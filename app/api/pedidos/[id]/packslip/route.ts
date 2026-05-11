@@ -13,6 +13,15 @@ const FROM_EMAIL       = process.env.PACKLINK_FROM_EMAIL       ?? ''
 const fmt = (n: number) =>
   new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'EUR' }).format(n)
 
+function esc(s: unknown): string {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
 const STATUS_LABELS: Record<string, string> = {
   draft: 'Draft', confirmado: 'Confirmed', produccion: 'In Production',
   listo_envio: 'Ready to Ship', esperando_pago: 'Awaiting Payment', enviado: 'Shipped', cancelado: 'Cancelled',
@@ -57,8 +66,8 @@ export async function GET(_req: NextRequest, { params }: Props) {
 
   const itemRows = (order.order_items ?? []).map((item: any) => `
     <tr>
-      <td>${item.nombre_producto}</td>
-      <td class="mono">${item.sku}</td>
+      <td>${esc(item.nombre_producto)}</td>
+      <td class="mono">${esc(item.sku)}</td>
       <td class="center">${item.cantidad}</td>
       <td class="right mono">${item.peso_unitario} kg</td>
       <td class="right">${fmt(item.precio_unitario)}</td>
@@ -127,23 +136,23 @@ export async function GET(_req: NextRequest, { params }: Props) {
   <div class="addresses">
     <div class="address-block">
       <h3>From</h3>
-      <p class="name">${FROM_NAME}</p>
-      <p>${FROM_STREET}</p><p>${FROM_POSTAL_CODE} ${FROM_CITY}</p>
-      <p>${FROM_COUNTRY}</p><p>${FROM_EMAIL}</p>
+      <p class="name">${esc(FROM_NAME)}</p>
+      <p>${esc(FROM_STREET)}</p><p>${esc(FROM_POSTAL_CODE)} ${esc(FROM_CITY)}</p>
+      <p>${esc(FROM_COUNTRY)}</p><p>${esc(FROM_EMAIL)}</p>
     </div>
     <div class="address-block">
       <h3>Ship To</h3>
-      <p class="name">${recipientName}</p>
-      <p>${order.customer?.company_name ?? ''}</p>
-      <p>${address?.street ?? '—'}</p>
-      <p>${address?.postal_code ?? ''} ${address?.city ?? ''}</p>
-      <p>${address?.country ?? ''}</p>
+      <p class="name">${esc(recipientName)}</p>
+      <p>${esc(order.customer?.company_name ?? '')}</p>
+      <p>${esc(address?.street ?? '—')}</p>
+      <p>${esc(address?.postal_code ?? '')} ${esc(address?.city ?? '')}</p>
+      <p>${esc(address?.country ?? '')}</p>
     </div>
   </div>
   <div class="meta">
     <div class="meta-item"><span>Order Date</span><span>${date}</span></div>
     <div class="meta-item"><span>Total Weight</span><span>${order.peso_total} kg</span></div>
-    ${order.packlink_shipment_id ? `<div class="meta-item"><span>Shipment Ref</span><span style="font-family:monospace">${order.packlink_shipment_id}</span></div>` : ''}
+    ${order.packlink_shipment_id ? `<div class="meta-item"><span>Shipment Ref</span><span style="font-family:monospace">${esc(order.packlink_shipment_id)}</span></div>` : ''}
     ${order.coste_envio_final ? `<div class="meta-item"><span>Shipping Cost</span><span>${fmt(order.coste_envio_final)}</span></div>` : ''}
   </div>
   <table>
@@ -164,7 +173,7 @@ export async function GET(_req: NextRequest, { params }: Props) {
     </div>
   </div>
   <div class="footer">
-    <span>${FROM_NAME} · ${FROM_EMAIL}</span>
+    <span>${esc(FROM_NAME)} · ${esc(FROM_EMAIL)}</span>
     <span>Generated ${new Date().toLocaleDateString('en-GB')}</span>
   </div>
 </body>

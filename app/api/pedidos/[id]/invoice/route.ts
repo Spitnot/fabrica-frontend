@@ -8,6 +8,15 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://b2b.firmarollers.c
 const fmt = (n: number) =>
   new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n)
 
+function esc(s: unknown): string {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
 function getTaxLogic(customer: any, company: any) {
   const country = customer?.ship_country ?? 'ES'
   const hasEuVat = !!customer?.nif_iva_eu && customer?.vies_validated
@@ -117,8 +126,8 @@ export async function GET(_req: NextRequest, { params }: Props) {
 
   const itemRows = (order.order_items ?? []).map((item: any) => `
     <tr>
-      <td>${item.nombre_producto}</td>
-      <td class="mono">${item.sku}</td>
+      <td>${esc(item.nombre_producto)}</td>
+      <td class="mono">${esc(item.sku)}</td>
       <td class="center">${item.cantidad}</td>
       <td class="right mono">${item.peso_unitario ?? '—'} kg</td>
       <td class="right">${fmt(item.precio_unitario)}</td>
@@ -183,32 +192,32 @@ export async function GET(_req: NextRequest, { params }: Props) {
   </div>
   <div class="header">
     <div>
-      <img src="${logoUrl}" alt="${fromName}" class="brand-logo" />
+      <img src="${esc(logoUrl)}" alt="${esc(fromName)}" class="brand-logo" />
       <div class="brand-sub">B2B</div>
-      <div class="brand-info">${fromStreet}<br />${fromCp} ${fromCity} · ${fromCountry}<br />${fromEmail}</div>
+      <div class="brand-info">${esc(fromStreet)}<br />${esc(fromCp)} ${esc(fromCity)} · ${esc(fromCountry)}<br />${esc(fromEmail)}</div>
     </div>
     <div class="doc-title">
       <h1>Factura</h1>
-      <div class="ref">${invoiceNumber}</div>
-      <div class="meta">Fecha: ${date}<br />Vencimiento: ${payTerms}<br />Incoterm: ${incoterm}</div>
+      <div class="ref">${esc(invoiceNumber)}</div>
+      <div class="meta">Fecha: ${date}<br />Vencimiento: ${esc(payTerms)}<br />Incoterm: ${esc(incoterm)}</div>
     </div>
   </div>
   <div class="addresses">
     <div class="address-block">
       <h3>Emisor</h3>
-      <p class="name">${fromName}</p>
-      <p>${fromStreet}</p><p>${fromCp} ${fromCity}</p><p>${fromCountry}</p>
-      <p class="vat">NIF/CIF: ${fromNif}${fromEori ? ` · EORI: ${fromEori}` : ''}</p>
+      <p class="name">${esc(fromName)}</p>
+      <p>${esc(fromStreet)}</p><p>${esc(fromCp)} ${esc(fromCity)}</p><p>${esc(fromCountry)}</p>
+      <p class="vat">NIF/CIF: ${esc(fromNif)}${fromEori ? ` · EORI: ${esc(fromEori)}` : ''}</p>
     </div>
     <div class="address-block">
       <h3>Destinatario</h3>
-      <p class="name">${cust?.company_name ?? recipientName}</p>
-      ${recipientName !== cust?.company_name ? `<p>${recipientName}</p>` : ''}
-      <p>${address?.street ?? '—'}${address?.street2 ? `, ${address.street2}` : ''}</p>
-      <p>${address?.postal_code ?? ''} ${address?.city ?? ''}</p>
-      <p>${address?.country ?? ''}</p>
-      ${cust?.nif_cif ? `<p class="vat">Tax ID: ${cust.nif_cif}</p>` : ''}
-      ${cust?.nif_iva_eu ? `<p class="vat">VAT EU: ${cust.nif_iva_eu}</p>` : ''}
+      <p class="name">${esc(cust?.company_name ?? recipientName)}</p>
+      ${recipientName !== cust?.company_name ? `<p>${esc(recipientName)}</p>` : ''}
+      <p>${esc(address?.street ?? '—')}${address?.street2 ? `, ${esc(address.street2)}` : ''}</p>
+      <p>${esc(address?.postal_code ?? '')} ${esc(address?.city ?? '')}</p>
+      <p>${esc(address?.country ?? '')}</p>
+      ${cust?.nif_cif ? `<p class="vat">Tax ID: ${esc(cust.nif_cif)}</p>` : ''}
+      ${cust?.nif_iva_eu ? `<p class="vat">VAT EU: ${esc(cust.nif_iva_eu)}</p>` : ''}
     </div>
   </div>
   <table>
@@ -229,10 +238,10 @@ export async function GET(_req: NextRequest, { params }: Props) {
     </div>
   </div>
   ${tax.mention ? `<div class="mention">⚠️ ${tax.mention}</div>` : ''}
-  ${fromIban ? `<div class="payment-info"><h4>Datos bancarios para transferencia</h4><p>${fromBanco ? `Banco: ${fromBanco}<br />` : ''}Titular: ${fromName}<br /><span class="iban">${fromIban}</span>${fromBic ? `<br />BIC/SWIFT: ${fromBic}` : ''}</p></div>` : ''}
-  ${pieFactura ? `<div class="pie">${pieFactura}</div>` : ''}
+  ${fromIban ? `<div class="payment-info"><h4>Datos bancarios para transferencia</h4><p>${fromBanco ? `Banco: ${esc(fromBanco)}<br />` : ''}Titular: ${esc(fromName)}<br /><span class="iban">${esc(fromIban)}</span>${fromBic ? `<br />BIC/SWIFT: ${esc(fromBic)}` : ''}</p></div>` : ''}
+  ${pieFactura ? `<div class="pie">${esc(pieFactura)}</div>` : ''}
   <div class="footer">
-    <span>${fromName} · ${fromNif} · ${fromWeb}</span>
+    <span>${esc(fromName)} · ${esc(fromNif)} · ${esc(fromWeb)}</span>
     <span>Generada el ${new Date().toLocaleDateString('es-ES')}</span>
   </div>
 </body>
