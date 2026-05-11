@@ -44,6 +44,9 @@ export async function GET() {
   const { response } = await requireAnyAuth()
   if (response) return response
 
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), 15_000)
+
   try {
     const res = await fetch(
       `https://${SHOPIFY_STORE_DOMAIN}/admin/api/2026-01/graphql.json`,
@@ -55,6 +58,7 @@ export async function GET() {
         },
         body: JSON.stringify({ query: QUERY }),
         cache: 'no-store',
+        signal: controller.signal,
       }
     )
 
@@ -96,6 +100,9 @@ export async function GET() {
     return NextResponse.json({ data: products })
   } catch (err: any) {
     console.error('[products]', err)
-    return NextResponse.json({ error: 'Error interno' }, { status: 500 })
+    const msg = err?.name === 'AbortError' ? 'Shopify timeout' : 'Error interno'
+    return NextResponse.json({ error: msg }, { status: err?.name === 'AbortError' ? 504 : 500 })
+  } finally {
+    clearTimeout(timer)
   }
 }

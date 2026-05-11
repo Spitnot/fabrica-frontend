@@ -37,11 +37,14 @@ export async function createRevolutOrder(
     'Idempotency-Key': `${Date.now()}-${Math.random()}`,
   };
 
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), 10_000)
   try {
     const response = await fetch(url, {
       method: 'POST',
       headers,
       body: JSON.stringify(payload),
+      signal: controller.signal,
     });
 
     if (!response.ok) {
@@ -58,6 +61,8 @@ export async function createRevolutOrder(
   } catch (error) {
     console.error('[Revolut] Failed to create order:', error);
     throw error;
+  } finally {
+    clearTimeout(timer)
   }
 }
 
@@ -74,10 +79,13 @@ export async function getRevolutOrder(
     'Revolut-Api-Version': '2024-01-01',
   };
 
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), 10_000)
   try {
     const response = await fetch(url, {
       method: 'GET',
       headers,
+      signal: controller.signal,
     });
 
     if (!response.ok) {
@@ -93,6 +101,8 @@ export async function getRevolutOrder(
   } catch (error) {
     console.error('[Revolut] Failed to retrieve order:', error);
     throw error;
+  } finally {
+    clearTimeout(timer)
   }
 }
 
@@ -108,11 +118,14 @@ export async function cancelRevolutOrder(orderId: string): Promise<void> {
     'Content-Type': 'application/json',
   };
 
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), 10_000)
   try {
     const response = await fetch(url, {
       method: 'POST',
       headers,
       body: JSON.stringify({}),
+      signal: controller.signal,
     });
 
     if (!response.ok) {
@@ -127,6 +140,8 @@ export async function cancelRevolutOrder(orderId: string): Promise<void> {
   } catch (error) {
     console.error('[Revolut] Failed to cancel order:', error);
     throw error;
+  } finally {
+    clearTimeout(timer)
   }
 }
 

@@ -51,9 +51,13 @@ export async function POST(req: NextRequest) {
     'packages[0][length]': String(Math.round(Number(largo))),
   });
 
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), 10_000)
+
   try {
     const res = await fetch(`${PACKLINK_API_URL}/services?${params}`, {
       headers: { 'Authorization': PACKLINK_API_KEY, 'Content-Type': 'application/json' },
+      signal: controller.signal,
     });
 
     if (!res.ok) {
@@ -80,6 +84,9 @@ export async function POST(req: NextRequest) {
 
   } catch (err: any) {
     console.error('[quotes]', err);
-    return NextResponse.json({ error: 'Error interno' }, { status: 500 });
+    const msg = err?.name === 'AbortError' ? 'Packlink timeout' : 'Error interno'
+    return NextResponse.json({ error: msg }, { status: err?.name === 'AbortError' ? 504 : 500 });
+  } finally {
+    clearTimeout(timer)
   }
 }

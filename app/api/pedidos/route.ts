@@ -40,8 +40,57 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const total_productos = items.reduce((s: number, i: any) => s + i.cantidad * i.precio_unitario, 0)
-    const peso_total      = items.reduce((s: number, i: any) => s + i.peso_unitario * i.cantidad, 0)
+    // Validate prices server-side against tarifas_precios
+    const { data: customer } = await supabaseAdmin
+      .from('customers')
+      .select('tarifa_id')
+      .eq('id', customer_id)
+      .single()
+
+    const serverPrices: Record<string, number> = {}
+    if (customer?.tarifa_id) {
+      const skus = items.map((i: any) => i.sku)
+      const { data: tarifaPrecios } = await supabaseAdmin
+        .from('tarifas_precios')
+        .select('sku, precio')
+        .eq('tarifa_id', customer.tarifa_id)
+        .in('sku', skus)
+      if (tarifaPrecios) {
+        for (const tp of tarifaPrecios) serverPrices[tp.sku] = tp.precio
+      }
+    }
+
+    const validatedItems = items.map((item: any) => {
+      const serverPrice = serverPrices[item.sku]
+      if (serverPrice !== undefined) {
+        if (Math.abs(serverPrice - item.precio_unitario) > 0.01) {
+          console.warn(`[pedidos] Price mismatch SKU ${item.sku}: client=${item.precio_unitario}, server=${serverPrice}`)
+        }
+        return { ...item, precio_unitario: serverPrice }
+      }
+      console.warn(`[pedidos] No explicit price for SKU ${item.sku} tarifa ${customer?.tarifa_id} — using client value`)
+      return item
+    })
+
+    const total_productos = validatedItems.reduce((s: number, i: any) => s + i.cantidad * i.precio_unitario, 0)
+    const peso_total      = validatedItems.reduce((s: number, i: any) => s + i.peso_unitario * i.cantidad, 0)
+
+    // Idempotency: reject if a confirmed order with same customer+total was created in the last 60s
+    const cutoff = new Date(Date.now() - 60_000).toISOString()
+    const { data: recentOrder } = await supabaseAdmin
+      .from('orders')
+      .select('id, total_productos')
+      .eq('customer_id', customer_id)
+      .eq('status', 'confirmado')
+      .gte('created_at', cutoff)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    if (recentOrder && Math.abs(recentOrder.total_productos - total_productos) < 0.01) {
+      console.warn('[pedidos] Duplicate order detected within 60s, returning existing:', recentOrder.id)
+      return NextResponse.json({ id: recentOrder.id, duplicate: true })
+    }
 
     const { data: order, error: orderError } = await supabaseAdmin
       .from('orders')
@@ -59,7 +108,7 @@ export async function POST(req: NextRequest) {
 
     const { error: itemsError } = await supabaseAdmin
       .from('order_items')
-      .insert(items.map((i: any) => ({
+      .insert(validatedItems.map((i: any) => ({
         order_id:        order.id,
         sku:             i.sku,
         nombre_producto: i.nombre_producto,
@@ -68,7 +117,11 @@ export async function POST(req: NextRequest) {
         peso_unitario:   i.peso_unitario,
       })))
 
-    if (itemsError) throw itemsError
+    if (itemsError) {
+      // Best-effort rollback: remove orphaned order
+      await supabaseAdmin.from('orders').delete().eq('id', order.id)
+      throw itemsError
+    }
 
     return NextResponse.json({ id: order.id, data: order })
   } catch (err: any) {

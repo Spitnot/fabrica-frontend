@@ -107,7 +107,7 @@ async function handleOrderCompleted(
     // 1. Encontrar pago en BD
     const { data: payment, error } = await supabase
       .from('revolut_payments')
-      .select('id, order_id, status')
+      .select('id, order_id, status, amount')
       .eq('revolut_order_id', revolutOrderId)
       .single();
 
@@ -121,10 +121,19 @@ async function handleOrderCompleted(
       return;
     }
 
-    // Si ya está completado, no procesar de nuevo
+    // Si ya está completado, no procesar de nuevo (idempotencia)
     if (payment.status === 'completed') {
       console.log('[Webhook] Payment already completed, skipping');
       return;
+    }
+
+    // Verificar que el importe pagado coincide con el esperado
+    // order.amount is in minor currency units (cents); payment.amount is in EUR
+    const paidCents = order.amount
+    const expectedCents = Math.round((payment.amount ?? 0) * 100)
+    if (paidCents !== undefined && Math.abs(paidCents - expectedCents) > 1) {
+      console.error(`[Webhook] Amount mismatch: paid=${paidCents}c expected=${expectedCents}c — rejecting`)
+      return
     }
 
     // 2. Actualizar revolut_payments

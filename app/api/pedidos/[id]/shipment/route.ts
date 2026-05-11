@@ -59,6 +59,9 @@ export async function POST(req: NextRequest, { params }: Props) {
     let trackingUrl: string | null = null
 
     if (service_id && PACKLINK_API_KEY) {
+      const plController = new AbortController()
+      const plTimer = setTimeout(() => plController.abort(), 10_000)
+
       const shipmentBody = {
         service_id,
         from: {
@@ -92,23 +95,34 @@ export async function POST(req: NextRequest, { params }: Props) {
         contentvalue: order.total_productos ?? 0,
       }
 
-      const plRes = await fetch(`${PACKLINK_API_URL}/shipments`, {
-        method: 'POST',
-        headers: {
-          'Authorization': PACKLINK_API_KEY,
-          'Content-Type':  'application/json',
-        },
-        body: JSON.stringify(shipmentBody),
-      })
+      try {
+        const plRes = await fetch(`${PACKLINK_API_URL}/shipments`, {
+          method: 'POST',
+          headers: {
+            'Authorization': PACKLINK_API_KEY,
+            'Content-Type':  'application/json',
+          },
+          body: JSON.stringify(shipmentBody),
+          signal: plController.signal,
+        })
 
-      if (plRes.ok) {
-        const plData = await plRes.json()
-        shipmentRef = plData.shipment_reference ?? plData.reference ?? null
-        trackingUrl = plData.tracking_url ?? plData.carrier_tracking_url ?? null
-        console.log('[shipment] Packlink draft creado:', shipmentRef)
-      } else {
-        const errText = await plRes.text()
-        console.error('[shipment] Packlink error:', plRes.status, errText)
+        if (plRes.ok) {
+          const plData = await plRes.json()
+          shipmentRef = plData.shipment_reference ?? plData.reference ?? null
+          trackingUrl = plData.tracking_url ?? plData.carrier_tracking_url ?? null
+          console.log('[shipment] Packlink draft creado:', shipmentRef)
+        } else {
+          const errText = await plRes.text()
+          console.error('[shipment] Packlink error:', plRes.status, errText)
+        }
+      } catch (plErr: any) {
+        if (plErr?.name === 'AbortError') {
+          console.error('[shipment] Packlink timeout — continuing without shipment ref')
+        } else {
+          console.error('[shipment] Packlink fetch failed:', plErr.message)
+        }
+      } finally {
+        clearTimeout(plTimer)
       }
     }
 
