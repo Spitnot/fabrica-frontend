@@ -1,9 +1,51 @@
 'use client';
 
-import { useState, useEffect, useMemo, Suspense } from 'react';
+import { useState, useEffect, useRef, useMemo, Suspense } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { StatusChip, FRStatus } from '@/components/fr/StatusChip';
+
+interface Slide { src: string; alt: string }
+
+function HeroBanner({ slides }: { slides: Slide[] }) {
+  const [idx, setIdx] = useState(0);
+  const timer = useRef<ReturnType<typeof setTimeout>>();
+
+  useEffect(() => {
+    if (slides.length < 2) return;
+    timer.current = setTimeout(() => setIdx(i => (i + 1) % slides.length), 4000);
+    return () => clearTimeout(timer.current);
+  }, [idx, slides.length]);
+
+  if (!slides.length) return null;
+  const slide = slides[idx];
+
+  return (
+    <div className="fr-hero-banner" style={{ position: 'relative', overflow: 'hidden', background: '#111' }}>
+      <img
+        key={slide.src}
+        src={slide.src}
+        alt={slide.alt}
+        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', opacity: 0.85 }}
+      />
+      {slides.length > 1 && (
+        <div style={{ position: 'absolute', bottom: 16, left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: 6 }}>
+          {slides.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => { clearTimeout(timer.current); setIdx(i); }}
+              style={{
+                width: i === idx ? 20 : 6, height: 6, border: 'none', boxShadow: 'none',
+                padding: 0, background: i === idx ? '#fff' : 'rgba(255,255,255,0.4)',
+                transition: 'all 0.2s', cursor: 'pointer',
+              }}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 const STATUS_LABELS: Record<string, string> = {
   draft: 'Draft', confirmado: 'Confirmed', produccion: 'In Production',
@@ -29,12 +71,27 @@ function PortalOrdersInner() {
 
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [heroSlides, setHeroSlides] = useState<Slide[]>([]);
 
   useEffect(() => {
     fetch('/api/portal/orders')
       .then(r => r.json())
       .then(d => { setOrders(d.data ?? []); setLoading(false); })
       .catch(() => setLoading(false));
+
+    fetch('/api/products')
+      .then(r => r.json())
+      .then(d => {
+        const slides: Slide[] = [];
+        for (const p of d.products ?? []) {
+          for (const img of p.images ?? []) {
+            if (img.url) slides.push({ src: img.url, alt: p.title ?? '' });
+          }
+          if (slides.length >= 8) break;
+        }
+        if (slides.length) setHeroSlides(slides);
+      })
+      .catch(() => {});
   }, []);
 
   function setParam(key: string, value: string) {
@@ -72,7 +129,9 @@ function PortalOrdersInner() {
   const cols = '90px 140px 90px 130px 90px';
 
   return (
-    <div className="fr-page">
+    <>
+      <HeroBanner slides={heroSlides} />
+      <div className="fr-page">
 
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
@@ -161,7 +220,8 @@ function PortalOrdersInner() {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 }
 

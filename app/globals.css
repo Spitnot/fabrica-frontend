@@ -249,6 +249,10 @@ select {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #111; }
 
+/* Hero banner — portal slideshow */
+.fr-hero-banner { height: 660px; }
+@media (max-width: 768px) { .fr-hero-banner { height: 240px; } }
+
 /* Tailwind radius override (doble seguro) */
 .rounded, .rounded-sm, .rounded-md, .rounded-lg,
 .rounded-xl, .rounded-2xl, .rounded-full {
