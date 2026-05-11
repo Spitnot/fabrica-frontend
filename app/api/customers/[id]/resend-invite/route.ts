@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/server'
 import { sendCustomerInviteEmail } from '@/lib/emailService'
+import { requireAdminManager } from '@/lib/auth'
 
 interface Props { params: Promise<{ id: string }> }
 
 export async function POST(req: NextRequest, { params }: Props) {
+  const { response } = await requireAdminManager()
+  if (response) return response
+
   try {
     const { id } = await params
 
@@ -33,11 +37,13 @@ export async function POST(req: NextRequest, { params }: Props) {
       return NextResponse.json({ error: 'Could not generate link' }, { status: 500 })
     }
 
-    const recipientName = (customer as any).first_name ? `${(customer as any).first_name} ${(customer as any).last_name ?? ""}`.trim() : customer.contacto_nombre
+    const recipientName = (customer as any).first_name
+      ? `${(customer as any).first_name} ${(customer as any).last_name ?? ''}`.trim()
+      : customer.contacto_nombre
+
     await sendCustomerInviteEmail(customer.email, recipientName, setupLink, id)
 
     return NextResponse.json({ success: true })
-
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 })
   }

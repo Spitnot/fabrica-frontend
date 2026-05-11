@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/server'
+import { requireAdminManager } from '@/lib/auth'
 import { sendOrderReadyToPayEmail } from '@/lib/emailService'
 
 const PACKLINK_API_URL = process.env.PACKLINK_API_URL!
@@ -12,9 +13,14 @@ const FROM_COUNTRY     = process.env.PACKLINK_FROM_COUNTRY!
 const FROM_PHONE       = process.env.PACKLINK_FROM_PHONE!
 const FROM_EMAIL       = process.env.PACKLINK_FROM_EMAIL!
 
+const VALID_STATES_FOR_SHIPMENT = ['listo_envio', 'produccion']
+
 interface Props { params: Promise<{ id: string }> }
 
 export async function POST(req: NextRequest, { params }: Props) {
+  const { response } = await requireAdminManager()
+  if (response) return response
+
   try {
     const { id } = await params
     const body = await req.json()
@@ -29,16 +35,22 @@ export async function POST(req: NextRequest, { params }: Props) {
     if (fetchError || !order)
       return NextResponse.json({ error: 'Pedido no encontrado' }, { status: 404 })
 
+    // Enforce state machine: only valid states can generate a shipment
+    if (!VALID_STATES_FOR_SHIPMENT.includes(order.status)) {
+      return NextResponse.json(
+        { error: `Cannot create shipment for order in status '${order.status}'` },
+        { status: 400 }
+      )
+    }
+
     const customer = Array.isArray(order.customer) ? order.customer[0] : order.customer
 
-    // Use new flat columns, fallback to legacy JSON for backwards compat
     const shipStreet  = (customer?.ship_street1     ?? (customer?.direccion_envio as any)?.street      ?? '').trim()
     const shipCity    = (customer?.ship_city        ?? (customer?.direccion_envio as any)?.city        ?? '').trim()
     const shipPostal  = (customer?.ship_postal_code ?? (customer?.direccion_envio as any)?.postal_code ?? '').trim()
     const shipCountry = (customer?.ship_country     ?? (customer?.direccion_envio as any)?.country     ?? 'ES').trim()
     const shipPhone   = (customer?.telefono_e164    ?? customer?.telefono ?? FROM_PHONE ?? '').trim()
 
-    // Recipient name: prefer first+last, fallback to contacto_nombre, fallback to company
     const recipientName = customer?.first_name
       ? `${customer.first_name} ${customer.last_name ?? ''}`.trim()
       : customer?.contacto_nombre ?? customer?.company_name

@@ -58,17 +58,20 @@ export async function POST(
     }
 
     // 4. Verificar permisos
-    // Admin puede crear pagos para cualquier orden
-    // Clientes solo para sus propias órdenes
     const userRole = userData.user.user_metadata?.role;
     if (userRole !== 'admin' && userData.user.id !== customer.id) {
-      return NextResponse.json(
-        { error: 'Forbidden' },
-        { status: 403 },
-      );
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    // 5. Verificar si ya existe un pago pendiente
+    // 5a. Verificar estado válido para pago
+    if (!['listo_envio', 'esperando_pago'].includes(order.status)) {
+      return NextResponse.json(
+        { error: `Cannot initiate payment for order in status '${order.status}'` },
+        { status: 400 },
+      )
+    }
+
+    // 5b. Verificar si ya existe un pago pendiente
     const { data: existingPayment } = await supabaseAdmin
       .from('revolut_payments')
       .select('id, status, checkout_url')

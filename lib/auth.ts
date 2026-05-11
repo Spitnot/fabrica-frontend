@@ -20,3 +20,4 @@ export async function requireRole(allowed: string[]): Promise<AuthResult> {
 export const requireAdmin        = () => requireRole(['admin'])
 export const requireAdminManager = () => requireRole(['admin', 'manager'])
 export const requireStaff        = () => requireRole(['admin', 'manager', 'viewer'])
+export const requireAnyAuth      = () => requireRole(['admin', 'manager', 'viewer', 'customer'])
