@@ -9,7 +9,7 @@ interface Slide { src: string; alt: string }
 
 function HeroBanner({ slides }: { slides: Slide[] }) {
   const [idx, setIdx] = useState(0);
-  const timer = useRef<ReturnType<typeof setTimeout>>();
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => {
     if (slides.length < 2) return;
