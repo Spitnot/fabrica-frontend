@@ -1,60 +1,80 @@
 'use client';
 
-import { useState, useEffect, useMemo, Suspense } from 'react';
+import { useState, useEffect, useRef, useMemo, Suspense } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { StatusChip, FRStatus } from '@/components/fr/StatusChip';
-import { FR } from '@/components/fr/Atoms';
 
-// ─── Hero banner ─────────────────────────────────────────────────────────────
+// ─── Hero slideshow (Shopify product images) ─────────────────────────────────
 
-interface HeroData {
-  active: boolean; bg_image_url: string; titulo: string;
-  descripcion: string; cta_label: string; cta_href: string;
-}
+function HeroBanner({ slides }: { slides: { image: string; name: string }[] }) {
+  const [slide, setSlide] = useState(0);
+  const [fading, setFading] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const total = slides.length || 1;
 
-function HeroBanner({ hero }: { hero: HeroData }) {
+  function goTo(idx: number) {
+    if (idx === slide) return;
+    setFading(true);
+    setTimeout(() => { setSlide(idx); setFading(false); }, 300);
+  }
+
+  useEffect(() => {
+    if (slides.length < 2) return;
+    timerRef.current = setInterval(() => {
+      setFading(true);
+      setTimeout(() => { setSlide(s => (s + 1) % total); setFading(false); }, 300);
+    }, 4000);
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, [slides.length, total]);
+
+  const current = slides[slide % total];
+
   return (
-    <div style={{
-      position: 'relative', width: '100%', height: 280,
-      background: hero.bg_image_url
-        ? `url(${hero.bg_image_url}) center/cover no-repeat`
-        : '#111',
-      overflow: 'hidden',
-      display: 'flex', flexDirection: 'column', justifyContent: 'flex-end',
-      marginBottom: 0,
-    }}>
-      <div style={{
-        position: 'absolute', inset: 0,
-        background: 'linear-gradient(to bottom, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.7) 100%)',
-      }} />
-      <div style={{ position: 'relative', padding: '24px 20px 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {hero.titulo && (
-          <div style={{
-            fontFamily: 'var(--font-display, Alexandria, sans-serif)',
-            fontWeight: 900, fontSize: 36, lineHeight: 0.95,
-            letterSpacing: '-0.03em', textTransform: 'uppercase', color: '#fff',
-          }}>
-            {hero.titulo}<span style={{ color: FR.red }}>.</span>
-          </div>
-        )}
-        {hero.descripcion && (
-          <div style={{
-            fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
-            fontSize: 11, color: 'rgba(255,255,255,0.82)', lineHeight: 1.55, maxWidth: 380,
-          }}>
-            {hero.descripcion}
-          </div>
-        )}
-        {hero.cta_label && hero.cta_href && (
-          <div style={{ marginTop: 4 }}>
-            <Link href={hero.cta_href}>
-              <button className="btn-primary" style={{ fontSize: 10, padding: '9px 20px' }}>
-                {hero.cta_label} →
-              </button>
-            </Link>
-          </div>
-        )}
+    <div style={{ position: 'relative', width: '100%', height: 220, overflow: 'hidden', background: '#111' }}>
+      {current && (
+        <img
+          key={slide}
+          src={current.image}
+          alt={current.name}
+          style={{
+            position: 'absolute', inset: 0, width: '100%', height: '100%',
+            objectFit: 'cover', opacity: fading ? 0 : 1,
+            transition: 'opacity 300ms ease',
+          }}
+        />
+      )}
+
+      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 80, background: 'linear-gradient(transparent, rgba(0,0,0,0.6))' }} />
+
+      {current && (
+        <div style={{ position: 'absolute', bottom: 44, left: 16, opacity: fading ? 0 : 1, transition: 'opacity 300ms' }}>
+          <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#fff', background: 'rgba(0,0,0,0.4)', padding: '3px 8px' }}>
+            {current.name}
+          </span>
+        </div>
+      )}
+
+      <div style={{ position: 'absolute', bottom: 12, left: 16, right: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', gap: 5 }}>
+          {slides.length > 1 && slides.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => goTo(i)}
+              style={{
+                width: i === slide ? 20 : 6, height: 6,
+                background: i === slide ? '#D93A35' : 'rgba(255,255,255,0.4)',
+                border: 'none', boxShadow: 'none', padding: 0,
+                transition: 'all 0.3s', cursor: 'pointer', minHeight: 'auto',
+              }}
+            />
+          ))}
+        </div>
+        <Link href="/portal/pedidos/nuevo">
+          <button className="btn-primary" style={{ fontSize: 9, padding: '7px 14px' }}>
+            + New Order
+          </button>
+        </Link>
       </div>
     </div>
   );
@@ -86,16 +106,29 @@ function PortalOrdersInner() {
 
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
-  const [hero, setHero] = useState<HeroData | null>(null);
+  const [heroSlides, setHeroSlides] = useState<{ image: string; name: string }[]>([]);
 
   useEffect(() => {
     fetch('/api/portal/orders')
       .then(r => r.json())
       .then(d => { setOrders(d.data ?? []); setLoading(false); })
       .catch(() => setLoading(false));
-    fetch('/api/contenido/hero')
+
+    fetch('/api/products')
       .then(r => r.json())
-      .then(d => { if (d.data?.active) setHero(d.data); })
+      .then(d => {
+        const products: any[] = d.data ?? [];
+        const seen = new Set<string>();
+        const slides: { image: string; name: string }[] = [];
+        for (const p of products) {
+          if (p.imagen && !seen.has(p.nombre_producto)) {
+            seen.add(p.nombre_producto);
+            slides.push({ image: p.imagen, name: p.nombre_producto });
+          }
+          if (slides.length >= 6) break;
+        }
+        setHeroSlides(slides);
+      })
       .catch(() => {});
   }, []);
 
@@ -134,17 +167,17 @@ function PortalOrdersInner() {
   const cols = '90px 140px 90px 130px 90px';
 
   return (
-    <div className="fr-page" style={{ paddingTop: hero ? 0 : undefined }}>
+    <div className="fr-page" style={{ paddingTop: heroSlides.length > 0 ? 0 : undefined }}>
 
-      {/* Hero — edge-to-edge, breaks out of fr-page padding */}
-      {hero && (
+      {/* Hero — edge-to-edge */}
+      {heroSlides.length > 0 && (
         <div style={{ margin: '0 -32px' }}>
-          <HeroBanner hero={hero} />
+          <HeroBanner slides={heroSlides} />
         </div>
       )}
 
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: hero ? 20 : 0 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: heroSlides.length > 0 ? 20 : 0 }}>
         <div>
           <div className="fr-label">{loading ? '—' : `${filtered.length} of ${orders.length} records`}</div>
           <h1 style={{ fontSize: 28, fontWeight: 700, marginTop: 4 }}>Orders</h1>
