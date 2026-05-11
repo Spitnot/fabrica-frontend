@@ -65,15 +65,15 @@ export default async function EmailsPage() {
 
       {/* Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
-        <div className="fr-card" style={{ borderLeft: '3px solid #111' }}>
+        <div className="fr-card" style={{ borderLeft: '3px solid #111', padding: '14px 16px' }}>
           <div className="fr-label" style={{ marginBottom: 4 }}>Total</div>
           <div style={{ fontSize: 26, fontWeight: 900, color: '#111', lineHeight: 1 }}>{logs.length}</div>
         </div>
-        <div className="fr-card" style={{ borderLeft: '3px solid #0DA265' }}>
+        <div className="fr-card" style={{ borderLeft: '3px solid #0DA265', padding: '14px 16px' }}>
           <div className="fr-label" style={{ marginBottom: 4 }}>Sent</div>
           <div style={{ fontSize: 26, fontWeight: 900, color: '#0DA265', lineHeight: 1 }}>{sentCount}</div>
         </div>
-        <div className="fr-card" style={{ borderLeft: `3px solid ${failedCount > 0 ? '#D93A35' : '#111'}` }}>
+        <div className="fr-card" style={{ borderLeft: `3px solid ${failedCount > 0 ? '#D93A35' : '#111'}`, padding: '14px 16px' }}>
           <div className="fr-label" style={{ marginBottom: 4 }}>Failed</div>
           <div style={{ fontSize: 26, fontWeight: 900, color: failedCount > 0 ? '#D93A35' : '#111', lineHeight: 1 }}>{failedCount}</div>
         </div>

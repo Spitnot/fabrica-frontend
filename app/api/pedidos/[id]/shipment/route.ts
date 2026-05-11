@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase/server'
-import { sendShippingEmail } from '@/lib/emailService'
+import { sendOrderReadyToPayEmail } from '@/lib/emailService'
 
 const PACKLINK_API_URL = process.env.PACKLINK_API_URL!
 const PACKLINK_API_KEY = process.env.PACKLINK_API_KEY!
@@ -32,11 +32,11 @@ export async function POST(req: NextRequest, { params }: Props) {
     const customer = Array.isArray(order.customer) ? order.customer[0] : order.customer
 
     // Use new flat columns, fallback to legacy JSON for backwards compat
-    const shipStreet  = customer?.ship_street1     ?? (customer?.direccion_envio as any)?.street      ?? ''
-    const shipCity    = customer?.ship_city        ?? (customer?.direccion_envio as any)?.city        ?? ''
-    const shipPostal  = customer?.ship_postal_code ?? (customer?.direccion_envio as any)?.postal_code ?? ''
-    const shipCountry = customer?.ship_country     ?? (customer?.direccion_envio as any)?.country     ?? 'ES'
-    const shipPhone   = customer?.telefono_e164    ?? customer?.telefono ?? FROM_PHONE
+    const shipStreet  = (customer?.ship_street1     ?? (customer?.direccion_envio as any)?.street      ?? '').trim()
+    const shipCity    = (customer?.ship_city        ?? (customer?.direccion_envio as any)?.city        ?? '').trim()
+    const shipPostal  = (customer?.ship_postal_code ?? (customer?.direccion_envio as any)?.postal_code ?? '').trim()
+    const shipCountry = (customer?.ship_country     ?? (customer?.direccion_envio as any)?.country     ?? 'ES').trim()
+    const shipPhone   = (customer?.telefono_e164    ?? customer?.telefono ?? FROM_PHONE ?? '').trim()
 
     // Recipient name: prefer first+last, fallback to contacto_nombre, fallback to company
     const recipientName = customer?.first_name
@@ -50,14 +50,14 @@ export async function POST(req: NextRequest, { params }: Props) {
       const shipmentBody = {
         service_id,
         from: {
-          name:     FROM_NAME,
-          surname:  process.env.PACKLINK_FROM_SURNAME ?? 'FIRMA ROLLERS',
-          street1:  FROM_STREET,
-          city:     FROM_CITY,
-          zip_code: FROM_POSTAL_CODE,
-          country:  FROM_COUNTRY,
-          phone:    FROM_PHONE,
-          email:    FROM_EMAIL,
+          name:     (FROM_NAME ?? '').trim(),
+          surname:  (process.env.PACKLINK_FROM_SURNAME ?? 'FIRMA ROLLERS').trim(),
+          street1:  (FROM_STREET ?? '').trim(),
+          city:     (FROM_CITY ?? '').trim(),
+          zip_code: (FROM_POSTAL_CODE ?? '').trim(),
+          country:  (FROM_COUNTRY ?? '').trim(),
+          phone:    (FROM_PHONE ?? '').trim(),
+          email:    (FROM_EMAIL ?? '').trim(),
         },
         to: {
           name:    customer?.first_name ?? recipientName,
@@ -100,7 +100,7 @@ export async function POST(req: NextRequest, { params }: Props) {
       }
     }
 
-    const updatePayload: Record<string, unknown> = { status: 'enviado' }
+    const updatePayload: Record<string, unknown> = { status: 'esperando_pago' }
     if (coste_envio_final != null) updatePayload.coste_envio_final    = coste_envio_final
     if (shipmentRef)               updatePayload.packlink_shipment_id = shipmentRef
     if (trackingUrl)               updatePayload.tracking_url         = trackingUrl
@@ -116,12 +116,14 @@ export async function POST(req: NextRequest, { params }: Props) {
     if (updateError) throw updateError
 
     if (customer?.email) {
-      sendShippingEmail(
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://b2b.firmarollers.com'
+      sendOrderReadyToPayEmail(
         customer.email,
         recipientName ?? customer.company_name,
         `#${id.slice(0, 8).toUpperCase()}`,
-        trackingUrl ?? undefined,
-        undefined,
+        order.total_productos ?? 0,
+        coste_envio_final ?? 0,
+        `${appUrl}/portal/pedidos/${id}`,
         customer.id,
         id,
       ).catch((e: any) => console.error('[shipment] Email failed silently:', e.message))

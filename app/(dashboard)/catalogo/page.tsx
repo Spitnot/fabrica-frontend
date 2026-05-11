@@ -139,7 +139,7 @@ export default function CatalogoPage() {
       {/* Fungibles modal */}
       {showFungMgr && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-          <div className="card" style={{ maxWidth: 420, width: '100%', padding: 0, overflow: 'hidden' }}>
+          <div className="fr-card" style={{ maxWidth: 420, width: '100%', padding: 0, overflow: 'hidden', background: '#fff' }}>
             <div style={{ padding: '12px 16px', borderBottom: '1px solid #111', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <span className="section-label">Raw Materials</span>
               <button onClick={() => setShowFungMgr(false)} style={{ background: 'transparent', border: 'none', boxShadow: 'none', color: '#111', fontSize: 16, padding: '0 4px' }}>✕</button>

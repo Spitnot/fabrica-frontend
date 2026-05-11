@@ -7,7 +7,7 @@ import { StatusChip, FRStatus } from '@/components/fr/StatusChip';
 
 const STATUS_LABELS: Record<string, string> = {
   draft: 'Draft', confirmado: 'Confirmed', produccion: 'In Production',
-  listo_envio: 'Ready to Ship', enviado: 'Shipped', cancelado: 'Cancelled',
+  listo_envio: 'Ready to Ship', esperando_pago: 'Awaiting Payment', enviado: 'Shipped', cancelado: 'Cancelled',
 };
 
 const fmt = (n: number) =>
@@ -38,7 +38,7 @@ function PedidosInner() {
     async function load() {
       setLoading(true);
       try {
-        const [oRes, cRes] = await Promise.all([fetch('/api/orders'), fetch('/api/customers')]);
+        const [oRes, cRes] = await Promise.all([fetch('/api/pedidos'), fetch('/api/customers')]);
         setOrders((await oRes.json()).data ?? []);
         setCustomers((await cRes.json()).data ?? []);
       } catch (e) { console.error(e); } finally { setLoading(false); }
@@ -74,8 +74,9 @@ function PedidosInner() {
     { id: 'draft',       label: 'Draft',     count: statusCounts.draft ?? 0 },
     { id: 'confirmado',  label: 'Confirmed', count: statusCounts.confirmado ?? 0 },
     { id: 'produccion',  label: 'In Prod',   count: statusCounts.produccion ?? 0 },
-    { id: 'listo_envio', label: 'Ready',     count: statusCounts.listo_envio ?? 0 },
-    { id: 'enviado',     label: 'Shipped',   count: statusCounts.enviado ?? 0 },
+    { id: 'listo_envio',    label: 'Ready',     count: statusCounts.listo_envio ?? 0 },
+    { id: 'esperando_pago', label: 'Awaiting',  count: statusCounts.esperando_pago ?? 0 },
+    { id: 'enviado',        label: 'Shipped',   count: statusCounts.enviado ?? 0 },
   ];
 
   const cols = '90px 1.4fr 140px 90px 130px 90px';

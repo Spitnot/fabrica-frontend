@@ -12,7 +12,7 @@ export function OrderActions({ orderId, status }: Props) {
   async function advance(newStatus: string) {
     setLoading(newStatus);
     const body = new URLSearchParams({ status: newStatus });
-    await fetch(`/api/orders/${orderId}/status`, {
+    await fetch(`/api/pedidos/${orderId}/status`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: body.toString(),
@@ -41,7 +41,7 @@ export function OrderActions({ orderId, status }: Props) {
           {loading === 'listo_envio' ? 'Updating…' : '→ Ready to Ship'}
         </button>
       )}
-      {status !== 'cancelado' && status !== 'enviado' && status !== 'listo_envio' && (
+      {status !== 'cancelado' && status !== 'enviado' && status !== 'listo_envio' && status !== 'esperando_pago' && (
         <button
           onClick={() => advance('cancelado')}
           disabled={loading !== null}

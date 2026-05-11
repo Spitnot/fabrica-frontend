@@ -1,4 +1,4 @@
-// app/api/orders/preview/invoice/route.ts
+// app/api/pedidos/preview/invoice/route.ts
 // Redirects to the last order's invoice for preview purposes
 
 import { NextResponse } from 'next/server'
@@ -19,6 +19,6 @@ export async function GET() {
   }
 
   return NextResponse.redirect(
-    new URL(`/api/orders/${data.id}/invoice`, process.env.NEXT_PUBLIC_SITE_URL ?? 'https://b2b.firmarollers.com')
+    new URL(`/api/pedidos/${data.id}/invoice`, process.env.NEXT_PUBLIC_SITE_URL ?? 'https://b2b.firmarollers.com')
   )
 }

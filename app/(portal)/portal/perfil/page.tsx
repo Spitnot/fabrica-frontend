@@ -158,6 +158,9 @@ const inp: React.CSSProperties = {
 export default function PerfilPage() {
   const [profile, setProfile] = useState<CustomerProfile | null>(null);
   const [editing, setEditing] = useState(false);
+  const [editingAddress, setEditingAddress] = useState(false);
+  const [savingAddress, setSavingAddress] = useState(false);
+  const [addressFeedback, setAddressFeedback] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
   const [showPwd, setShowPwd] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
   const [profileFeedback, setProfileFeedback] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
@@ -215,9 +218,6 @@ export default function PerfilPage() {
     if (!draft.contacto_nombre.trim()) {
       setProfileFeedback({ type: 'error', msg: 'Contact name is required.' }); return;
     }
-    if (!draft.postal_code.trim() || !draft.country.trim()) {
-      setProfileFeedback({ type: 'error', msg: 'Postal code and country are required.' }); return;
-    }
     setSavingProfile(true);
     setProfileFeedback(null);
     const res = await fetch('/api/portal/profile', {
@@ -227,11 +227,7 @@ export default function PerfilPage() {
         contacto_nombre: draft.contacto_nombre.trim(),
         first_name: draft.contacto_nombre.trim().split(' ')[0] ?? null,
         last_name: draft.contacto_nombre.trim().split(' ').slice(1).join(' ') || null,
-        telefono: `${draft.telefono_prefix} ${draft.telefono_number}`.trim(),
-        ship_street1: draft.street.trim(),
-        ship_city: draft.city.trim(),
-        ship_postal_code: draft.postal_code.trim(),
-        ship_country: draft.country.trim().toUpperCase(),
+        telefono_e164: `${draft.telefono_prefix} ${draft.telefono_number}`.trim(),
       }),
     });
     setSavingProfile(false);
@@ -246,14 +242,56 @@ export default function PerfilPage() {
       first_name: draft.contacto_nombre.trim().split(' ')[0] ?? null,
       last_name: draft.contacto_nombre.trim().split(' ').slice(1).join(' ') || null,
       telefono: `${draft.telefono_prefix} ${draft.telefono_number}`.trim(),
+    } : prev);
+    setEditing(false);
+    setProfileFeedback({ type: 'success', msg: 'Profile updated.' });
+  }
+
+  async function saveAddress() {
+    if (!draft.postal_code.trim() || !draft.country.trim()) {
+      setAddressFeedback({ type: 'error', msg: 'Postal code and country are required.' }); return;
+    }
+    setSavingAddress(true);
+    setAddressFeedback(null);
+    const res = await fetch('/api/portal/profile', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ship_street1: draft.street.trim(),
+        ship_city: draft.city.trim(),
+        ship_postal_code: draft.postal_code.trim(),
+        ship_country: draft.country.trim().toUpperCase(),
+      }),
+    });
+    setSavingAddress(false);
+    if (!res.ok) {
+      const d = await res.json();
+      setAddressFeedback({ type: 'error', msg: d.error ?? 'Error saving.' });
+      return;
+    }
+    setProfile(prev => prev ? {
+      ...prev,
       ship_street1: draft.street.trim(),
       ship_city: draft.city.trim(),
       ship_postal_code: draft.postal_code.trim(),
       ship_country: draft.country.trim().toUpperCase(),
       direccion_envio: { street: draft.street.trim(), city: draft.city.trim(), postal_code: draft.postal_code.trim(), country: draft.country.trim() },
     } : prev);
-    setEditing(false);
-    setProfileFeedback({ type: 'success', msg: 'Profile updated.' });
+    setEditingAddress(false);
+    setAddressFeedback({ type: 'success', msg: 'Address updated.' });
+  }
+
+  function cancelAddress() {
+    if (!profile) return;
+    setDraft(d => ({
+      ...d,
+      street: profile.ship_street1 ?? profile.direccion_envio?.street ?? '',
+      city: profile.ship_city ?? profile.direccion_envio?.city ?? '',
+      postal_code: profile.ship_postal_code ?? profile.direccion_envio?.postal_code ?? '',
+      country: profile.ship_country ?? profile.direccion_envio?.country ?? '',
+    }));
+    setEditingAddress(false);
+    setAddressFeedback(null);
   }
 
   async function savePassword(e: React.FormEvent) {
@@ -436,9 +474,23 @@ export default function PerfilPage() {
       </Card>
 
       {/* Shipping address */}
-      <Card title="Shipping Address">
-        {!editing ? (
-          (profile?.ship_street1 || profile?.direccion_envio) ? (
+      <Card
+        title="Shipping Address"
+        action={
+          editingAddress ? (
+            <div style={{ display: 'flex', gap: 14 }}>
+              <ActionBtn onClick={cancelAddress}>Cancel</ActionBtn>
+              <ActionBtn onClick={saveAddress} danger disabled={savingAddress}>
+                {savingAddress ? 'Saving…' : 'Save'}
+              </ActionBtn>
+            </div>
+          ) : (
+            <ActionBtn onClick={() => { setEditingAddress(true); setAddressFeedback(null); }} danger>Edit</ActionBtn>
+          )
+        }
+      >
+        {!editingAddress ? (
+          (profile?.ship_street1 || profile?.ship_postal_code || profile?.direccion_envio) ? (
             <>
               <InfoRow label="STREET" value={profile.ship_street1 ?? profile.direccion_envio?.street ?? ''} />
               <InfoRow label="CITY" value={profile.ship_city ?? profile.direccion_envio?.city ?? ''} />
@@ -446,10 +498,9 @@ export default function PerfilPage() {
               <InfoRow label="COUNTRY" value={profile.ship_country ?? profile.direccion_envio?.country ?? ''} />
             </>
           ) : (
-            <div style={{
-              fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)',
-              fontSize: 12, color: muted,
-            }}>No shipping address on file.</div>
+            <div style={{ fontFamily: 'var(--font-mono, "JetBrains Mono", monospace)', fontSize: 12, color: muted }}>
+              No shipping address on file. Click Edit to add one.
+            </div>
           )
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -474,13 +525,14 @@ export default function PerfilPage() {
               </div>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <FieldLabel>Country *</FieldLabel>
+              <FieldLabel>Country * (2-letter ISO code)</FieldLabel>
               <input type="text" value={draft.country}
-                onChange={e => setDraft(d => ({ ...d, country: e.target.value }))}
-                placeholder="ES" style={inp} />
+                onChange={e => setDraft(d => ({ ...d, country: e.target.value.toUpperCase() }))}
+                placeholder="ES" maxLength={2} style={inp} />
             </div>
           </div>
         )}
+        {addressFeedback && <div style={{ marginTop: 12 }}><Feedback fb={addressFeedback} /></div>}
       </Card>
 
       {/* External link cards */}

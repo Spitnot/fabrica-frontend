@@ -14,7 +14,7 @@ export function PaymentPanel({ orderId, orderState, totalAmount, currency, order
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  if (orderState !== 'confirmado') return null;
+  if (orderState !== 'esperando_pago') return null;
 
   async function handleInitiatePayment() {
     try {

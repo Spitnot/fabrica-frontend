@@ -17,9 +17,9 @@ async function getStats() {
     { data: facturacion },
   ] = await Promise.all([
     supabaseAdmin.from('orders').select('*', { count: 'exact', head: true }).in('status', ['confirmado', 'produccion']),
-    supabaseAdmin.from('orders').select('*', { count: 'exact', head: true }).eq('status', 'listo_envio'),
+    supabaseAdmin.from('orders').select('*', { count: 'exact', head: true }).in('status', ['listo_envio', 'esperando_pago']),
     supabaseAdmin.from('orders').select('*', { count: 'exact', head: true }).eq('status', 'enviado').gte('created_at', startOfMonth),
-    supabaseAdmin.from('orders').select('total_productos').in('status', ['confirmado', 'produccion', 'listo_envio', 'enviado']).gte('created_at', startOfMonth),
+    supabaseAdmin.from('orders').select('total_productos').in('status', ['confirmado', 'produccion', 'listo_envio', 'esperando_pago', 'enviado']).gte('created_at', startOfMonth),
   ]);
   const facturacionMes = (facturacion ?? []).reduce((s: number, o: any) => s + (o.total_productos ?? 0), 0);
   return { activos: activos ?? 0, listos: listos ?? 0, enviados: enviados ?? 0, facturacionMes };
@@ -38,7 +38,7 @@ async function getStockWidget() {
   const { data: items } = await supabaseAdmin
     .from('order_items')
     .select('sku, nombre_producto, cantidad, order:orders!inner(status)')
-    .in('orders.status', ['confirmado', 'produccion', 'listo_envio']);
+    .in('orders.status', ['confirmado', 'produccion', 'listo_envio', 'esperando_pago']);
   const { data: metas } = await supabaseAdmin
     .from('product_meta')
     .select('sku, volume_ml, alert_threshold_liters');
