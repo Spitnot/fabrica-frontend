@@ -244,10 +244,6 @@ select {
 .fr-page { max-width: 1200px; margin: 0 auto; width: 100%; box-sizing: border-box; padding: 32px; display: flex; flex-direction: column; gap: 24px; }
 @media (max-width: 768px) { .fr-page { padding: 20px 16px; } }
 
-/* Hero banner del portal (full-bleed, fuera de .fr-page) */
-.fr-hero-banner { height: 660px; }
-@media (max-width: 768px) { .fr-hero-banner { height: 380px; } }
-
 /* Scrollbar */
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }

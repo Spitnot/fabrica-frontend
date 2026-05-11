@@ -1,86 +1,9 @@
 'use client';
 
-import { useState, useEffect, useRef, useMemo, Suspense } from 'react';
+import { useState, useEffect, useMemo, Suspense } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { StatusChip, FRStatus } from '@/components/fr/StatusChip';
-
-// ─── Hero slideshow (Shopify product images) ─────────────────────────────────
-
-function HeroBanner({ slides }: { slides: { image: string; name: string }[] }) {
-  const [slide, setSlide] = useState(0);
-  const [fading, setFading] = useState(false);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const total = slides.length || 1;
-
-  function goTo(idx: number) {
-    if (idx === slide) return;
-    setFading(true);
-    setTimeout(() => { setSlide(idx); setFading(false); }, 300);
-  }
-
-  useEffect(() => {
-    if (slides.length < 2) return;
-    timerRef.current = setInterval(() => {
-      setFading(true);
-      setTimeout(() => { setSlide(s => (s + 1) % total); setFading(false); }, 300);
-    }, 4000);
-    return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [slides.length, total]);
-
-  const current = slides[slide % total];
-
-  return (
-    <div className="fr-hero-banner" style={{ position: 'relative', width: '100%', overflow: 'hidden', background: '#111' }}>
-      {current && (
-        <img
-          key={slide}
-          src={current.image}
-          alt={current.name}
-          style={{
-            position: 'absolute', inset: 0, width: '100%', height: '100%',
-            objectFit: 'cover', opacity: fading ? 0 : 1,
-            transition: 'opacity 300ms ease',
-          }}
-        />
-      )}
-
-      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 80, background: 'linear-gradient(transparent, rgba(0,0,0,0.6))' }} />
-
-      {current && (
-        <div style={{ position: 'absolute', bottom: 44, left: 16, opacity: fading ? 0 : 1, transition: 'opacity 300ms' }}>
-          <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#fff', background: 'rgba(0,0,0,0.4)', padding: '3px 8px' }}>
-            {current.name}
-          </span>
-        </div>
-      )}
-
-      <div style={{ position: 'absolute', bottom: 12, left: 16, right: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{ display: 'flex', gap: 5 }}>
-          {slides.length > 1 && slides.map((_, i) => (
-            <button
-              key={i}
-              onClick={() => goTo(i)}
-              style={{
-                width: i === slide ? 20 : 6, height: 6,
-                background: i === slide ? '#D93A35' : 'rgba(255,255,255,0.4)',
-                border: 'none', boxShadow: 'none', padding: 0,
-                transition: 'all 0.3s', cursor: 'pointer', minHeight: 'auto',
-              }}
-            />
-          ))}
-        </div>
-        <Link href="/portal/pedidos/nuevo">
-          <button className="btn-primary" style={{ fontSize: 9, padding: '7px 14px' }}>
-            + New Order
-          </button>
-        </Link>
-      </div>
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
 
 const STATUS_LABELS: Record<string, string> = {
   draft: 'Draft', confirmado: 'Confirmed', produccion: 'In Production',
@@ -106,30 +29,12 @@ function PortalOrdersInner() {
 
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
-  const [heroSlides, setHeroSlides] = useState<{ image: string; name: string }[]>([]);
 
   useEffect(() => {
     fetch('/api/portal/orders')
       .then(r => r.json())
       .then(d => { setOrders(d.data ?? []); setLoading(false); })
       .catch(() => setLoading(false));
-
-    fetch('/api/products')
-      .then(r => r.json())
-      .then(d => {
-        const products: any[] = d.data ?? [];
-        const seen = new Set<string>();
-        const slides: { image: string; name: string }[] = [];
-        for (const p of products) {
-          if (p.imagen && !seen.has(p.nombre_producto)) {
-            seen.add(p.nombre_producto);
-            slides.push({ image: p.imagen, name: p.nombre_producto });
-          }
-          if (slides.length >= 6) break;
-        }
-        setHeroSlides(slides);
-      })
-      .catch(() => {});
   }, []);
 
   function setParam(key: string, value: string) {
@@ -167,10 +72,7 @@ function PortalOrdersInner() {
   const cols = '90px 140px 90px 130px 90px';
 
   return (
-    <>
-      {heroSlides.length > 0 && <HeroBanner slides={heroSlides} />}
-
-      <div className="fr-page">
+    <div className="fr-page">
 
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
@@ -260,7 +162,6 @@ function PortalOrdersInner() {
         </div>
       </div>
     </div>
-    </>
   );
 }
 
