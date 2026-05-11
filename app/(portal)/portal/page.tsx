@@ -31,7 +31,7 @@ function HeroBanner({ slides }: { slides: { image: string; name: string }[] }) {
   const current = slides[slide % total];
 
   return (
-    <div style={{ position: 'relative', width: '100%', height: 220, overflow: 'hidden', background: '#111' }}>
+    <div className="fr-hero-banner" style={{ position: 'relative', width: '100%', overflow: 'hidden', background: '#111' }}>
       {current && (
         <img
           key={slide}
@@ -167,17 +167,13 @@ function PortalOrdersInner() {
   const cols = '90px 140px 90px 130px 90px';
 
   return (
-    <div className="fr-page" style={{ paddingTop: heroSlides.length > 0 ? 0 : undefined }}>
+    <>
+      {heroSlides.length > 0 && <HeroBanner slides={heroSlides} />}
 
-      {/* Hero — edge-to-edge */}
-      {heroSlides.length > 0 && (
-        <div style={{ margin: '0 -32px' }}>
-          <HeroBanner slides={heroSlides} />
-        </div>
-      )}
+      <div className="fr-page">
 
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: heroSlides.length > 0 ? 20 : 0 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
         <div>
           <div className="fr-label">{loading ? '—' : `${filtered.length} of ${orders.length} records`}</div>
           <h1 style={{ fontSize: 28, fontWeight: 700, marginTop: 4 }}>Orders</h1>
@@ -264,6 +260,7 @@ function PortalOrdersInner() {
         </div>
       </div>
     </div>
+    </>
   );
 }
 

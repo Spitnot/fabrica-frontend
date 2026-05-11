@@ -329,7 +329,7 @@ export default function AyudaPage() {
   }
 
   return (
-    <div className="fr-page" style={{ maxWidth: 760 }}>
+    <div className="fr-page">
 
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 12 }}>

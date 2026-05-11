@@ -388,7 +388,7 @@ export default function PerfilPage() {
   // ─── Render ────────────────────────────────────────────
 
   return (
-    <div style={{ maxWidth: 720, margin: '0 auto', padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+    <div className="fr-page" style={{ gap: 20 }}>
 
       {/* Header */}
       <div style={{ borderBottom: `2px solid ${ink}`, paddingBottom: 16, marginBottom: 4 }}>
