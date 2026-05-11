@@ -76,7 +76,7 @@ export default function ProduccionPage() {
   }
 
   return (
-    <div style={{ padding: '24px 28px', maxWidth: 1280, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 16 }}>
+    <div className="fr-page">
 
       <PageHeader
         eyebrow="● PRODUCTION FLOOR / LIVE"

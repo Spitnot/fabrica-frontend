@@ -14,7 +14,7 @@ export async function POST(req: NextRequest, { params }: Props) {
 
     const { data: customer, error: dbError } = await supabaseAdmin
       .from('customers')
-      .select('email, contacto_nombre, first_name, last_name')
+      .select('email, first_name, last_name')
       .eq('id', id)
       .single()
 
@@ -39,7 +39,7 @@ export async function POST(req: NextRequest, { params }: Props) {
 
     const recipientName = (customer as any).first_name
       ? `${(customer as any).first_name} ${(customer as any).last_name ?? ''}`.trim()
-      : customer.contacto_nombre
+      : customer.email
 
     await sendCustomerInviteEmail(customer.email, recipientName, setupLink, id)
 

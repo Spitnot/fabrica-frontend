@@ -25,19 +25,25 @@ async function getLogs(): Promise<EmailLog[]> {
 }
 
 const TYPE_LABELS: Record<string, string> = {
-  welcome:            'Welcome',
-  order_confirmation: 'Confirmed',
-  order_shipped:      'Shipped',
-  admin_notification: 'Admin',
-  admin_invite:       'Team invite',
+  welcome:               'Welcome',
+  order_confirmation:    'Confirmed',
+  order_shipped:         'Shipped',
+  order_ready_to_pay:    'Pay Now',
+  admin_notification:    'Admin',
+  admin_invite:          'Team invite',
+  customer_invite:       'Invite',
+  reset_password:        'Reset',
 };
 
 const TYPE_COLORS: Record<string, string> = {
-  welcome:            '#0087B8',
-  order_confirmation: '#0DA265',
-  order_shipped:      '#876693',
-  admin_notification: '#111',
-  admin_invite:       '#E6883E',
+  welcome:               '#0087B8',
+  order_confirmation:    '#0DA265',
+  order_shipped:         '#876693',
+  order_ready_to_pay:    '#E6883E',
+  admin_notification:    '#111',
+  admin_invite:          '#E6883E',
+  customer_invite:       '#0087B8',
+  reset_password:        '#111',
 };
 
 function fmt(dateStr: string) {
@@ -108,9 +114,9 @@ export default async function EmailsPage() {
               <style>{`@media(max-width:600px){.fr-email-row{grid-template-columns:1fr!important}.fr-email-col-hide{display:none!important}}`}</style>
 
               {/* Type */}
-              <div>
-                <span className="badge" style={{ background: TYPE_COLORS[log.type] ?? '#111' }}>
-                  {TYPE_LABELS[log.type] ?? log.type}
+              <div style={{ overflow: 'hidden' }}>
+                <span className="badge" style={{ background: TYPE_COLORS[log.type] ?? '#111', maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', display: 'inline-block', whiteSpace: 'nowrap' }}>
+                  {TYPE_LABELS[log.type] ?? log.type.replace(/_/g, ' ')}
                 </span>
               </div>
 
